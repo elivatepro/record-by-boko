@@ -1,7 +1,7 @@
 # Roudio — design (Tide Clock direction, October 2026)
 
-Static screen designs for Roudio. No app code exists yet. The app's
-technology hasn't been chosen.
+Static screen designs for Roudio. The apps are built from these: colours,
+radii and type come from the Paper tokens via `packages/design-tokens`.
 
 - **Editable designs:** Paper file **“Roudio — Fresh Direction (Oct 2026)”**
   (https://app.paper.design/file/01M4JN5MF7KH805065DG9T8AD1). The older

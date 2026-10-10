@@ -1,6 +1,6 @@
 # Roudio — architecture (October 2026)
 
-How Roudio will be built. No app code exists yet.
+How Roudio is built. Code layout and commands: `../../README.md`.
 
 - `decisions.md`: what has been decided, when, and why.
 - `spec.md`: the first technical spec. It covers the parts, the life of a

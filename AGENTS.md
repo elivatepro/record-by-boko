@@ -66,10 +66,19 @@ notes, conventions, and release instructions here as the project develops.
 
 - Plain-language product brief: `docs/roudio-brief.md`.
 - Current design direction (Paper file, exports, decisions, inventory,
-  open checks): `docs/design/README.md`. No app code exists yet.
+  open checks): `docs/design/README.md`.
 - Architecture decisions and the technical spec: `docs/architecture/`.
   The app is native Android (Kotlin + Jetpack Compose) and uses the official
   Plaud SDK. Processing runs on our own backend, with ElevenLabs Scribe v2
   for transcription.
 - Build plan (milestones 0–7, repo layout, prerequisites): `docs/build/build-plan.md`.
   Start each new development thread from `docs/build/new-thread-handoff.md`.
+- Repo layout, tools and everyday commands: `README.md`. CI
+  (`.github/workflows/ci.yml`) runs the backend, web and Android checks on
+  every push.
+- Generated files (never edit by hand): `apps/web/src/styles/tokens.css`,
+  `RoudioTokens.kt`, the bundled Lexend copies (from `pnpm tokens`),
+  `packages/api-spec/openapi.json` (from `uv run roudio-openapi`) and
+  `apps/web/src/api/schema.d.ts`. CI fails when they're stale.
+- Every external service (Plaud, Google, ElevenLabs, OpenAI, Drive) sits
+  behind a small interface with a fake in the tests.
