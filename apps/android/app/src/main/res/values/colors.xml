@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window backgrounds before Compose draws (must match tokens: ground). -->
+    <color name="paper">#FFFFFF</color>
+    <color name="night">#07111D</color>
+</resources>

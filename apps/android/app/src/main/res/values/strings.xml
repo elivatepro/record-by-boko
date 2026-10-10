@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Roudio</string>
+    <string name="back">Back</string>
+    <string name="step_of">Step %1$d of %2$d</string>
+
+    <!-- 11b Setup · Sign in -->
+    <string name="sign_in_title">Sign in with Google</string>
+    <string name="sign_in_body">One account does two jobs. It keeps your recordings yours, and it’s where backups go.</string>
+    <string name="sign_in_private_title">Your private Roudio</string>
+    <string name="sign_in_private_body">Only this account can see your recordings, here or on the web.</string>
+    <string name="sign_in_drive_title">Backups in a Roudio folder on your Drive</string>
+    <string name="sign_in_drive_body">Roudio only touches the folder it creates.</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="signing_in">Signing in…</string>
+    <string name="not_owner_title">That account can’t open this Roudio</string>
+    <string name="not_owner_body">%1$s isn’t the owner. Pick the Google account this Roudio belongs to.</string>
+    <string name="that_account">That account</string>
+    <string name="sign_in_failed_title">Sign-in didn’t work</string>
+    <string name="no_connection">Couldn’t reach Roudio’s server. Check your connection and try again.</string>
+
+    <!-- Milestone 0 check screen -->
+    <string name="signed_in">Signed in</string>
+    <string name="drive_connected">Drive backup connected.</string>
+    <string name="drive_not_connected">Drive backup isn’t connected yet.</string>
+    <string name="check_plaud">Check Plaud link</string>
+    <string name="plaud_ok">Plaud token received for %1$s, valid until %2$s.</string>
+    <string name="sign_out">Sign out</string>
+</resources>
