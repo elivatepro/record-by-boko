@@ -13,3 +13,12 @@ needs) are public API. Everything else is obfuscated and changes between release
 
 To update: replace the file, update the version and checksum above, and re-test
 linking on the real recorder.
+
+## Logging
+
+The SDK logs whole HTTP exchanges (the user token, and the RSA private key Plaud returns)
+through Timber, to logcat and to `files/plaud_sdk_logs`. Roudio replaces Timber with a silent
+copy (`src/main/java/timber/log/Timber.java`) that covers exactly the calls this SDK makes. If a
+new SDK version fails with `NoSuchMethodError` in `timber.log`, add the missing call there as a
+no-op; never bring the real Timber back. The SDK's Bluetooth logs (`PenBleSDK-*`, plain
+`android.util.Log`) carry no secrets.

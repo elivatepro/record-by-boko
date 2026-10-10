@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,13 +17,10 @@ import com.boko.roudio.auth.GoogleSignInCancelled
 import com.boko.roudio.data.ApiException
 import com.boko.roudio.data.errorDetail
 import com.boko.roudio.ui.signin.SignInError
+import com.boko.roudio.ui.signin.RecorderCheckScreen
 import com.boko.roudio.ui.signin.SignInScreen
-import com.boko.roudio.ui.signin.SignedInScreen
 import com.boko.roudio.ui.theme.RoudioTheme
 import java.io.IOException
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -94,36 +90,21 @@ class MainActivity : ComponentActivity() {
     @androidx.compose.runtime.Composable
     private fun SignedIn() {
         val scope = rememberCoroutineScope()
-        var email by remember { mutableStateOf<String?>(null) }
-        var drive by remember { mutableStateOf<Boolean?>(null) }
-        var plaud by remember { mutableStateOf<String?>(null) }
-        LaunchedEffect(Unit) {
-            runCatching { app.api.auth.getMe() }.getOrNull()?.body()?.let {
-                email = it.email
-                drive = it.driveConnected
-            }
-        }
-        SignedInScreen(
-            email = email,
-            driveConnected = drive,
-            plaudStatus = plaud,
-            onCheckPlaud = {
-                scope.launch {
-                    plaud = runCatching {
-                        val response = app.api.plaud.getPlaudToken()
-                        val token = response.body()
-                            ?: throw ApiException(response.errorDetail(), response.code())
-                        // Never show or log the token itself.
-                        val until = token.expiresAt.atZoneSameInstant(ZoneId.systemDefault())
-                            .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT))
-                        getString(R.string.plaud_ok, token.domain, until)
-                    }.getOrElse { it.message ?: getString(R.string.no_connection) }
-                }
-            },
+        val recorder = app.recorder
+        val state by recorder.state.collectAsState()
+        RecorderCheckScreen(
+            state = state,
+            onSearch = recorder::search,
+            onLink = recorder::link,
+            onRefresh = recorder::refresh,
+            onReconnect = recorder::reconnect,
+            onDisconnect = { recorder.clearLink() },
+            onUnlink = { scope.launch { recorder.unlink() } },
             onSignOut = {
                 scope.launch {
                     runCatching { app.api.auth.signOut() }
                     app.session.clear()
+                    app.plaudTokens.clear()
                 }
             },
         )

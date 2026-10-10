@@ -17,11 +17,10 @@ coroutines = "1.11.0"
 gson = "2.14.0"
 javaWebsocket = "1.6.0"
 bouncycastle = "1.86"
-timber = "5.0.1"
 guava = "33.7.2-android"
-# The SDK calls logback's JoranConfigurator directly; keep the pair Plaud's template uses.
-logbackAndroid = "2.0.0"
-slf4j = "1.7.36"
+# The SDK configures logback itself. Java-WebSocket 1.6 brings SLF4J 2, which needs logback-android 3.
+logbackAndroid = "3.0.0"
+slf4j = "2.0.20"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -49,7 +48,6 @@ plaud-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 plaud-retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 plaud-java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "javaWebsocket" }
 plaud-bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
-plaud-timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 plaud-guava = { module = "com.google.guava:guava", version.ref = "guava" }
 plaud-logback-android = { module = "com.github.tony19:logback-android", version.ref = "logbackAndroid" }
 plaud-slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }

@@ -115,13 +115,13 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.android)
 
-    // Plaud SDK (app/libs/README.md) and the libraries it needs at runtime.
+    // Plaud SDK (app/libs/README.md) and the libraries it needs at runtime. Timber is replaced
+    // by a silent copy in src/main/java/timber, so the SDK can't log secrets.
     implementation(files("libs/plaud-sdk.aar"))
     implementation(libs.plaud.gson)
     implementation(libs.plaud.retrofit.gson)
     implementation(libs.plaud.java.websocket)
     implementation(libs.plaud.bouncycastle)
-    implementation(libs.plaud.timber)
     implementation(libs.plaud.guava)
     implementation(libs.plaud.logback.android)
     implementation(libs.plaud.slf4j)

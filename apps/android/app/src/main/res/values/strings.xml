@@ -18,12 +18,4 @@
     <string name="that_account">That account</string>
     <string name="sign_in_failed_title">Sign-in didn’t work</string>
     <string name="no_connection">Couldn’t reach Roudio’s server. Check your connection and try again.</string>
-
-    <!-- Milestone 0 check screen -->
-    <string name="signed_in">Signed in</string>
-    <string name="drive_connected">Drive backup connected.</string>
-    <string name="drive_not_connected">Drive backup isn’t connected yet.</string>
-    <string name="check_plaud">Check Plaud link</string>
-    <string name="plaud_ok">Plaud token received for %1$s, valid until %2$s.</string>
-    <string name="sign_out">Sign out</string>
 </resources>
