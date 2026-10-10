@@ -14,7 +14,7 @@ from roudio.api.deps import Db, Services
 from roudio.auth.crypto import TokenCipher
 from roudio.auth.google import HttpDriveCodeExchanger, HttpGoogleVerifier
 from roudio.config import Settings, get_settings
-from roudio.plaud import FakePlaudAuth, HttpPlaudAuth, PlaudAuth
+from roudio.plaud import FakePlaudAuth, HttpPlaudAuth, PlaudAuth, UnconfiguredPlaudAuth
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +35,8 @@ def build_services(settings: Settings) -> Services:
             api_base=settings.plaud_api_base,
         )
     elif settings.is_production_like:
-        raise RuntimeError("PLAUD_CLIENT_ID and PLAUD_CLIENT_SECRET must be set")
+        log.error("PLAUD_CLIENT_ID / PLAUD_CLIENT_SECRET aren't set; /plaud/token will fail")
+        plaud_auth = UnconfiguredPlaudAuth()
     else:
         log.warning("No Plaud credentials; using the fake Plaud token")
         plaud_auth = FakePlaudAuth()
@@ -45,6 +46,8 @@ def build_services(settings: Settings) -> Services:
         drive = HttpDriveCodeExchanger(
             settings.google_client_ids[0], settings.google_client_secret.get_secret_value()
         )
+    if not settings.google_client_ids:
+        log.error("GOOGLE_CLIENT_IDS isn't set; sign-in will fail")
     cipher = None
     if settings.drive_token_key:
         cipher = TokenCipher(settings.drive_token_key.get_secret_value())

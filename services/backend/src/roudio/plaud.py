@@ -117,6 +117,13 @@ def _json_or_raise(response: httpx.Response, what: str) -> dict[str, Any]:
     raise PlaudError(f"Plaud {what}: HTTP {response.status_code}")
 
 
+class UnconfiguredPlaudAuth:
+    """Deployed without Plaud credentials: every request fails with a clear reason."""
+
+    async def user_token(self) -> PlaudUserToken:
+        raise PlaudError("PLAUD_CLIENT_ID / PLAUD_CLIENT_SECRET aren't set")
+
+
 class FakePlaudAuth:
     """Used in tests and in development when no Plaud credentials are set."""
 

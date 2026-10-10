@@ -2,10 +2,15 @@
   "name": "roudio",
   "private": true,
   "packageManager": "pnpm@11.25.0",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "tokens": "pnpm --filter @roudio/design-tokens generate",
     "tokens:check": "pnpm --filter @roudio/design-tokens check",
     "api:clients": "pnpm --filter @roudio/api-spec generate"
+  },
+  "devDependencies": {
+    "railway": "^3.13.1"
   }
 }

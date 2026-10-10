@@ -59,16 +59,14 @@ class Settings(BaseSettings):
         return self.environment in {"staging", "production"}
 
     def check_for_deploy(self) -> None:
-        """Refuse to start a deployed service with development defaults."""
-        if not self.is_production_like:
-            return
-        missing = []
-        if self.session_secret.get_secret_value().startswith("dev-only"):
-            missing.append("SESSION_SECRET")
-        if not self.google_client_ids:
-            missing.append("GOOGLE_CLIENT_IDS")
-        if missing:
-            raise RuntimeError(f"Missing settings for {self.environment}: {', '.join(missing)}")
+        """Refuse to start a deployed service with the development session secret.
+
+        Google and Plaud settings may arrive later; until then the endpoints that need them
+        answer "not set up yet" instead of the service crash-looping.
+        """
+        dev_secret = self.session_secret.get_secret_value().startswith("dev-only")
+        if self.is_production_like and dev_secret:
+            raise RuntimeError(f"SESSION_SECRET must be set for {self.environment}")
 
 
 @lru_cache
