@@ -16,7 +16,7 @@ jobs:
         working-directory: services/backend
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: roudio
           POSTGRES_PASSWORD: roudio

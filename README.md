@@ -57,6 +57,36 @@ roudio.apiUrl=http://127.0.0.1:8000
 roudio.googleServerClientId=<web/backend OAuth client ID>.apps.googleusercontent.com
 ```
 
+## Deploying (Railway)
+
+Project **roudio** in the **Quality Performance** workspace, with `production` and
+`staging` environments. Each has Postgres, an `audio` bucket (Amsterdam), `api`,
+`worker` and `web`. Every push to `master` deploys both environments.
+
+| | production | staging |
+| --- | --- | --- |
+| api | https://api-production-59d9.up.railway.app | https://api-staging-d3f1.up.railway.app |
+| web | https://web-production-bb1235.up.railway.app | https://web-staging-d0c3.up.railway.app |
+
+Infrastructure is code: `.railway/railway.ts`. Preview and apply changes with a
+project token for the target environment:
+
+```bash
+export RAILWAY_TOKEN=$(sed -n 's/^RAILWAY_TOKEN_PRODUCTION=//p' .env.railway)
+railway config plan
+railway config apply
+```
+
+`.env.railway` (git-ignored) holds `RAILWAY_API_TOKEN` (a workspace token; the
+CLI doesn't accept those, but Railway's API does) and per-environment project
+tokens. Secrets (`SESSION_SECRET`, `DRIVE_TOKEN_KEY`, Google and Plaud keys)
+are set as shared variables in each environment, never in the file. Staging
+and production have different secrets.
+
+Known gap: `railway config plan` currently answers "Unauthorized" with the
+staging token, so staging was created as a copy of production. Re-check after
+CLI updates.
+
 ## Secrets
 
 Keys live in Railway variables and in local `.env` / `.env.local` /

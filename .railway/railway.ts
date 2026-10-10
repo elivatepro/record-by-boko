@@ -26,13 +26,13 @@ export default defineRailway((ctx) => {
     PLAUD_API_BASE: ctx.shared.PLAUD_API_BASE,
   };
 
+  // api and web use Railway's default restart policy (on failure).
   const api = service("api", {
     source,
     build,
     start: "roudio-api",
     preDeploy: "alembic upgrade head",
     healthcheck: "/health",
-    deploy: { restartPolicyType: "ON_FAILURE" },
     env,
   });
 
@@ -49,7 +49,6 @@ export default defineRailway((ctx) => {
     source: github("elivatepro/record-by-boko", { branch: "master", rootDirectory: "/" }),
     build: { builder: "DOCKERFILE", dockerfilePath: "apps/web/Dockerfile" },
     healthcheck: "/",
-    deploy: { restartPolicyType: "ON_FAILURE" },
     env: {
       // Public values, baked into the bundle at build time.
       VITE_API_URL: "https://${{api.RAILWAY_PUBLIC_DOMAIN}}",
