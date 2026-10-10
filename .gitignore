@@ -28,7 +28,7 @@ dist/
 
 # Gradle / Android
 .gradle/
-build/
+apps/android/**/build/
 .kotlin/
 captures/
 *.apk
