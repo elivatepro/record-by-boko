@@ -1,0 +1,44 @@
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+google-services.json
+local.properties
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Gradle / Android
+.gradle/
+build/
+.kotlin/
+captures/
+*.apk
+*.aab
+
+# Plaud SDK binaries come from the developer portal; keep them out of git
+apps/android/app/libs/*.aar
+
+# Real audio never goes in the repo
+*.opus
+*.wav
+*.mp3
+*.m4a

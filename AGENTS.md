@@ -63,3 +63,13 @@ After making a change:
 
 This file is the initial project guide. Add concrete commands, architecture
 notes, conventions, and release instructions here as the project develops.
+
+- Plain-language product brief: `docs/roudio-brief.md`.
+- Current design direction (Paper file, exports, decisions, inventory,
+  open checks): `docs/design/README.md`. No app code exists yet.
+- Architecture decisions and the technical spec: `docs/architecture/`.
+  The app is native Android (Kotlin + Jetpack Compose) and uses the official
+  Plaud SDK. Processing runs on our own backend, with ElevenLabs Scribe v2
+  for transcription.
+- Build plan (milestones 0–7, repo layout, prerequisites): `docs/build/build-plan.md`.
+  Start each new development thread from `docs/build/new-thread-handoff.md`.
