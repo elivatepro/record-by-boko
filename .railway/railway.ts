@@ -24,6 +24,8 @@ export default defineRailway((ctx) => {
     DRIVE_TOKEN_KEY: ctx.shared.DRIVE_TOKEN_KEY,
     OWNER_EMAIL: ctx.shared.OWNER_EMAIL,
     PLAUD_API_BASE: ctx.shared.PLAUD_API_BASE,
+    GOOGLE_CLIENT_IDS: ctx.shared.GOOGLE_WEB_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: ctx.shared.GOOGLE_CLIENT_SECRET,
   };
 
   // api and web use Railway's default restart policy (on failure).
