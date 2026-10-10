@@ -1,0 +1,119 @@
+/* Generated from packages/design-tokens/tokens.json by generate.mjs. Do not edit. */
+
+@font-face {
+  font-family: "Lexend";
+  src: url("/fonts/Lexend-Variable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --palette-paper: #FFFFFF;
+  --palette-fog: #F1F4F8;
+  --palette-hairline: #E3E7EE;
+  --palette-muted: #56627A;
+  --palette-navy: #0E2240;
+  --palette-buoy: #FFB800;
+  --palette-buoy-ink: #8A5A00;
+  --palette-alert: #B3261E;
+  --palette-warning-tint: #FFF6DB;
+  --palette-warning-rim: #F2D27A;
+  --palette-night: #07111D;
+  --palette-night-sheet: #0B1726;
+  --palette-night-sheet-rim: #22344F;
+  --palette-night-raised: #111F33;
+  --palette-night-card: #16294A;
+  --palette-night-card-tile: #1F355C;
+  --palette-night-hairline: #1B2A3F;
+  --palette-night-muted: #9AA8BE;
+  --palette-night-disabled: #4E5D74;
+  --palette-night-ink: #E8EEF7;
+  --palette-night-buoy: #FFC433;
+  --palette-night-alert: #FF8A80;
+  --palette-night-alert-tile: #3A1A1F;
+  --palette-night-warning-tint: #2A2410;
+  --palette-night-warning-rim: #5C4A14;
+
+  --color-ground: var(--palette-paper);
+  --color-sheet: var(--palette-paper);
+  --color-sheet-rim: var(--palette-hairline);
+  --color-raised: var(--palette-fog);
+  --color-hero-card: var(--palette-navy);
+  --color-on-hero-card: var(--palette-paper);
+  --color-ink: var(--palette-navy);
+  --color-muted: var(--palette-muted);
+  --color-hairline: var(--palette-hairline);
+  --color-primary: var(--palette-navy);
+  --color-on-primary: var(--palette-paper);
+  --color-buoy: var(--palette-buoy);
+  --color-on-buoy: var(--palette-navy);
+  --color-buoy-text: var(--palette-buoy-ink);
+  --color-alert: var(--palette-alert);
+  --color-warning-tint: var(--palette-warning-tint);
+  --color-warning-rim: var(--palette-warning-rim);
+
+  --font-sans: "Lexend", system-ui, sans-serif;
+  --text-display: 34px;
+  --leading-display: 40px;
+  --text-title: 26px;
+  --leading-title: 32px;
+  --text-section: 20px;
+  --leading-section: 26px;
+  --text-transcript: 17px;
+  --leading-transcript: 28px;
+  --text-body: 16px;
+  --leading-body: 24px;
+  --text-small: 14px;
+  --leading-small: 20px;
+  --text-label: 12px;
+  --leading-label: 16px;
+  --radius-chip: 18px;
+  --radius-card: 24px;
+  --radius-sheet: 28px;
+  --radius-pill: 999px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-ground: var(--palette-night);
+    --color-sheet: var(--palette-night-sheet);
+    --color-sheet-rim: var(--palette-night-sheet-rim);
+    --color-raised: var(--palette-night-raised);
+    --color-hero-card: var(--palette-night-card);
+    --color-on-hero-card: var(--palette-night-ink);
+    --color-ink: var(--palette-night-ink);
+    --color-muted: var(--palette-night-muted);
+    --color-hairline: var(--palette-night-hairline);
+    --color-primary: var(--palette-night-ink);
+    --color-on-primary: var(--palette-night);
+    --color-buoy: var(--palette-night-buoy);
+    --color-on-buoy: var(--palette-night);
+    --color-buoy-text: var(--palette-night-buoy);
+    --color-alert: var(--palette-night-alert);
+    --color-warning-tint: var(--palette-night-warning-tint);
+    --color-warning-rim: var(--palette-night-warning-rim);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-ground: var(--palette-night);
+  --color-sheet: var(--palette-night-sheet);
+  --color-sheet-rim: var(--palette-night-sheet-rim);
+  --color-raised: var(--palette-night-raised);
+  --color-hero-card: var(--palette-night-card);
+  --color-on-hero-card: var(--palette-night-ink);
+  --color-ink: var(--palette-night-ink);
+  --color-muted: var(--palette-night-muted);
+  --color-hairline: var(--palette-night-hairline);
+  --color-primary: var(--palette-night-ink);
+  --color-on-primary: var(--palette-night);
+  --color-buoy: var(--palette-night-buoy);
+  --color-on-buoy: var(--palette-night);
+  --color-buoy-text: var(--palette-night-buoy);
+  --color-alert: var(--palette-night-alert);
+  --color-warning-tint: var(--palette-night-warning-tint);
+  --color-warning-rim: var(--palette-night-warning-rim);
+  color-scheme: dark;
+}
