@@ -12,6 +12,16 @@ okhttp = "5.5.0"
 kotlinxSerialization = "1.11.0"
 openapiGenerator = "7.26.0"
 junit = "4.13.2"
+coroutines = "1.11.0"
+# Libraries the Plaud SDK aar uses but doesn't declare (see app/libs/README.md).
+gson = "2.14.0"
+javaWebsocket = "1.6.0"
+bouncycastle = "1.86"
+timber = "5.0.1"
+guava = "33.7.2-android"
+# The SDK calls logback's JoranConfigurator directly; keep the pair Plaud's template uses.
+logbackAndroid = "2.0.0"
+slf4j = "1.7.36"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -33,6 +43,16 @@ okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.
 retrofit-scalars = { module = "com.squareup.retrofit2:converter-scalars", version.ref = "retrofit" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 junit = { module = "junit:junit", version.ref = "junit" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+plaud-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+plaud-retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+plaud-java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "javaWebsocket" }
+plaud-bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+plaud-timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+plaud-guava = { module = "com.google.guava:guava", version.ref = "guava" }
+plaud-logback-android = { module = "com.github.tony19:logback-android", version.ref = "logbackAndroid" }
+plaud-slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

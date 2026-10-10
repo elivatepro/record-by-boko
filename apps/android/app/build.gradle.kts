@@ -113,5 +113,19 @@ dependencies {
     implementation(libs.retrofit.scalars)
     implementation(libs.kotlinx.serialization.json)
 
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Plaud SDK (app/libs/README.md) and the libraries it needs at runtime.
+    implementation(files("libs/plaud-sdk.aar"))
+    implementation(libs.plaud.gson)
+    implementation(libs.plaud.retrofit.gson)
+    implementation(libs.plaud.java.websocket)
+    implementation(libs.plaud.bouncycastle)
+    implementation(libs.plaud.timber)
+    implementation(libs.plaud.guava)
+    implementation(libs.plaud.logback.android)
+    implementation(libs.plaud.slf4j)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

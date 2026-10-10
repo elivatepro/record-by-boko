@@ -34,9 +34,6 @@ captures/
 *.apk
 *.aab
 
-# Plaud SDK binaries come from the developer portal; keep them out of git
-apps/android/app/libs/*.aar
-
 # Real audio never goes in the repo
 *.opus
 *.wav
