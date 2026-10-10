@@ -26,6 +26,8 @@ export default defineRailway((ctx) => {
     PLAUD_API_BASE: ctx.shared.PLAUD_API_BASE,
     GOOGLE_CLIENT_IDS: ctx.shared.GOOGLE_WEB_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: ctx.shared.GOOGLE_CLIENT_SECRET,
+    PLAUD_CLIENT_ID: ctx.shared.PLAUD_CLIENT_ID,
+    PLAUD_CLIENT_SECRET: ctx.shared.PLAUD_CLIENT_SECRET,
   };
 
   // api and web use Railway's default restart policy (on failure).
