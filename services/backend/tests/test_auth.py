@@ -24,6 +24,7 @@ async def test_other_google_account_is_refused(client: AsyncClient, services: Se
     response = await client.post("/auth/google", json={"id_token": "stranger", "client": "web"})
     assert response.status_code == 403
     assert response.json()["detail"]["code"] == "not_owner"
+    assert response.json()["detail"]["email"] == "someone@gmail.com"
 
 
 async def test_unverified_owner_email_is_refused(client: AsyncClient, services: Services) -> None:

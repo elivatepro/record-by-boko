@@ -115,7 +115,13 @@ async def sign_in_with_google(
 
 async def _owner_for(db: Db, owner_email: str, identity: GoogleIdentity) -> Owner:
     """The owner row for this Google account, or 403 for anyone else."""
-    refused = error(status.HTTP_403_FORBIDDEN, "not_owner", "This Google account can't use Roudio.")
+    # The refused address goes back to the person who just signed in with it, nowhere else.
+    refused = error(
+        status.HTTP_403_FORBIDDEN,
+        "not_owner",
+        f"{identity.email} isn't the owner. Pick the account you use on your phone.",
+        email=identity.email,
+    )
     if not identity.email_verified or identity.email != owner_email:
         log.warning("Refused sign-in from a Google account that isn't the owner's")
         raise refused

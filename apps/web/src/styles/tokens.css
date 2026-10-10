@@ -16,8 +16,10 @@
   --palette-buoy: #FFB800;
   --palette-buoy-ink: #8A5A00;
   --palette-alert: #B3261E;
+  --palette-alert-tint: #FCEEEE;
   --palette-warning-tint: #FFF6DB;
   --palette-warning-rim: #F2D27A;
+  --palette-hero-muted: #C9D3E3;
   --palette-night: #07111D;
   --palette-night-sheet: #0B1726;
   --palette-night-sheet-rim: #22344F;
@@ -40,6 +42,8 @@
   --color-raised: var(--palette-fog);
   --color-hero-card: var(--palette-navy);
   --color-on-hero-card: var(--palette-paper);
+  --color-hero-tile: var(--palette-night-card);
+  --color-on-hero-card-muted: var(--palette-hero-muted);
   --color-ink: var(--palette-navy);
   --color-muted: var(--palette-muted);
   --color-hairline: var(--palette-hairline);
@@ -49,6 +53,7 @@
   --color-on-buoy: var(--palette-navy);
   --color-buoy-text: var(--palette-buoy-ink);
   --color-alert: var(--palette-alert);
+  --color-alert-tint: var(--palette-alert-tint);
   --color-warning-tint: var(--palette-warning-tint);
   --color-warning-rim: var(--palette-warning-rim);
 
@@ -82,6 +87,8 @@
     --color-raised: var(--palette-night-raised);
     --color-hero-card: var(--palette-night-card);
     --color-on-hero-card: var(--palette-night-ink);
+    --color-hero-tile: var(--palette-night-card-tile);
+    --color-on-hero-card-muted: var(--palette-night-muted);
     --color-ink: var(--palette-night-ink);
     --color-muted: var(--palette-night-muted);
     --color-hairline: var(--palette-night-hairline);
@@ -91,6 +98,7 @@
     --color-on-buoy: var(--palette-night);
     --color-buoy-text: var(--palette-night-buoy);
     --color-alert: var(--palette-night-alert);
+    --color-alert-tint: var(--palette-night-alert-tile);
     --color-warning-tint: var(--palette-night-warning-tint);
     --color-warning-rim: var(--palette-night-warning-rim);
     color-scheme: dark;
@@ -104,6 +112,8 @@
   --color-raised: var(--palette-night-raised);
   --color-hero-card: var(--palette-night-card);
   --color-on-hero-card: var(--palette-night-ink);
+  --color-hero-tile: var(--palette-night-card-tile);
+  --color-on-hero-card-muted: var(--palette-night-muted);
   --color-ink: var(--palette-night-ink);
   --color-muted: var(--palette-night-muted);
   --color-hairline: var(--palette-night-hairline);
@@ -113,6 +123,7 @@
   --color-on-buoy: var(--palette-night);
   --color-buoy-text: var(--palette-night-buoy);
   --color-alert: var(--palette-night-alert);
+  --color-alert-tint: var(--palette-night-alert-tile);
   --color-warning-tint: var(--palette-night-warning-tint);
   --color-warning-rim: var(--palette-night-warning-rim);
   color-scheme: dark;

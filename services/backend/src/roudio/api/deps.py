@@ -31,9 +31,9 @@ def get_services(request: Request) -> Services:
     return services
 
 
-def error(status_code: int, code: str, message: str) -> HTTPException:
+def error(status_code: int, code: str, message: str, **extra: str) -> HTTPException:
     """Errors carry a stable `code` for the apps and a plain-language `message`."""
-    return HTTPException(status_code, detail={"code": code, "message": message})
+    return HTTPException(status_code, detail={"code": code, "message": message, **extra})
 
 
 _bearer = HTTPBearer(auto_error=False)

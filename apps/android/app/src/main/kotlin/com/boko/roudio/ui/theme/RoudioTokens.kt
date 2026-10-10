@@ -24,10 +24,14 @@ object RoudioPalette {
     val BuoyInk = Color(0xFF8A5A00)
     /** Light failure text and icons */
     val Alert = Color(0xFFB3261E)
+    /** Light failure callout background */
+    val AlertTint = Color(0xFFFCEEEE)
     /** Light playing segment / not-enough answer tint */
     val WarningTint = Color(0xFFFFF6DB)
     /** Light warning tint border */
     val WarningRim = Color(0xFFF2D27A)
+    /** Secondary text on the navy hero card */
+    val HeroMuted = Color(0xFFC9D3E3)
     /** Dark ground */
     val Night = Color(0xFF07111D)
     /** Dark sheets */
@@ -69,6 +73,8 @@ data class RoudioColors(
     val raised: Color,
     val heroCard: Color,
     val onHeroCard: Color,
+    val heroTile: Color,
+    val onHeroCardMuted: Color,
     val ink: Color,
     val muted: Color,
     val hairline: Color,
@@ -78,6 +84,7 @@ data class RoudioColors(
     val onBuoy: Color,
     val buoyText: Color,
     val alert: Color,
+    val alertTint: Color,
     val warningTint: Color,
     val warningRim: Color,
 )
@@ -89,6 +96,8 @@ val LightRoudioColors = RoudioColors(
     raised = RoudioPalette.Fog,
     heroCard = RoudioPalette.Navy,
     onHeroCard = RoudioPalette.Paper,
+    heroTile = RoudioPalette.NightCard,
+    onHeroCardMuted = RoudioPalette.HeroMuted,
     ink = RoudioPalette.Navy,
     muted = RoudioPalette.Muted,
     hairline = RoudioPalette.Hairline,
@@ -98,6 +107,7 @@ val LightRoudioColors = RoudioColors(
     onBuoy = RoudioPalette.Navy,
     buoyText = RoudioPalette.BuoyInk,
     alert = RoudioPalette.Alert,
+    alertTint = RoudioPalette.AlertTint,
     warningTint = RoudioPalette.WarningTint,
     warningRim = RoudioPalette.WarningRim,
 )
@@ -109,6 +119,8 @@ val DarkRoudioColors = RoudioColors(
     raised = RoudioPalette.NightRaised,
     heroCard = RoudioPalette.NightCard,
     onHeroCard = RoudioPalette.NightInk,
+    heroTile = RoudioPalette.NightCardTile,
+    onHeroCardMuted = RoudioPalette.NightMuted,
     ink = RoudioPalette.NightInk,
     muted = RoudioPalette.NightMuted,
     hairline = RoudioPalette.NightHairline,
@@ -118,6 +130,7 @@ val DarkRoudioColors = RoudioColors(
     onBuoy = RoudioPalette.Night,
     buoyText = RoudioPalette.NightBuoy,
     alert = RoudioPalette.NightAlert,
+    alertTint = RoudioPalette.NightAlertTile,
     warningTint = RoudioPalette.NightWarningTint,
     warningRim = RoudioPalette.NightWarningRim,
 )

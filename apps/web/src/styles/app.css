@@ -1,0 +1,256 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis: none;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.03em;
+}
+
+/* W1 Sign in */
+.sign-in {
+  display: flex;
+  min-height: 100%;
+}
+
+.sign-in__hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  width: 640px;
+  max-width: 45%;
+  padding: 48px 56px;
+  overflow: clip;
+  background: var(--color-hero-card);
+  color: var(--color-on-hero-card);
+}
+
+.sign-in__pitch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 440px;
+}
+
+.sign-in__pitch h1 {
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 52px;
+  letter-spacing: -0.02em;
+}
+
+.sign-in__pitch p {
+  color: var(--color-on-hero-card-muted);
+  font-size: 16px;
+  line-height: 25px;
+}
+
+.sign-in__ring {
+  position: absolute;
+  top: -120px;
+  right: -230px;
+  pointer-events: none;
+}
+
+.sign-in__panel {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.sign-in__form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 400px;
+  max-width: 100%;
+}
+
+.sign-in__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sign-in__heading h2 {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 38px;
+  letter-spacing: -0.02em;
+}
+
+.sign-in__heading p {
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 23px;
+}
+
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 56px;
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius-sheet);
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.google-button:hover:not(:disabled) {
+  background: var(--color-raised);
+}
+
+.google-button:focus-visible,
+.pill-button:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+.google-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.callout {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+}
+
+.callout svg {
+  flex-shrink: 0;
+}
+
+.callout--alert {
+  background: var(--color-alert-tint);
+}
+
+.callout strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-alert);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.callout p {
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.sign-in__note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-hairline);
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.sign-in__note svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .sign-in {
+    flex-direction: column;
+  }
+
+  .sign-in__hero {
+    width: 100%;
+    max-width: none;
+    gap: 48px;
+    padding: 32px 24px;
+  }
+
+  .sign-in__pitch h1 {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+/* Placeholder home */
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  max-width: 560px;
+  padding: 48px 56px;
+}
+
+.home__account {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.home__account h1 {
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: var(--leading-title);
+}
+
+.home__warning {
+  color: var(--color-buoy-text);
+}
+
+.pill-button {
+  margin-top: 16px;
+  padding: 12px 24px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
