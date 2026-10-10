@@ -1,0 +1,18 @@
+{
+	admin off
+}
+
+:{$PORT:8080} {
+	root * /srv
+	encode zstd gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+	}
+	@assets path /assets/* /fonts/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	# Single-page app: unknown paths load index.html so deep links work.
+	try_files {path} /index.html
+	file_server
+}

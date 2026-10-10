@@ -17,6 +17,8 @@ export default defineRailway((ctx) => {
 
   const env = {
     ENVIRONMENT: ctx.environmentName,
+    // The web app's origin, so browsers may call the API (Railway resolves ${{…}}).
+    CORS_ORIGINS: "https://${{web.RAILWAY_PUBLIC_DOMAIN}}",
     DATABASE_URL: db.env.DATABASE_URL,
     SESSION_SECRET: ctx.shared.SESSION_SECRET,
     DRIVE_TOKEN_KEY: ctx.shared.DRIVE_TOKEN_KEY,
@@ -42,5 +44,18 @@ export default defineRailway((ctx) => {
     env,
   });
 
-  return project("roudio", { resources: [db, audio, api, worker] });
+  // Static web app (decision 15), built from the repo root because it's a pnpm workspace.
+  const web = service("web", {
+    source: github("elivatepro/record-by-boko", { branch: "master", rootDirectory: "/" }),
+    build: { builder: "DOCKERFILE", dockerfilePath: "apps/web/Dockerfile" },
+    healthcheck: "/",
+    deploy: { restartPolicyType: "ON_FAILURE" },
+    env: {
+      // Public values, baked into the bundle at build time.
+      VITE_API_URL: "https://${{api.RAILWAY_PUBLIC_DOMAIN}}",
+      VITE_GOOGLE_CLIENT_ID: ctx.shared.GOOGLE_WEB_CLIENT_ID,
+    },
+  });
+
+  return project("roudio", { resources: [db, audio, api, worker, web] });
 });
