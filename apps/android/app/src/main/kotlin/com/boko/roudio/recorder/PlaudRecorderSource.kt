@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.util.Base64
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.tinnotech.penblesdk.entity.BleDevice
@@ -70,6 +71,9 @@ class PlaudRecorderSource(
     @Volatile private var reconnectSerial: String? = null
 
     @Volatile private var connectedSerial: String? = null
+
+    /** Use the force-clear handshake for first links (see [handshake]). Debug builds can switch it. */
+    @Volatile var forceClearOnFirstLink = true
     @Volatile private var depairDone: CompletableDeferred<Unit>? = null
 
     init {
@@ -207,7 +211,17 @@ class PlaudRecorderSource(
 
         lastStage = null
         handshakeSerial = serial
-        sdk("connectBleDevice") { PlaudDeviceAgent.connectBleDevice(device) }
+        val userId = tokenInUse?.let { handshakeUserId(it.accessToken) }
+        if (firstLink && userId != null && forceClearOnFirstLink) {
+            // A recorder keeps the public key of the last app it was linked to and encrypts its
+            // first reply with it, so a recorder freed from the Plaud app answers with a key we
+            // can't read (the SDK fails with an RSA error, then times out). The force-clear
+            // handshake (0xFE20) tells it to drop that key and take ours. The SDK only exposes
+            // it as "recovery"; given our own user id it's an ordinary link as us.
+            sdk("recoveryConnectBleDevice") { PlaudDeviceAgent.recoveryConnectBleDevice(device, userId) }
+        } else {
+            sdk("connectBleDevice") { PlaudDeviceAgent.connectBleDevice(device) }
+        }
     }
 
     private fun onHandshakeDone(serial: String) {
@@ -384,6 +398,16 @@ class PlaudRecorderSource(
             serial.startsWith("882") -> "notepins"
             else -> "note"
         }
+
+        /**
+         * The user id the SDK handshakes with: the `sub` claim of the Plaud user token
+         * (as `NiceBuildSdk.resolveHandshakeToken` reads it). Not a secret on its own.
+         */
+        fun handshakeUserId(token: String): String? = runCatching {
+            val payload = token.split('.').takeIf { it.size == 3 }?.get(1) ?: return null
+            val json = String(Base64.decode(payload, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP))
+            JSONObject(json).optString("sub").takeIf { it.isNotBlank() }
+        }.getOrNull()
 
         /** Plaud session ids are the recording's start in Unix seconds. Anything else is unknown. */
         fun sessionStart(sessionId: Long): Instant? =

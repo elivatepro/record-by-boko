@@ -29,7 +29,7 @@ class RoudioApp : Application() {
         }
     }
 
-    val recorder by lazy {
-        Recorder(PlaudRecorderSource(this, plaudTokens, appScope), PrefsRecorderStore(this), appScope)
-    }
+    val plaudSource by lazy { PlaudRecorderSource(this, plaudTokens, appScope) }
+
+    val recorder by lazy { Recorder(plaudSource, PrefsRecorderStore(this), appScope) }
 }

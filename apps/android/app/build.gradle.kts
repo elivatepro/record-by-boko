@@ -123,6 +123,8 @@ dependencies {
     implementation(libs.plaud.java.websocket)
     implementation(libs.plaud.bouncycastle)
     implementation(libs.plaud.guava)
+    // Only used when the phone lacks ChaCha20-Poly1305 (the SDK installs it as a provider then).
+    implementation(libs.plaud.conscrypt)
     implementation(libs.plaud.logback.android)
     implementation(libs.plaud.slf4j)
 

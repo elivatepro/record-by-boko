@@ -54,6 +54,7 @@ class RecorderCommands : BroadcastReceiver() {
                 }
                 return
             }
+            "forceclear" -> app.plaudSource.forceClearOnFirstLink = intent.getBooleanExtra("on", true)
             "state" -> Unit
             else -> Log.w(TAG, "unknown command $cmd")
         }
