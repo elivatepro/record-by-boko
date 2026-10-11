@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.boko.roudio.R
 import com.boko.roudio.ui.RoudioIcons
+import com.boko.roudio.ui.setup.StepHeader
 import com.boko.roudio.ui.theme.RoudioRadius
 import com.boko.roudio.ui.theme.RoudioTheme
 import com.boko.roudio.ui.theme.roudioText
@@ -67,7 +68,7 @@ fun SignInScreen(
             Modifier.weight(1f).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(28.dp),
         ) {
-            StepHeader(step = 1, of = 6, onBack = onBack)
+            StepHeader(step = 1, onBack = onBack)
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     stringResource(R.string.sign_in_title),
@@ -88,42 +89,6 @@ fun SignInScreen(
         }
         Spacer(Modifier.height(12.dp))
         ContinueWithGoogle(busy = busy, onClick = onContinue)
-    }
-}
-
-@Composable
-private fun StepHeader(step: Int, of: Int, onBack: (() -> Unit)?) {
-    val c = RoudioTheme.colors
-    Row(
-        Modifier.height(48.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        IconButton(
-            onClick = { onBack?.invoke() },
-            enabled = onBack != null,
-            modifier = Modifier.size(48.dp),
-            colors = IconButtonDefaults.iconButtonColors(containerColor = c.raised, contentColor = c.ink),
-        ) {
-            Icon(RoudioIcons.Back, contentDescription = stringResource(R.string.back), Modifier.size(22.dp))
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                stringResource(R.string.step_of, step, of),
-                style = roudioText(13.sp, 18.sp, FontWeight.Medium),
-                color = c.muted,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                repeat(of) { i ->
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .height(4.dp)
-                            .background(if (i < step) c.primary else c.hairline, RoundedCornerShape(2.dp)),
-                    )
-                }
-            }
-        }
     }
 }
 

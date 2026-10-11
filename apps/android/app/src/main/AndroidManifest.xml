@@ -11,6 +11,13 @@
         tools:targetApi="s" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Wi-Fi fast transfer (optional, 11c). Never used for location. -->
+    <uses-permission
+        android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="tiramisu" />
+    <!-- 11d asks Android to stop restricting Roudio in the background (decision 9). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- RecorderService holds the recorder connection with the screen off. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
@@ -22,6 +29,11 @@
     <uses-permission
         android:name="android.permission.ACCESS_COARSE_LOCATION"
         android:maxSdkVersion="30" />
+
+    <!-- 11d opens Xiaomi's Autostart list when it exists. -->
+    <queries>
+        <package android:name="com.miui.securitycenter" />
+    </queries>
 
     <application
         android:name=".RoudioApp"

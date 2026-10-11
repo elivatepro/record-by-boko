@@ -100,6 +100,9 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     debugImplementation(libs.compose.ui.tooling)
+    implementation(libs.navigation3.runtime)
+    implementation(libs.navigation3.ui)
+    implementation(libs.lifecycle.runtime.compose)
 
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play)

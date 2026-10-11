@@ -4,6 +4,22 @@
     <string name="back">Back</string>
     <string name="step_of">Step %1$d of %2$d</string>
 
+    <string name="continue_label">Continue</string>
+    <string name="allow">Allow</string>
+    <string name="allowed">Allowed</string>
+
+    <!-- 11a Setup · Welcome -->
+    <string name="welcome_title">Your day, written down and easy to find.</string>
+    <string name="welcome_body">Roudio works with your Plaud Note Pro. Here’s what it does:</string>
+    <string name="welcome_pulls_title">Pulls recordings off your recorder</string>
+    <string name="welcome_pulls_body">Over Bluetooth, in the background.</string>
+    <string name="welcome_writes_title">Writes them up</string>
+    <string name="welcome_writes_body">Who said what, decisions and suggested tasks, each linked to the moment.</string>
+    <string name="welcome_backs_title">Backs everything up to your Drive</string>
+    <string name="welcome_backs_body">Recordings stay on this phone until you delete them.</string>
+    <string name="welcome_footnote">Takes about 3 minutes. Keep your recorder nearby and charged.</string>
+    <string name="get_started">Get started</string>
+
     <!-- 11b Setup · Sign in -->
     <string name="sign_in_title">Sign in with Google</string>
     <string name="sign_in_body">One account does two jobs. It keeps your recordings yours, and it’s where backups go.</string>
@@ -26,4 +42,48 @@
     <string name="recorder_notification_not_connected_seen">Not connected · last seen %1$s</string>
     <string name="recorder_notification_looking">Looking for your recorder</string>
     <string name="recorder_notification_bluetooth_off">Bluetooth is off. Turn it on to reach your recorder.</string>
+
+    <!-- 11c Setup · Permissions -->
+    <string name="permissions_title">Allow what Roudio needs</string>
+    <string name="permissions_body">Android will ask you for each one. Here’s why.</string>
+    <string name="permission_nearby_title">Nearby devices</string>
+    <string name="permission_nearby_body">To find your recorder and pull recordings off it. Required.</string>
+    <string name="permission_notifications_title">Notifications</string>
+    <string name="permission_notifications_body">Android shows one while transfers run. We also tell you when a backup needs you.</string>
+    <string name="permission_wifi_title">Nearby Wi-Fi</string>
+    <string name="permission_wifi_body">For faster transfers of long recordings. Optional.</string>
+    <string name="permissions_no_microphone">Roudio never uses this phone’s microphone. Your recorder does the recording.</string>
+    <string name="permissions_footnote">You can change these later in Settings.</string>
+
+    <!-- 11d Setup · Keep running -->
+    <string name="keep_running_title">Let Roudio keep working</string>
+    <string name="keep_running_body">Your phone stops apps in the background to save battery. Roudio needs to keep going with the screen off, or transfers stop.</string>
+    <string name="autostart_on">Autostart: on</string>
+    <string name="autostart_title">Autostart</string>
+    <string name="autostart_checked">Autostart: checked by you</string>
+    <string name="autostart_done_body">Roudio starts again after a restart.</string>
+    <string name="autostart_path">Settings › Apps › Manage apps › Roudio › Autostart</string>
+    <string name="autostart_unknown_body">Your phone doesn’t tell apps this. Open the setting and switch Roudio on.</string>
+    <string name="open_autostart_settings">Open Autostart settings</string>
+    <string name="battery_title">Battery saver: No restrictions</string>
+    <string name="battery_path">Settings › Apps › Roudio › Battery saver › No restrictions</string>
+    <string name="battery_done_body">Roudio can run with the screen off.</string>
+    <string name="open_battery_settings">Open battery settings</string>
+    <string name="lock_recents_title">Lock Roudio in recent apps</string>
+    <string name="lock_recents_body">Optional. Open recent apps, hold Roudio, tap the lock.</string>
+    <string name="keep_running_footnote">Without it, transfers may stop when the screen is off. Phone updates can also switch these off; Settings will warn you.</string>
+    <string name="continue_without_it">Continue without it</string>
+
+    <!-- 11e Setup · Free it from the Plaud app -->
+    <string name="unlink_title">Unlink it from the Plaud app</string>
+    <string name="unlink_body">Your Note Pro works with one app at a time. If the Plaud app is linked to it, Roudio can’t connect.</string>
+    <string name="unlink_warning_title">Before you unlink</string>
+    <string name="unlink_warning_body">Let the Plaud app finish syncing anything you want to keep from it.</string>
+    <string name="unlink_step_1">Open the Plaud app and go to your Note Pro.</string>
+    <!-- The recorder only forgets the Plaud app when it's connected while unlinking
+         (learned 11 Oct 2026, apps/android/app/libs/README.md). Paper updated to match. -->
+    <string name="unlink_step_2">With the Note Pro next to your phone, choose the option to unlink or remove the device.</string>
+    <string name="unlink_step_3">Come back here. You can keep the Plaud app installed.</string>
+    <string name="unlink_done">It’s unlinked. Find my recorder</string>
+    <string name="unlink_never">It was never linked</string>
 </resources>

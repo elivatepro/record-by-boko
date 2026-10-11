@@ -12,6 +12,8 @@ okhttp = "5.5.0"
 kotlinxSerialization = "1.11.0"
 openapiGenerator = "7.26.0"
 junit = "4.13.2"
+navigation3 = "1.2.0"
+lifecycleCompose = "2.11.0"
 coroutines = "1.11.0"
 # Libraries the Plaud SDK aar uses but doesn't declare (see app/libs/README.md).
 gson = "2.14.0"
@@ -43,6 +45,9 @@ okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.
 retrofit-scalars = { module = "com.squareup.retrofit2:converter-scalars", version.ref = "retrofit" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 junit = { module = "junit:junit", version.ref = "junit" }
+navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
+navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleCompose" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 plaud-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
