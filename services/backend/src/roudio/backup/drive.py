@@ -23,6 +23,10 @@ class DriveAccessLost(DriveError):
     """The grant was revoked or expired: the owner has to reconnect Drive."""
 
 
+class DriveNotEnabled(DriveError):
+    """The Drive API is switched off in Roudio's Google Cloud project; retried until it's on."""
+
+
 @dataclass(frozen=True)
 class DriveFileInfo:
     id: str
@@ -102,6 +106,14 @@ class HttpDrive:
                 continue
             if response.status_code in (401, 403) and "insufficient" in response.text.lower():
                 raise DriveAccessLost("Roudio no longer has Drive access. Reconnect Google Drive.")
+            if response.status_code == 403 and (
+                "accessNotConfigured" in response.text or "SERVICE_DISABLED" in response.text
+            ):
+                raise DriveNotEnabled(
+                    "The Google Drive API is off in Roudio's Google Cloud project. Turn it on "
+                    "(APIs & Services → Library → Google Drive API) and backups start by "
+                    "themselves."
+                )
             if not response.is_success:
                 raise DriveError(f"Drive answered {response.status_code}: {response.text[:200]}")
             return response

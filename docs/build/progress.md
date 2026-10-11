@@ -210,6 +210,9 @@ Done:
   only on the server with Download (06e).
 
 Still to do:
+- Owner: turn on the Google Drive API in the Google Cloud project behind Roudio's sign-in
+  (project number 921109748576: APIs & Services → Library → Google Drive API → Enable). Until
+  then every backup fails with a 403 and the Update says so; they retry by themselves after.
 - Owner: watch a week of recordings clear only after their Drive copy is checked, then decide
   whether to turn deleting on. Check that a Drive failure blocks clean-up and says what's safe.
 

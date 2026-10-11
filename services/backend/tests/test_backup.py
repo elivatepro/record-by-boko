@@ -169,3 +169,18 @@ async def test_costs_add_up(
     assert costs["total_usd"] >= 0
     assert any(line["service"] == "scribe" for line in costs["total"])
     assert costs["stored_audio_bytes"] == recording.size_bytes
+
+
+async def test_drive_api_switched_off_says_how_to_fix_it() -> None:
+    import httpx
+
+    from roudio.backup.drive import DriveNotEnabled, HttpDrive
+
+    body = '{"error": {"code": 403, "details": [{"reason": "SERVICE_DISABLED"}]}}'
+    drive = HttpDrive("id", "secret", "refresh")
+    drive._access = "token"
+    drive._http = httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda _: httpx.Response(403, text=body))
+    )
+    with pytest.raises(DriveNotEnabled, match="Google Drive API is off"):
+        await drive.folder("Roudio", None)

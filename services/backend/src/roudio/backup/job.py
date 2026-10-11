@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from roudio import jobs
 from roudio.auth.crypto import TokenCipher
-from roudio.backup.drive import Drive, DriveAccessLost, DriveError, HttpDrive
+from roudio.backup.drive import Drive, DriveAccessLost, DriveError, DriveNotEnabled, HttpDrive
 from roudio.config import get_settings
 from roudio.models import (
     AppSetting,
@@ -135,6 +135,10 @@ async def backup_recording(db: AsyncSession, job: Job) -> None:
         await db.rollback()
         await _fail(db, recording, str(exc))
         raise PermanentJobError(str(exc)) from exc
+    except DriveNotEnabled as exc:
+        await db.rollback()
+        await _fail(db, recording, str(exc))
+        raise exc
     except DriveError as exc:
         await db.rollback()
         await _fail(db, recording, "The backup to Drive didn't finish. It will be tried again.")
