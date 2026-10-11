@@ -18,4 +18,12 @@
     <string name="that_account">That account</string>
     <string name="sign_in_failed_title">Sign-in didn’t work</string>
     <string name="no_connection">Couldn’t reach Roudio’s server. Check your connection and try again.</string>
+
+    <!-- Recorder service notification (no design yet; screen-inventory "Still to design") -->
+    <string name="recorder_notification_channel">Recorder connection</string>
+    <string name="recorder_notification_connected">Connected</string>
+    <string name="recorder_notification_connected_battery">Connected · battery %1$d%%</string>
+    <string name="recorder_notification_not_connected_seen">Not connected · last seen %1$s</string>
+    <string name="recorder_notification_looking">Looking for your recorder</string>
+    <string name="recorder_notification_bluetooth_off">Bluetooth is off. Turn it on to reach your recorder.</string>
 </resources>

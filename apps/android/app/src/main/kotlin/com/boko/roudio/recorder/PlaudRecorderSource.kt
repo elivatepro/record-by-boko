@@ -138,6 +138,12 @@ class PlaudRecorderSource(
                 // The recorder may have a new address since; find it by serial first.
                 reconnectSerial = serial
                 sdk("startScan") { PlaudDeviceAgent.startScan() }
+                delay(RECONNECT_SCAN_MS)
+                if (reconnectSerial == serial) {
+                    // Not in range. KeepConnected tries again later.
+                    reconnectSerial = null
+                    sdk("stopScan") { PlaudDeviceAgent.stopScan() }
+                }
             }
         }
     }
@@ -385,6 +391,7 @@ class PlaudRecorderSource(
         const val TAG = "Recorder"
         const val PARTNER_KEYS_WAIT_MS = 10_000L
         const val DEPAIR_WAIT_MS = 3_000L
+        const val RECONNECT_SCAN_MS = 15_000L
         const val HTTP_FORBIDDEN = 403
         const val SDK_LOG_DIR = "plaud_sdk_logs"
 

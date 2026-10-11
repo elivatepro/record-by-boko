@@ -16,6 +16,7 @@ import com.boko.roudio.auth.GoogleAuth
 import com.boko.roudio.auth.GoogleSignInCancelled
 import com.boko.roudio.data.ApiException
 import com.boko.roudio.data.errorDetail
+import com.boko.roudio.recorder.RecorderService
 import com.boko.roudio.ui.signin.SignInError
 import com.boko.roudio.ui.signin.RecorderCheckScreen
 import com.boko.roudio.ui.signin.SignInScreen
@@ -92,6 +93,10 @@ class MainActivity : ComponentActivity() {
         val scope = rememberCoroutineScope()
         val recorder = app.recorder
         val state by recorder.state.collectAsState()
+        // The service keeps the link alive with the screen off; start it once there's a recorder.
+        androidx.compose.runtime.LaunchedEffect(state.linked) {
+            if (state.linked != null) RecorderService.startIfLinked(this@MainActivity)
+        }
         RecorderCheckScreen(
             state = state,
             onSearch = recorder::search,
