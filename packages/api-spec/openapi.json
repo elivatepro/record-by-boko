@@ -1198,6 +1198,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
+              "format": "int64",
               "title": "Update Id"
             }
           }

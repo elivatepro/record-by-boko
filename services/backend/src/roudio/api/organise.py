@@ -221,7 +221,7 @@ async def mark_updates_read(_: CurrentSession, db: Db) -> None:
 
 
 @router.delete("/updates/{update_id}", operation_id="dismissUpdate", status_code=204)
-async def dismiss_update(update_id: int, _: CurrentSession, db: Db) -> None:
+async def dismiss_update(update_id: Id64, _: CurrentSession, db: Db) -> None:
     """Swiped away on the phone: gone for good. A new failure raises a new update."""
     await db.execute(delete(Notification).where(Notification.id == update_id))
     await db.commit()

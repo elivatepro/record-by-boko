@@ -220,4 +220,5 @@
     <string name="backups_copy_drive_checking">Drive · checking</string>
     <string name="backups_copy_drive_after_write_up">Drive · after write-up</string>
     <string name="backups_copy_drive_waiting">Drive · waiting</string>
+    <string name="updates_dismiss">Dismiss</string>
 </resources>

@@ -1,5 +1,15 @@
 package com.boko.roudio.ui.updates
 
+import kotlin.math.roundToInt
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -139,6 +149,10 @@ fun UpdatesRoute(
         },
         onOpen = { id -> onOpenConversation(id, null) },
         onBackups = onBackups,
+        onDismiss = { update ->
+            rows = rows?.filterNot { it.update.id == update.id }
+            scope.launch { if (send { app.api.organise.dismissUpdate(update.id) }) SyncWork.now(context) }
+        },
         onBack = onBack,
     )
 }
@@ -156,9 +170,14 @@ fun UpdatesSheet(
     onBackups: () -> Unit,
     onBack: () -> Unit,
     initialFilter: Int = 0,
+    onDismiss: (UpdateView) -> Unit = {},
 ) {
     val c = RoudioTheme.colors
     var filter by rememberSaveable { mutableIntStateOf(initialFilter) }
+    // Dragging the handle down moves the sheet with the finger; far or fast enough closes it.
+    val scope = rememberCoroutineScope()
+    val drag = remember { Animatable(0f) }
+    val closeAt = with(LocalDensity.current) { 120.dp.toPx() }
     Box(
         Modifier
             .fillMaxSize()
@@ -169,16 +188,29 @@ fun UpdatesSheet(
             Modifier
                 .statusBarsPadding()
                 .padding(top = 48.dp)
+                .offset { IntOffset(0, drag.value.roundToInt()) }
                 .fillMaxSize()
                 .background(c.sheet, RoundedCornerShape(topStart = RoudioRadius.Sheet, topEnd = RoudioRadius.Sheet))
                 // Swallows taps so only the strip above closes the sheet.
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         ) {
-            Box(Modifier.fillMaxWidth().padding(top = 10.dp), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(32.dp)
+                    .draggable(
+                        state = rememberDraggableState { delta -> scope.launch { drag.snapTo((drag.value + delta).coerceAtLeast(0f)) } },
+                        orientation = Orientation.Vertical,
+                        onDragStopped = { velocity ->
+                            if (drag.value > closeAt || velocity > 1500f) onBack() else drag.animateTo(0f)
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
                 Box(Modifier.width(36.dp).height(4.dp).background(c.hairline, RoundedCornerShape(2.dp)))
             }
             when {
-                rows != null -> Loaded(rows, filter, { filter = it }, retries, onMarkAllRead, onRetryBackup, onOpen, onBackups)
+                rows != null -> Loaded(rows, filter, { filter = it }, retries, onMarkAllRead, onRetryBackup, onOpen, onBackups, onDismiss)
                 failed -> Padded {
                     Header(null, onMarkAllRead)
                     CouldNotLoad(stringResource(R.string.no_connection), onRetryLoad)
@@ -207,6 +239,7 @@ private fun Loaded(
     onRetryBackup: (UpdateView) -> Unit,
     onOpen: (String) -> Unit,
     onBackups: () -> Unit,
+    onDismiss: (UpdateView) -> Unit,
 ) {
     val unread = rows.count { !it.update.read }
     val needsYou = rows.filter { UpdatesModel.needsYou(it.update) }
@@ -253,7 +286,9 @@ private fun Loaded(
             }
             items(updates, key = { it.id }) { update ->
                 val row = byId.getValue(update.id)
-                UpdateItem(row, retries[update.id] ?: RetryState.Idle, onRetryBackup, onOpen, onBackups)
+                SwipeAway(onGone = { onDismiss(update) }) {
+                    UpdateItem(row, retries[update.id] ?: RetryState.Idle, onRetryBackup, onOpen, onBackups)
+                }
             }
         }
         item { Box(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)) }
@@ -491,4 +526,24 @@ private fun UpdatesDarkPreview() {
 private fun UpdatesNothingNeedsYouPreview() {
     val read = previewRows.map { it.copy(update = it.update.copy(read = true)) }
     RoudioTheme(darkTheme = false) { UpdatesSheet(read, false, emptyMap(), {}, {}, {}, {}, {}, {}, initialFilter = 1) }
+}
+
+/** Swipe an update left or right to dismiss it for good. */
+@Composable
+private fun SwipeAway(onGone: () -> Unit, content: @Composable () -> Unit) {
+    val c = RoudioTheme.colors
+    val state = rememberSwipeToDismissBoxState()
+    SwipeToDismissBox(
+        state = state,
+        backgroundContent = {
+            val toEnd = state.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+            Box(
+                Modifier.fillMaxSize().background(c.alertTint).padding(horizontal = 24.dp),
+                contentAlignment = if (toEnd) Alignment.CenterStart else Alignment.CenterEnd,
+            ) { Icon(RoudioIcons.Bin, contentDescription = stringResource(R.string.updates_dismiss), tint = c.alert) }
+        },
+        onDismiss = { onGone() },
+    ) {
+        Box(Modifier.background(c.sheet)) { content() }
+    }
 }
