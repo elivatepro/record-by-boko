@@ -28,6 +28,58 @@ object OggOpus {
         }
     }.getOrNull()
 
+    /**
+     * A copy of [source] with only its Opus stream, for playback. Plaud's files interleave a second
+     * Ogg stream (a "PLAUD.AI" metadata stream) that ffmpeg skips but Android's player feeds to the
+     * Opus decoder, which then fails. The stored file is never changed: its checksum is what the
+     * clean-up gate compares. Returns [source] itself when it has only the one stream.
+     */
+    fun audioOnly(source: File, cacheDir: File): File {
+        val target = File(cacheDir, "play-${source.name}")
+        if (target.exists() && target.lastModified() >= source.lastModified()) return target
+        var opusSerial: Int? = null
+        var dropped = false
+        val partial = File(cacheDir, "play-${source.name}.part")
+        source.inputStream().buffered().use { input ->
+            partial.outputStream().buffered().use { output ->
+                val header = ByteArray(27)
+                while (input.readNBytesCompat(header) == 27) {
+                    if (!header.startsWith("OggS", 0)) break
+                    val segments = header[26].toInt() and 0xFF
+                    val table = ByteArray(segments).also { input.readNBytesCompat(it) }
+                    val body = ByteArray(table.sumOf { it.toInt() and 0xFF }).also { input.readNBytesCompat(it) }
+                    val serial = (header[14].toInt() and 0xFF) or ((header[15].toInt() and 0xFF) shl 8) or
+                        ((header[16].toInt() and 0xFF) shl 16) or ((header[17].toInt() and 0xFF) shl 24)
+                    if (opusSerial == null && body.startsWith("OpusHead", 0)) opusSerial = serial
+                    if (serial == opusSerial) {
+                        output.write(header)
+                        output.write(table)
+                        output.write(body)
+                    } else {
+                        dropped = true
+                    }
+                }
+            }
+        }
+        if (!dropped || opusSerial == null) {
+            partial.delete()
+            return source
+        }
+        partial.renameTo(target)
+        return target
+    }
+
+    /** InputStream.readNBytes needs API 33; read until [buffer] is full or the stream ends. */
+    private fun java.io.InputStream.readNBytesCompat(buffer: ByteArray): Int {
+        var read = 0
+        while (read < buffer.size) {
+            val n = read(buffer, read, buffer.size - read)
+            if (n < 0) break
+            read += n
+        }
+        return read
+    }
+
     private fun ByteArray.startsWith(text: String, at: Int): Boolean =
         at + text.length <= size && text.indices.all { this[at + it] == text[it].code.toByte() }
 

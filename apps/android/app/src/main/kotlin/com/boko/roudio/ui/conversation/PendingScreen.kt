@@ -1,5 +1,8 @@
 package com.boko.roudio.ui.conversation
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import com.boko.roudio.recorder.OggOpus
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.OutlinedButton
 import android.net.Uri
@@ -76,7 +79,9 @@ fun PendingRoute(app: RoudioApp, recordingId: Long, onBack: () -> Unit) {
         }
     }
     LaunchedEffect(recording?.fileName) {
-        recording?.fileName?.let { File(app.recordingFiles.dir, it) }?.takeIf { it.exists() }?.let { player.load(Uri.fromFile(it), 0) }
+        val file = recording?.fileName?.let { File(app.recordingFiles.dir, it) }?.takeIf { it.exists() } ?: return@LaunchedEffect
+        val playable = withContext(Dispatchers.IO) { OggOpus.audioOnly(file, context.cacheDir) }
+        player.load(Uri.fromFile(playable), 0)
     }
     Column(
         Modifier.fillMaxSize().background(c.ground).safeDrawingPadding().padding(horizontal = 20.dp, vertical = 8.dp),

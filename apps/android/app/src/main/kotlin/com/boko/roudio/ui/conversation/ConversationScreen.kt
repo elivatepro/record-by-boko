@@ -1,5 +1,8 @@
 package com.boko.roudio.ui.conversation
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import com.boko.roudio.recorder.OggOpus
 import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -142,7 +145,8 @@ fun ConversationRoute(app: RoudioApp, id: String, atMs: Long?, onBack: () -> Uni
     LaunchedEffect(detail?.recording?.id, phoneFile?.path) {
         val recording = detail?.recording ?: return@LaunchedEffect
         val start = if (player.positionMs > 0) player.positionMs else atMs ?: detail.conversation.startMs
-        val uri = phoneFile?.let(Uri::fromFile) ?: try {
+        val playable = phoneFile?.let { withContext(Dispatchers.IO) { OggOpus.audioOnly(it, context.cacheDir) } }
+        val uri = playable?.let(Uri::fromFile) ?: try {
             app.api.library.getRecordingAudio(recording.id).body()?.url?.let(Uri::parse)
         } catch (e: IOException) {
             null
