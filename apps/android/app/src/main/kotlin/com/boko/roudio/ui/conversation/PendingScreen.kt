@@ -97,6 +97,7 @@ fun PendingRoute(app: RoudioApp, recordingId: Long, onBack: () -> Unit) {
         Text("%02d:%02d".format(start.hour, start.minute), style = roudioText(14.sp, 20.sp), color = c.muted)
         PendingPlayer(position, length.toMillis(), playing, player)
         val failed = recording.processing == ProcessingState.Failed && !retried
+        val quiet = recording.processing == ProcessingState.Done
         Row(
             Modifier
                 .fillMaxWidth()
@@ -108,12 +109,24 @@ fun PendingRoute(app: RoudioApp, recordingId: Long, onBack: () -> Unit) {
             Icon(if (failed) RoudioIcons.Alert else RoudioIcons.Notes, contentDescription = null, tint = if (failed) c.alert else c.ink, modifier = Modifier.size(20.dp))
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    stringResource(if (failed) R.string.writing_up_failed_title else R.string.still_writing_up_title),
+                    stringResource(
+                        when {
+                            failed -> R.string.writing_up_failed_title
+                            quiet -> R.string.nothing_said_title
+                            else -> R.string.still_writing_up_title
+                        },
+                    ),
                     style = roudioText(15.sp, 20.sp, FontWeight.SemiBold),
                     color = c.ink,
                 )
                 Text(
-                    recording.processingError?.takeIf { failed } ?: stringResource(if (failed) R.string.writing_up_failed_body else R.string.still_writing_up_body),
+                    recording.processingError?.takeIf { failed } ?: stringResource(
+                        when {
+                            failed -> R.string.writing_up_failed_body
+                            quiet -> R.string.nothing_said_body
+                            else -> R.string.still_writing_up_body
+                        },
+                    ),
                     style = roudioText(14.sp, 20.sp),
                     color = c.muted,
                 )

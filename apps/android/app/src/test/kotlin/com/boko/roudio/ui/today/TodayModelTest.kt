@@ -168,4 +168,15 @@ class TodayModelTest {
         assertEquals(listOf(RowStatus.WritingUpFailed, RowStatus.WritingUp), rows.map { it.status })
         assertEquals(BackupWord.Failed, rows.first().backup)
     }
+
+    @Test
+    fun `a written-up recording with no conversation keeps its row, so it can still be played`() {
+        val quiet = recording("2026-10-11T08:00:00Z", 1, TransferState.Uploaded).copy(processing = ProcessingState.Done)
+        val model = build(listOf(quiet))
+        val row = model.rows.single()
+        assertEquals(RowStatus.NothingSaid, row.status)
+        assertEquals(RowTitle.Length(Duration.ofMinutes(1)), row.title)
+        assertEquals(quiet.id, row.pendingId)
+        assertEquals(SpanKind.Quiet, model.spans.single().kind)
+    }
 }

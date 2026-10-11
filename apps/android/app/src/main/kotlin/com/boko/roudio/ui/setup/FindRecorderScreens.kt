@@ -41,6 +41,7 @@ import com.boko.roudio.recorder.FoundRecorder
 import com.boko.roudio.recorder.RecorderModel
 import com.boko.roudio.recorder.serialEnding
 import com.boko.roudio.ui.RoudioIcons
+import com.boko.roudio.ui.rememberReduceMotion
 import com.boko.roudio.ui.theme.RoudioTheme
 import com.boko.roudio.ui.theme.roudioText
 
@@ -79,12 +80,14 @@ fun FindingScreen(seconds: Int, onStop: () -> Unit, onBack: () -> Unit) {
 @Composable
 private fun SearchRadar() {
     val c = RoudioTheme.colors
-    val turn by rememberInfiniteTransition(label = "radar").animateFloat(
+    val still = rememberReduceMotion()
+    val sweeping by rememberInfiniteTransition(label = "radar").animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing)),
         label = "sweep",
     )
+    val turn = if (still) 0f else sweeping
     Canvas(Modifier.size(280.dp)) {
         val s = size.width / 280f
         val centre = Offset(140f * s, 140f * s)

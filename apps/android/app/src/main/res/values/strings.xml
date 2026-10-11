@@ -288,6 +288,9 @@
     <string name="word_writing_up">Writing up</string>
     <string name="word_writing_up_failed">Writing up failed</string>
     <string name="word_written_up">Written up</string>
+    <string name="word_nothing_said">No conversation</string>
+    <string name="nothing_said_title">No conversation found</string>
+    <string name="nothing_said_body">Nothing in this recording sounded like people talking. The audio is kept, so you can still play it.</string>
     <string name="backup_later">backup later</string>
     <string name="backup_not_yet">not backed up</string>
     <string name="backup_done">backed up</string>

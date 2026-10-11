@@ -484,6 +484,7 @@ private fun statusText(row: TimelineRow): String {
         RowStatus.WritingUp -> stringResource(R.string.word_writing_up)
         RowStatus.WritingUpFailed -> stringResource(R.string.word_writing_up_failed)
         RowStatus.WrittenUp -> stringResource(R.string.word_written_up)
+        RowStatus.NothingSaid -> stringResource(R.string.word_nothing_said)
     }
     val backup = stringResource(
         when (row.backup) {

@@ -76,8 +76,11 @@ data class TodayModel(
 
             val rows = onDay.sortedByDescending { it.startedAt }.flatMap { recording ->
                 val found = bySession[recording.serial to recording.sessionId].orEmpty()
-                if (recording.processing == ProcessingState.Done) {
-                    found.filter { it.day == day.toString() }.sortedByDescending { it.startMs }.map { conversationRow(recording, it) }
+                val talk = found.filter { it.day == day.toString() }
+                if (recording.processing == ProcessingState.Done && talk.isNotEmpty()) {
+                    talk.sortedByDescending { it.startMs }.map { conversationRow(recording, it) }
+                } else if (recording.processing == ProcessingState.Done && found.isNotEmpty()) {
+                    emptyList() // its conversations are all on the other side of midnight
                 } else {
                     listOf(row(recording, progress, open))
                 }
@@ -143,7 +146,8 @@ data class TodayModel(
                 TransferState.Uploaded -> when (recording.processing) {
                     ProcessingState.Waiting -> RowStatus.WaitingToWriteUp
                     ProcessingState.Failed -> RowStatus.WritingUpFailed
-                    ProcessingState.Done -> RowStatus.WrittenUp
+                    // Written up, and nothing in it sounded like a conversation.
+                    ProcessingState.Done -> RowStatus.NothingSaid
                     else -> RowStatus.WritingUp
                 }
             }
@@ -256,4 +260,7 @@ sealed interface RowStatus {
     data object WritingUpFailed : RowStatus
 
     data object WrittenUp : RowStatus
+
+    /** Written up with no conversation found; the row stays so the audio can still be played. */
+    data object NothingSaid : RowStatus
 }

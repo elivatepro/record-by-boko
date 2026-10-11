@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.boko.roudio.R
 import com.boko.roudio.ui.RoudioIcons
+import com.boko.roudio.ui.rememberReduceMotion
 import com.boko.roudio.ui.theme.RoudioTheme
 import com.boko.roudio.ui.theme.roudioText
 
@@ -431,7 +432,8 @@ fun CheckItem(title: String, body: String, last: Boolean) {
 @Composable
 fun Spinner(size: Dp, stroke: Dp) {
     val c = RoudioTheme.colors
-    val turn by rememberInfiniteTransition(label = "spinner").animateFloat(
+    val still = rememberReduceMotion()
+    val turning by rememberInfiniteTransition(label = "spinner").animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
@@ -439,6 +441,7 @@ fun Spinner(size: Dp, stroke: Dp) {
         ),
         label = "turn",
     )
+    val turn = if (still) 0f else turning
     Canvas(Modifier.size(size)) {
         val w = stroke.toPx()
         val inset = w / 2
