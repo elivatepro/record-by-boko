@@ -54,6 +54,25 @@ async def enqueue(
     return job
 
 
+async def ensure(db: AsyncSession, kind: str, payload: dict[str, Any]) -> Job:
+    """Queue a job unless one of this kind with this payload is already queued or running.
+
+    For safety nets like the hourly tick: unlike a dedupe key, an old finished job never blocks it.
+    """
+    active = await db.scalar(
+        select(Job)
+        .where(
+            Job.kind == kind,
+            Job.payload == payload,
+            Job.status.in_([JobStatus.QUEUED, JobStatus.RUNNING]),
+        )
+        .limit(1)
+    )
+    if active is not None:
+        return active
+    return await enqueue(db, kind, payload)
+
+
 _CLAIM = text(
     """
     UPDATE job

@@ -20,7 +20,7 @@ from roudio.models import (
 )
 from roudio.pipeline import services
 from roudio.pipeline.brain import BrainError, BrainNotConfigured, DigestInput
-from roudio.pipeline.process import DIGEST, _ai_cost, enqueue_digest, enqueue_processing, local_day
+from roudio.pipeline.process import DIGEST, PROCESS, _ai_cost, enqueue_digest, local_day
 
 log = logging.getLogger(__name__)
 
@@ -120,7 +120,7 @@ async def build_digest(db: AsyncSession, job: Job) -> None:
 
 async def tick(db: AsyncSession, job: Job) -> None:
     """Hourly: finish the digests of days that have ended, make sure every uploaded recording
-    has been queued for processing (once per file), then schedule the next tick."""
+    waiting to be written up or backed up has a job, then schedule the next tick."""
     now = datetime.now(UTC)
     for recording in await db.scalars(
         select(Recording).where(
@@ -128,9 +128,9 @@ async def tick(db: AsyncSession, job: Job) -> None:
             Recording.processing_state == ProcessingState.WAITING,
         )
     ):
-        await enqueue_processing(db, recording)
+        await jobs.ensure(db, PROCESS, {"recording_id": str(recording.id)})
     # Backups too: recordings uploaded before Drive backup existed, or whose job was lost.
-    from roudio.backup.job import enqueue_backup
+    from roudio.backup.job import BACKUP
 
     for recording in await db.scalars(
         select(Recording).where(
@@ -138,7 +138,7 @@ async def tick(db: AsyncSession, job: Job) -> None:
             Recording.backup_state == "waiting",
         )
     ):
-        await enqueue_backup(db, recording)
+        await jobs.ensure(db, BACKUP, {"recording_id": str(recording.id)})
     for digest in await db.scalars(
         select(DayDigest).where(DayDigest.state == DigestState.UPDATING)
     ):

@@ -114,3 +114,13 @@ async def test_a_handler_that_rolls_back_and_returns_still_completes(db: AsyncSe
     assert await run_once(get_sessionmaker(), {"rollback": rolls_back}, "worker-a")
     job = await db.scalar(select(Job).where(Job.kind == "rollback"))
     assert job is not None and job.status == JobStatus.SUCCEEDED
+
+
+async def test_ensure_skips_an_active_job_but_not_a_finished_one(db: AsyncSession) -> None:
+    payload = {"recording_id": "r1"}
+    first = await jobs.ensure(db, "process_recording", payload)
+    assert (await jobs.ensure(db, "process_recording", payload)).id == first.id
+    await jobs.complete(db, first)
+    again = await jobs.ensure(db, "process_recording", payload)
+    assert again.id != first.id
+    assert (await jobs.ensure(db, "process_recording", {"recording_id": "r2"})).id != again.id
