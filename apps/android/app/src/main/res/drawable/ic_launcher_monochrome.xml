@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Roudio's working mark (design-decisions.md, "Identity"): the day dial's ring with the buoy
+     "now" dot. Not a final logo. Generated geometry: 22-unit mark scaled 2.5x into 108 dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M73.10,48.06 A20.00,20.00 0 1,1 62.50,35.90"
+        android:strokeWidth="7.50"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M63.00,40.50 a6.50,6.50 0 1,0 13.00,0 a6.50,6.50 0 1,0 -13.00,0"
+        android:fillColor="#FFFFFF" />
+</vector>

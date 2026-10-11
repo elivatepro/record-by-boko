@@ -115,7 +115,10 @@ Reduced-transparency fallback: the same shapes in opaque Fog / `#111F33`.
 ## Identity
 
 Working mark: a navy ring with a buoy dot "on the clock", plus lowercase
-Lexend SemiBold "roudio". **Not a final logo.**
+Lexend SemiBold "roudio". **Not a final logo.** Since 11 Oct 2026 it's also the
+Android launcher icon (light ring and buoy dot on navy, with a monochrome layer
+for themed icons) and the web favicon, so the app no longer shows Android's
+default icon. Swap both when a final logo is chosen.
 
 ## Assumptions
 
