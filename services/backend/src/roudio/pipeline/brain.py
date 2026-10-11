@@ -94,10 +94,12 @@ class Answer:
 class Usage:
     input_tokens: int = 0
     output_tokens: int = 0
+    web_searches: int = 0
 
     def add(self, other: "Usage") -> None:
         self.input_tokens += other.input_tokens
         self.output_tokens += other.output_tokens
+        self.web_searches += other.web_searches
 
 
 @dataclass
@@ -310,7 +312,12 @@ class OpenAIBrain:
             parsed: dict[str, Any] = json.loads(output)
         except json.JSONDecodeError as exc:
             raise BrainError("OpenAI returned something that isn't the expected JSON") from exc
-        return parsed, Usage(int(usage.get("input_tokens", 0)), int(usage.get("output_tokens", 0)))
+        searches = sum(
+            1 for item in body.get("output", []) if item.get("type") == "web_search_call"
+        )
+        return parsed, Usage(
+            int(usage.get("input_tokens", 0)), int(usage.get("output_tokens", 0)), searches
+        )
 
     async def tidy(self, lines: list[Line], words: list[str]) -> BrainResult[list[Correction]]:
         text = f"Word list: {', '.join(words) or '(empty)'}\n\nTranscript:\n{_transcript(lines)}"

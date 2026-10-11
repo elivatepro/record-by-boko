@@ -2161,6 +2161,29 @@
             "type": "number",
             "title": "Total Usd"
           },
+          "today_usd": {
+            "type": "number",
+            "title": "Today Usd",
+            "default": 0
+          },
+          "purposes": {
+            "items": {
+              "$ref": "#/components/schemas/PurposeLine"
+            },
+            "type": "array",
+            "title": "Purposes",
+            "default": []
+          },
+          "elevenlabs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ElevenLabsAccount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "stored_audio_bytes": {
             "type": "integer",
             "format": "int64",
@@ -2169,6 +2192,16 @@
           "speech_hours": {
             "type": "number",
             "title": "Speech Hours"
+          },
+          "recorded_hours": {
+            "type": "number",
+            "title": "Recorded Hours",
+            "default": 0
+          },
+          "recordings_written_up": {
+            "type": "integer",
+            "title": "Recordings Written Up",
+            "default": 0
           }
         },
         "type": "object",
@@ -2181,7 +2214,7 @@
           "speech_hours"
         ],
         "title": "CostsView",
-        "description": "What outside services cost (milestone 7), this calendar month and in total."
+        "description": "What outside services cost (milestone 7): today, this calendar month and in total."
       },
       "DayView": {
         "properties": {
@@ -2324,6 +2357,50 @@
           "decisions"
         ],
         "title": "DigestView"
+      },
+      "ElevenLabsAccount": {
+        "properties": {
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "credits_used": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Credits Used"
+          },
+          "credits_limit": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Credits Limit"
+          },
+          "resets_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resets At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tier",
+          "status",
+          "credits_used",
+          "credits_limit",
+          "resets_at"
+        ],
+        "title": "ElevenLabsAccount",
+        "description": "Live from ElevenLabs: the plan and how many of this period's credits are used."
       },
       "GoogleSignInRequest": {
         "properties": {
@@ -2526,6 +2603,40 @@
           "domain"
         ],
         "title": "PlaudToken"
+      },
+      "PurposeLine": {
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "title": "Purpose"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "units": {
+            "type": "number",
+            "title": "Units"
+          },
+          "usd": {
+            "type": "number",
+            "title": "Usd"
+          }
+        },
+        "type": "object",
+        "required": [
+          "purpose",
+          "service",
+          "unit",
+          "units",
+          "usd"
+        ],
+        "title": "PurposeLine",
+        "description": "What the app used a service for, this month: transcribe, tidy, understand, digest, ask,\nweb_search, or other (entries from before purposes were recorded)."
       },
       "RecordingConversations": {
         "properties": {

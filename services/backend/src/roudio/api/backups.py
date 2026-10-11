@@ -89,15 +89,71 @@ class CostLine(BaseModel):
     usd: float
 
 
+class PurposeLine(BaseModel):
+    """What the app used a service for, this month: transcribe, tidy, understand, digest, ask,
+    web_search, or other (entries from before purposes were recorded)."""
+
+    purpose: str
+    service: str
+    unit: str
+    units: float
+    usd: float
+
+
+class ElevenLabsAccount(BaseModel):
+    """Live from ElevenLabs: the plan and how many of this period's credits are used."""
+
+    tier: str
+    status: str
+    credits_used: int = Field(json_schema_extra=INT64)
+    credits_limit: int = Field(json_schema_extra=INT64)
+    resets_at: datetime | None
+
+
 class CostsView(BaseModel):
-    """What outside services cost (milestone 7), this calendar month and in total."""
+    """What outside services cost (milestone 7): today, this calendar month and in total."""
 
     month: list[CostLine]
     total: list[CostLine]
     month_usd: float
     total_usd: float
+    today_usd: float = 0
+    purposes: list[PurposeLine] = []
+    elevenlabs: ElevenLabsAccount | None = None
     stored_audio_bytes: int = Field(json_schema_extra=INT64)
     speech_hours: float
+    recorded_hours: float = 0
+    recordings_written_up: int = 0
+
+
+async def _elevenlabs_account() -> ElevenLabsAccount | None:
+    """Best effort: None when there's no key or ElevenLabs doesn't answer quickly."""
+    import httpx
+
+    from roudio.config import get_settings
+
+    key = get_settings().elevenlabs_api_key
+    if key is None:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(
+                "https://api.elevenlabs.io/v1/user/subscription",
+                headers={"xi-api-key": key.get_secret_value()},
+            )
+        if not response.is_success:
+            return None
+        body = response.json()
+        reset = body.get("next_character_count_reset_unix")
+        return ElevenLabsAccount(
+            tier=str(body.get("tier", "")),
+            status=str(body.get("status", "")),
+            credits_used=int(body.get("character_count") or 0),
+            credits_limit=int(body.get("character_limit") or 0),
+            resets_at=datetime.fromtimestamp(int(reset), UTC) if reset else None,
+        )
+    except (httpx.HTTPError, ValueError):
+        return None
 
 
 @router.get("/costs", operation_id="getCosts")
@@ -106,7 +162,9 @@ async def get_costs(_: CurrentSession, db: Db) -> CostsView:
 
     from roudio.models import CostEntry
 
-    start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    now = datetime.now(UTC)
+    start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
     async def lines(since: datetime | None) -> list[CostLine]:
         query = select(
@@ -120,19 +178,54 @@ async def get_costs(_: CurrentSession, db: Db) -> CostsView:
         ]
 
     month, total = await lines(start), await lines(None)
+    today = await db.scalar(
+        select(func.coalesce(func.sum(CostEntry.usd), 0)).where(CostEntry.created_at >= day_start)
+    )
+    purposes = [
+        PurposeLine(
+            purpose=purpose or "other",
+            service=service,
+            unit=unit,
+            units=float(units or 0),
+            usd=float(usd or 0),
+        )
+        for purpose, service, unit, units, usd in (
+            await db.execute(
+                select(
+                    CostEntry.purpose,
+                    CostEntry.service,
+                    CostEntry.unit,
+                    func.sum(CostEntry.units),
+                    func.sum(CostEntry.usd),
+                )
+                .where(CostEntry.created_at >= start)
+                .group_by(CostEntry.purpose, CostEntry.service, CostEntry.unit)
+                .order_by(func.sum(CostEntry.usd).desc())
+            )
+        ).all()
+    ]
     stored = await db.scalar(
         select(func.coalesce(func.sum(Recording.size_bytes), 0)).where(
             Recording.transfer_state == "uploaded"
         )
     )
     speech = await db.scalar(select(func.coalesce(func.sum(Recording.speech_ms), 0)))
+    recorded = await db.scalar(select(func.coalesce(func.sum(Recording.duration_ms), 0)))
+    written = await db.scalar(
+        select(func.count()).select_from(Recording).where(Recording.processing_state == "done")
+    )
     return CostsView(
         month=month,
         total=total,
         month_usd=round(sum(line.usd for line in month), 4),
         total_usd=round(sum(line.usd for line in total), 4),
+        today_usd=round(float(today or 0), 4),
+        purposes=purposes,
+        elevenlabs=await _elevenlabs_account(),
         stored_audio_bytes=int(stored or 0),
         speech_hours=round(float(speech or 0) / 3_600_000, 3),
+        recorded_hours=round(float(recorded or 0) / 3_600_000, 3),
+        recordings_written_up=int(written or 0),
     )
 
 

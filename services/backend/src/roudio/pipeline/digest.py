@@ -100,7 +100,7 @@ async def build_digest(db: AsyncSession, job: Job) -> None:
         digest.error = "The digest couldn't be written. It will be tried again."
         await db.commit()
         raise exc
-    await _ai_cost(db, None, result.usage, svc)
+    await _ai_cost(db, None, result.usage, svc, "digest")
     digest.overview = result.value.overview.strip()
     digest.moments = [
         {

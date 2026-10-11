@@ -265,7 +265,7 @@ async def _run(
         await _set_state(db, recording, ProcessingState.TIDYING)
         words = list(await db.scalars(select(Word.term).where(Word.confirmed)))
         tidy = await svc.brain.tidy(lines, words)
-        await _ai_cost(db, recording, tidy.usage, svc)
+        await _ai_cost(db, recording, tidy.usage, svc, "tidy")
         by_idx = {r.idx: r for r in rows}
         for fix in tidy.value:
             row = by_idx.get(fix.idx)
@@ -279,7 +279,7 @@ async def _run(
         # 4. Understand: conversations and items, every citation checked.
         await _set_state(db, recording, ProcessingState.UNDERSTANDING)
         understood = await svc.brain.understand(lines)
-        await _ai_cost(db, recording, understood.usage, svc)
+        await _ai_cost(db, recording, understood.usage, svc, "understand")
         log.info(
             "recording %s: the model found %d conversation(s) with %d item(s)",
             recording.id,
@@ -393,13 +393,32 @@ async def _save_conversations(
 
 
 async def _cost(
-    db: AsyncSession, recording: Recording, service: str, units: Decimal, unit: str, usd: Decimal
+    db: AsyncSession,
+    recording: Recording,
+    service: str,
+    units: Decimal,
+    unit: str,
+    usd: Decimal,
+    purpose: str = "transcribe",
 ) -> None:
-    db.add(CostEntry(recording_id=recording.id, service=service, units=units, unit=unit, usd=usd))
+    db.add(
+        CostEntry(
+            recording_id=recording.id,
+            service=service,
+            units=units,
+            unit=unit,
+            usd=usd,
+            purpose=purpose,
+        )
+    )
 
 
 async def _ai_cost(
-    db: AsyncSession, recording: Recording | None, usage: Usage, svc: services.PipelineServices
+    db: AsyncSession,
+    recording: Recording | None,
+    usage: Usage,
+    svc: services.PipelineServices,
+    purpose: str,
 ) -> None:
     if not usage.input_tokens and not usage.output_tokens:
         return
@@ -414,5 +433,17 @@ async def _ai_cost(
             units=Decimal(usage.input_tokens + usage.output_tokens),
             unit="tokens",
             usd=Decimal(str(usd)),
+            purpose=purpose,
         )
     )
+    if usage.web_searches:
+        db.add(
+            CostEntry(
+                recording_id=recording.id if recording else None,
+                service="openai",
+                units=Decimal(usage.web_searches),
+                unit="searches",
+                usd=Decimal(str(usage.web_searches * svc.settings.openai_usd_per_web_search)),
+                purpose="web_search",
+            )
+        )

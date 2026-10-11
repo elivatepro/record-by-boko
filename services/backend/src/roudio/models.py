@@ -471,6 +471,8 @@ class CostEntry(Base):
     units: Mapped[Decimal] = mapped_column(Numeric(14, 3))
     unit: Mapped[str] = mapped_column(String(16))
     usd: Mapped[Decimal] = mapped_column(Numeric(12, 6))
+    # What it was for: transcribe, tidy, understand, digest, ask, web_search.
+    purpose: Mapped[str | None] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

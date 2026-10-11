@@ -169,6 +169,9 @@ async def test_costs_add_up(
     assert costs["total_usd"] >= 0
     assert any(line["service"] == "scribe" for line in costs["total"])
     assert costs["stored_audio_bytes"] == recording.size_bytes
+    assert any(p["purpose"] == "transcribe" for p in costs["purposes"])
+    assert costs["recordings_written_up"] == 1
+    assert costs["elevenlabs"] is None  # no key in tests
 
 
 async def test_drive_api_switched_off_says_how_to_fix_it() -> None:

@@ -800,7 +800,7 @@ export interface components {
         };
         /**
          * CostsView
-         * @description What outside services cost (milestone 7), this calendar month and in total.
+         * @description What outside services cost (milestone 7): today, this calendar month and in total.
          */
         CostsView: {
             /** Month */
@@ -812,12 +812,33 @@ export interface components {
             /** Total Usd */
             total_usd: number;
             /**
+             * Today Usd
+             * @default 0
+             */
+            today_usd: number;
+            /**
+             * Purposes
+             * @default []
+             */
+            purposes: components["schemas"]["PurposeLine"][];
+            elevenlabs?: components["schemas"]["ElevenLabsAccount"] | null;
+            /**
              * Stored Audio Bytes
              * Format: int64
              */
             stored_audio_bytes: number;
             /** Speech Hours */
             speech_hours: number;
+            /**
+             * Recorded Hours
+             * @default 0
+             */
+            recorded_hours: number;
+            /**
+             * Recordings Written Up
+             * @default 0
+             */
+            recordings_written_up: number;
         };
         /** DayView */
         DayView: {
@@ -878,6 +899,28 @@ export interface components {
             key_moments: number;
             /** Decisions */
             decisions: number;
+        };
+        /**
+         * ElevenLabsAccount
+         * @description Live from ElevenLabs: the plan and how many of this period's credits are used.
+         */
+        ElevenLabsAccount: {
+            /** Tier */
+            tier: string;
+            /** Status */
+            status: string;
+            /**
+             * Credits Used
+             * Format: int64
+             */
+            credits_used: number;
+            /**
+             * Credits Limit
+             * Format: int64
+             */
+            credits_limit: number;
+            /** Resets At */
+            resets_at: string | null;
         };
         /**
          * GoogleSignInRequest
@@ -970,6 +1013,23 @@ export interface components {
              * @description Host to pass to the SDK, e.g. platform-us.plaud.ai
              */
             domain: string;
+        };
+        /**
+         * PurposeLine
+         * @description What the app used a service for, this month: transcribe, tidy, understand, digest, ask,
+         *     web_search, or other (entries from before purposes were recorded).
+         */
+        PurposeLine: {
+            /** Purpose */
+            purpose: string;
+            /** Service */
+            service: string;
+            /** Unit */
+            unit: string;
+            /** Units */
+            units: number;
+            /** Usd */
+            usd: number;
         };
         /** RecordingConversations */
         RecordingConversations: {

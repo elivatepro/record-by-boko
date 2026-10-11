@@ -480,6 +480,9 @@ async def ask(conversation_id: UUID, body: AskRequest, _: CurrentSession, db: Db
         links=[{"title": link.title, "url": link.url} for link in result.value.links],
     )
     db.add(turn)
+    from roudio.pipeline.process import _ai_cost
+
+    await _ai_cost(db, _r, result.usage, pipeline.get(), "ask")
     await db.commit()
     return ask_view(turn)
 

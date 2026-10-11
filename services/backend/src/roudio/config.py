@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     scribe_keyterms_usd_per_hour: float = 0.05
     openai_usd_per_million_input: float = 2.0
     openai_usd_per_million_output: float = 10.0
+    openai_usd_per_web_search: float = 0.01
 
     # Uploads arrive in parts of this size (S3 needs at least 5 MiB for all but the last).
     upload_part_bytes: int = 8 * 1024 * 1024
