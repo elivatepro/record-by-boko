@@ -35,19 +35,27 @@ def api() -> None:
 
 def worker() -> None:
     _logging()
+    from datetime import UTC, datetime
+
     from roudio.db import get_sessionmaker
+    from roudio.worker.handlers import all_handlers
     from roudio.worker.loop import run_forever
 
     settings = get_settings()
     settings.check_for_deploy()
 
     async def main() -> None:
+        from roudio.pipeline.digest import schedule_tick
+
         stop = asyncio.Event()
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, stop.set)
+        async with get_sessionmaker()() as db:
+            await schedule_tick(db, datetime.now(UTC))
         await run_forever(
             get_sessionmaker(),
+            handlers=all_handlers(),
             poll_seconds=settings.worker_poll_seconds,
             lease=timedelta(minutes=settings.job_lease_minutes),
             stop=stop,

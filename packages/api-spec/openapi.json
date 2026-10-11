@@ -365,10 +365,1276 @@
           }
         }
       }
+    },
+    "/days/{day}": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Get Day",
+        "operationId": "getDay",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "day",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Day"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DayView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations/{conversation_id}": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Get Conversation",
+        "operationId": "getConversation",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recordings/{recording_id}/audio": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Recording Audio",
+        "operationId": "getRecordingAudio",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recording_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recording Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioLink"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations/{conversation_id}/ask": {
+      "post": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Ask",
+        "operationId": "askConversation",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Clear Ask",
+        "operationId": "clearAsk",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations/{conversation_id}/note": {
+      "put": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Set Note",
+        "operationId": "setNote",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/segments/{segment_id}": {
+      "patch": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Edit Segment",
+        "operationId": "editSegment",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "segment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Segment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SegmentEdit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/speakers/{speaker_id}": {
+      "patch": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Rename Speaker",
+        "operationId": "renameSpeaker",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "speaker_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Speaker Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeakerRename"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeakerView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/review": {
+      "get": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "List Review",
+        "operationId": "listReview",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "waiting",
+                    "accepted",
+                    "done",
+                    "dismissed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewView"
+                  },
+                  "title": "Response Listreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/review/{review_id}": {
+      "patch": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Update Review",
+        "operationId": "updateReview",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Review Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/words": {
+      "get": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "List Words",
+        "operationId": "listWords",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WordView"
+                  },
+                  "type": "array",
+                  "title": "Response Listwords"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Add Word",
+        "operationId": "addWord",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/words/{word_id}": {
+      "patch": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Update Word",
+        "operationId": "updateWord",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "word_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Word Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WordChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Delete Word",
+        "operationId": "deleteWord",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "word_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Word Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/updates": {
+      "get": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "List Updates",
+        "operationId": "listUpdates",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UpdateView"
+                  },
+                  "type": "array",
+                  "title": "Response Listupdates"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/updates/read": {
+      "post": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Mark Updates Read",
+        "operationId": "markUpdatesRead",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/search": {
+      "get": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Search",
+        "operationId": "search",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchResult"
+                  },
+                  "title": "Response Search"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync": {
+      "get": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Sync",
+        "description": "What changed since `since` (the last answer's `server_time`). Recordings whose\n`results_version` moved should have their conversations fetched again.",
+        "operationId": "sync",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recordings/{recording_id}/conversations": {
+      "get": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Recording Conversations",
+        "operationId": "getRecordingConversations",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recording_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recording Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordingConversations"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AskRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "AskRequest"
+      },
+      "AskView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "enough": {
+            "type": "boolean",
+            "title": "Enough"
+          },
+          "sources": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "question",
+          "answer",
+          "enough",
+          "sources",
+          "created_at"
+        ],
+        "title": "AskView"
+      },
+      "AudioLink": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Short-lived link to the original Ogg Opus file"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "expires_at"
+        ],
+        "title": "AudioLink"
+      },
+      "ConversationDetail": {
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationSummary"
+          },
+          "recording": {
+            "$ref": "#/components/schemas/RecordingSummary"
+          },
+          "summary_sources": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Summary Sources"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemView"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "speakers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeakerView"
+            },
+            "type": "array",
+            "title": "Speakers"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/SegmentView"
+            },
+            "type": "array",
+            "title": "Segments"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "asks": {
+            "items": {
+              "$ref": "#/components/schemas/AskView"
+            },
+            "type": "array",
+            "title": "Asks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation",
+          "recording",
+          "summary_sources",
+          "items",
+          "speakers",
+          "segments",
+          "language",
+          "note",
+          "asks"
+        ],
+        "title": "ConversationDetail"
+      },
+      "ConversationSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "recording_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recording Id"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "ended_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ended At"
+          },
+          "start_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Start Ms"
+          },
+          "end_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "End Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "recording_id",
+          "day",
+          "kind",
+          "title",
+          "summary",
+          "started_at",
+          "ended_at",
+          "start_ms",
+          "end_ms"
+        ],
+        "title": "ConversationSummary"
+      },
+      "DayView": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "recordings": {
+            "items": {
+              "$ref": "#/components/schemas/RecordingSummary"
+            },
+            "type": "array",
+            "title": "Recordings"
+          },
+          "conversations": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationSummary"
+            },
+            "type": "array",
+            "title": "Conversations"
+          },
+          "digest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DigestView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "recordings",
+          "conversations",
+          "digest"
+        ],
+        "title": "DayView"
+      },
+      "DigestMoment": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "item_id": {
+            "type": "integer",
+            "title": "Item Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "At Ms"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "item_id",
+          "kind",
+          "text",
+          "at_ms",
+          "at"
+        ],
+        "title": "DigestMoment"
+      },
+      "DigestView": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "updating",
+              "finished",
+              "quiet",
+              "failed"
+            ],
+            "title": "State"
+          },
+          "overview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overview"
+          },
+          "moments": {
+            "items": {
+              "$ref": "#/components/schemas/DigestMoment"
+            },
+            "type": "array",
+            "title": "Moments"
+          },
+          "recordings_total": {
+            "type": "integer",
+            "title": "Recordings Total"
+          },
+          "recordings_done": {
+            "type": "integer",
+            "title": "Recordings Done"
+          },
+          "key_moments": {
+            "type": "integer",
+            "title": "Key Moments"
+          },
+          "decisions": {
+            "type": "integer",
+            "title": "Decisions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "overview",
+          "moments",
+          "recordings_total",
+          "recordings_done",
+          "key_moments",
+          "decisions"
+        ],
+        "title": "DigestView"
+      },
       "GoogleSignInRequest": {
         "properties": {
           "client": {
@@ -447,6 +1713,72 @@
         ],
         "title": "Health"
       },
+      "ItemView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "decision",
+              "task",
+              "key_moment"
+            ],
+            "title": "Kind"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "At Ms"
+          },
+          "sources": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "review_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "int64",
+            "title": "Review Id"
+          },
+          "review_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review State"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "text",
+          "at_ms",
+          "sources"
+        ],
+        "title": "ItemView"
+      },
       "Me": {
         "properties": {
           "email": {
@@ -464,6 +1796,20 @@
           "drive_connected"
         ],
         "title": "Me"
+      },
+      "NoteRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 20000,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "NoteRequest"
       },
       "PlaudToken": {
         "properties": {
@@ -490,6 +1836,124 @@
           "domain"
         ],
         "title": "PlaudToken"
+      },
+      "RecordingConversations": {
+        "properties": {
+          "recording": {
+            "$ref": "#/components/schemas/RecordingSummary"
+          },
+          "conversations": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationSummary"
+            },
+            "type": "array",
+            "title": "Conversations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recording",
+          "conversations"
+        ],
+        "title": "RecordingConversations"
+      },
+      "RecordingSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "recorder_serial": {
+            "type": "string",
+            "title": "Recorder Serial"
+          },
+          "session_id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Session Id"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "zone_offset_seconds": {
+            "type": "integer",
+            "title": "Zone Offset Seconds"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "int64",
+            "title": "Duration Ms"
+          },
+          "transfer_state": {
+            "type": "string",
+            "title": "Transfer State"
+          },
+          "processing_state": {
+            "type": "string",
+            "title": "Processing State"
+          },
+          "processing_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processing Error"
+          },
+          "backup_state": {
+            "type": "string",
+            "title": "Backup State"
+          },
+          "backup_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backup Error"
+          },
+          "cleanup_state": {
+            "type": "string",
+            "title": "Cleanup State"
+          },
+          "results_version": {
+            "type": "integer",
+            "title": "Results Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "recorder_serial",
+          "session_id",
+          "started_at",
+          "zone_offset_seconds",
+          "duration_ms",
+          "transfer_state",
+          "processing_state",
+          "processing_error",
+          "backup_state",
+          "backup_error",
+          "cleanup_state",
+          "results_version"
+        ],
+        "title": "RecordingSummary"
       },
       "RecordingUpload": {
         "properties": {
@@ -608,6 +2072,259 @@
         ],
         "title": "RefreshRequest"
       },
+      "ReviewChange": {
+        "properties": {
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "waiting",
+                  "accepted",
+                  "done",
+                  "dismissed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text",
+            "description": "The owner's wording; empty resets it"
+          }
+        },
+        "type": "object",
+        "title": "ReviewChange"
+      },
+      "ReviewView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "accepted",
+              "done",
+              "dismissed"
+            ],
+            "title": "State"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "suggested_text": {
+            "type": "string",
+            "title": "Suggested Text"
+          },
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationSummary"
+          },
+          "at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "At Ms"
+          },
+          "sources": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "text",
+          "suggested_text",
+          "conversation",
+          "at_ms",
+          "sources",
+          "updated_at"
+        ],
+        "title": "ReviewView"
+      },
+      "SearchHit": {
+        "properties": {
+          "where": {
+            "type": "string",
+            "enum": [
+              "transcript",
+              "summary",
+              "note"
+            ],
+            "title": "Where"
+          },
+          "snippet": {
+            "type": "string",
+            "title": "Snippet",
+            "description": "Matched words are wrapped in [[ ]]"
+          },
+          "at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "At Ms"
+          },
+          "segment_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "int64",
+            "title": "Segment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "where",
+          "snippet",
+          "at_ms"
+        ],
+        "title": "SearchHit"
+      },
+      "SearchResult": {
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationSummary"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "type": "array",
+            "title": "Hits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation",
+          "hits"
+        ],
+        "title": "SearchResult"
+      },
+      "SegmentEdit": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "edited_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Edited At",
+            "description": "When the owner made the edit; the latest edit wins"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "edited_at"
+        ],
+        "title": "SegmentEdit"
+      },
+      "SegmentView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "idx": {
+            "type": "integer",
+            "title": "Idx"
+          },
+          "speaker": {
+            "type": "string",
+            "title": "Speaker"
+          },
+          "speaker_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speaker Name"
+          },
+          "start_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Start Ms"
+          },
+          "end_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "End Ms"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "original_text": {
+            "type": "string",
+            "title": "Original Text"
+          },
+          "corrections": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Corrections"
+          },
+          "edited": {
+            "type": "boolean",
+            "title": "Edited"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "idx",
+          "speaker",
+          "speaker_name",
+          "start_ms",
+          "end_ms",
+          "text",
+          "original_text",
+          "corrections",
+          "edited"
+        ],
+        "title": "SegmentView"
+      },
       "SessionTokens": {
         "properties": {
           "access_token": {
@@ -697,6 +2414,194 @@
         ],
         "title": "SignInResult"
       },
+      "SpeakerRename": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "SpeakerRename"
+      },
+      "SpeakerView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "name"
+        ],
+        "title": "SpeakerView"
+      },
+      "SyncDigest": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "title": "Day"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "state",
+          "updated_at"
+        ],
+        "title": "SyncDigest"
+      },
+      "SyncView": {
+        "properties": {
+          "server_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Server Time"
+          },
+          "recordings": {
+            "items": {
+              "$ref": "#/components/schemas/RecordingSummary"
+            },
+            "type": "array",
+            "title": "Recordings"
+          },
+          "digests": {
+            "items": {
+              "$ref": "#/components/schemas/SyncDigest"
+            },
+            "type": "array",
+            "title": "Digests"
+          },
+          "unread_updates": {
+            "type": "integer",
+            "title": "Unread Updates"
+          },
+          "waiting_review": {
+            "type": "integer",
+            "title": "Waiting Review"
+          }
+        },
+        "type": "object",
+        "required": [
+          "server_time",
+          "recordings",
+          "digests",
+          "unread_updates",
+          "waiting_review"
+        ],
+        "title": "SyncView"
+      },
+      "UpdateView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "recording_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recording Id"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          },
+          "read": {
+            "type": "boolean",
+            "title": "Read"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "body",
+          "action",
+          "recording_id",
+          "conversation_id",
+          "read",
+          "created_at"
+        ],
+        "title": "UpdateView"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -736,6 +2641,67 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WordChange": {
+        "properties": {
+          "confirmed": {
+            "type": "boolean",
+            "title": "Confirmed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "confirmed"
+        ],
+        "title": "WordChange"
+      },
+      "WordRequest": {
+        "properties": {
+          "term": {
+            "type": "string",
+            "maxLength": 49,
+            "minLength": 1,
+            "title": "Term"
+          }
+        },
+        "type": "object",
+        "required": [
+          "term"
+        ],
+        "title": "WordRequest"
+      },
+      "WordView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "term": {
+            "type": "string",
+            "title": "Term"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "learned"
+            ],
+            "title": "Source"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "title": "Confirmed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "term",
+          "source",
+          "confirmed"
+        ],
+        "title": "WordView"
       }
     },
     "securitySchemes": {

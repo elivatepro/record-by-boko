@@ -74,7 +74,10 @@ async def _clean() -> AsyncIterator[None]:
     yield
     async with get_sessionmaker()() as db:
         await db.execute(
-            text("TRUNCATE recording, job, auth_session, drive_grant, owner RESTART IDENTITY")
+            text(
+                "TRUNCATE recording, job, auth_session, drive_grant, owner, word, day_digest,"
+                " notification, cost_entry RESTART IDENTITY CASCADE"
+            )
         )
         await db.commit()
 

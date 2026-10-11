@@ -38,6 +38,24 @@ class Settings(BaseSettings):
     audio_secret_access_key: SecretStr | None = None
     audio_region: str = "auto"
     audio_path_style: bool = False
+    # Processing (spec §5). Without a key, recordings wait and are tried again every hour.
+    elevenlabs_api_key: SecretStr | None = None
+    elevenlabs_model: str = "scribe_v2"
+    openai_api_key: SecretStr | None = None
+    openai_model: str = "gpt-6.1-sol"
+    # FireRedVAD weights (the Docker image downloads them here). Empty: a simple energy detector.
+    vad_model_dir: str = ""
+    # Tuned to miss as little speech as possible (spec §5): low threshold, padding, gaps merged.
+    vad_threshold: float = 0.3
+    vad_pad_ms: int = 300
+    vad_merge_gap_ms: int = 1500
+    vad_min_speech_ms: int = 250
+    # Prices for the cost log (Oct 2026, decisions 5 and 8).
+    scribe_usd_per_hour: float = 0.22
+    scribe_keyterms_usd_per_hour: float = 0.05
+    openai_usd_per_million_input: float = 2.0
+    openai_usd_per_million_output: float = 10.0
+
     # Uploads arrive in parts of this size (S3 needs at least 5 MiB for all but the last).
     upload_part_bytes: int = 8 * 1024 * 1024
 

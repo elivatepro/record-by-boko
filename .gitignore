@@ -39,3 +39,6 @@ captures/
 *.wav
 *.mp3
 *.m4a
+
+# Model weights, downloaded by the Docker build (services/backend/Dockerfile) or by hand
+services/backend/models/

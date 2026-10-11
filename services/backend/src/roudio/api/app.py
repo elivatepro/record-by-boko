@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from roudio import __version__
-from roudio.api import auth, plaud, recordings
+from roudio.api import auth, library, organise, plaud, recordings
 from roudio.api.deps import Db, Services
 from roudio.auth.crypto import TokenCipher
 from roudio.auth.google import HttpDriveCodeExchanger, HttpGoogleVerifier
@@ -114,4 +114,6 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     app.include_router(auth.router)
     app.include_router(plaud.router)
     app.include_router(recordings.router)
+    app.include_router(library.router)
+    app.include_router(organise.router)
     return app

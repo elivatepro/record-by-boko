@@ -157,10 +157,448 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/days/{day}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Day */
+        get: operations["getDay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["getConversation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recording_id}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recording Audio */
+        get: operations["getRecordingAudio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversation_id}/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask */
+        post: operations["askConversation"];
+        /** Clear Ask */
+        delete: operations["clearAsk"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversation_id}/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Note */
+        put: operations["setNote"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/segments/{segment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit Segment */
+        patch: operations["editSegment"];
+        trace?: never;
+    };
+    "/speakers/{speaker_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename Speaker */
+        patch: operations["renameSpeaker"];
+        trace?: never;
+    };
+    "/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Review */
+        get: operations["listReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/review/{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Review */
+        patch: operations["updateReview"];
+        trace?: never;
+    };
+    "/words": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Words */
+        get: operations["listWords"];
+        put?: never;
+        /** Add Word */
+        post: operations["addWord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/words/{word_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Word */
+        delete: operations["deleteWord"];
+        options?: never;
+        head?: never;
+        /** Update Word */
+        patch: operations["updateWord"];
+        trace?: never;
+    };
+    "/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Updates */
+        get: operations["listUpdates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/updates/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Updates Read */
+        post: operations["markUpdatesRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search */
+        get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sync
+         * @description What changed since `since` (the last answer's `server_time`). Recordings whose
+         *     `results_version` moved should have their conversations fetched again.
+         */
+        get: operations["sync"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recording_id}/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recording Conversations */
+        get: operations["getRecordingConversations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AskRequest */
+        AskRequest: {
+            /** Question */
+            question: string;
+        };
+        /** AskView */
+        AskView: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /** Question */
+            question: string;
+            /** Answer */
+            answer: string;
+            /** Enough */
+            enough: boolean;
+            /** Sources */
+            sources: number[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AudioLink */
+        AudioLink: {
+            /**
+             * Url
+             * @description Short-lived link to the original Ogg Opus file
+             */
+            url: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** ConversationDetail */
+        ConversationDetail: {
+            conversation: components["schemas"]["ConversationSummary"];
+            recording: components["schemas"]["RecordingSummary"];
+            /** Summary Sources */
+            summary_sources: number[];
+            /** Items */
+            items: components["schemas"]["ItemView"][];
+            /** Speakers */
+            speakers: components["schemas"]["SpeakerView"][];
+            /** Segments */
+            segments: components["schemas"]["SegmentView"][];
+            /** Language */
+            language: string | null;
+            /** Note */
+            note: string | null;
+            /** Asks */
+            asks: components["schemas"]["AskView"][];
+        };
+        /** ConversationSummary */
+        ConversationSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Recording Id
+             * Format: uuid
+             */
+            recording_id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /** Summary */
+            summary: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /**
+             * Start Ms
+             * Format: int64
+             */
+            start_ms: number;
+            /**
+             * End Ms
+             * Format: int64
+             */
+            end_ms: number;
+        };
+        /** DayView */
+        DayView: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Recordings */
+            recordings: components["schemas"]["RecordingSummary"][];
+            /** Conversations */
+            conversations: components["schemas"]["ConversationSummary"][];
+            digest: components["schemas"]["DigestView"] | null;
+        };
+        /** DigestMoment */
+        DigestMoment: {
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Item Id */
+            item_id: number;
+            /** Kind */
+            kind: string;
+            /** Text */
+            text: string;
+            /**
+             * At Ms
+             * Format: int64
+             */
+            at_ms: number;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+        };
+        /** DigestView */
+        DigestView: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "updating" | "finished" | "quiet" | "failed";
+            /** Overview */
+            overview: string | null;
+            /** Moments */
+            moments: components["schemas"]["DigestMoment"][];
+            /** Recordings Total */
+            recordings_total: number;
+            /** Recordings Done */
+            recordings_done: number;
+            /** Key Moments */
+            key_moments: number;
+            /** Decisions */
+            decisions: number;
+        };
         /**
          * GoogleSignInRequest
          * @description Android sends `id_token` (and `drive_auth_code` when Drive is granted). The web sends
@@ -197,12 +635,46 @@ export interface components {
             /** Database */
             database: string;
         };
+        /** ItemView */
+        ItemView: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "decision" | "task" | "key_moment";
+            /** Text */
+            text: string;
+            /**
+             * At Ms
+             * Format: int64
+             */
+            at_ms: number;
+            /** Sources */
+            sources: number[];
+            /**
+             * Review Id
+             * Format: int64
+             */
+            review_id?: number | null;
+            /** Review State */
+            review_state?: string | null;
+        };
         /** Me */
         Me: {
             /** Email */
             email: string;
             /** Drive Connected */
             drive_connected: boolean;
+        };
+        /** NoteRequest */
+        NoteRequest: {
+            /** Text */
+            text: string;
         };
         /** PlaudToken */
         PlaudToken: {
@@ -221,6 +693,53 @@ export interface components {
              * @description Host to pass to the SDK, e.g. platform-us.plaud.ai
              */
             domain: string;
+        };
+        /** RecordingConversations */
+        RecordingConversations: {
+            recording: components["schemas"]["RecordingSummary"];
+            /** Conversations */
+            conversations: components["schemas"]["ConversationSummary"][];
+        };
+        /** RecordingSummary */
+        RecordingSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Recorder Serial */
+            recorder_serial: string;
+            /**
+             * Session Id
+             * Format: int64
+             */
+            session_id: number;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Zone Offset Seconds */
+            zone_offset_seconds: number;
+            /**
+             * Duration Ms
+             * Format: int64
+             */
+            duration_ms: number | null;
+            /** Transfer State */
+            transfer_state: string;
+            /** Processing State */
+            processing_state: string;
+            /** Processing Error */
+            processing_error: string | null;
+            /** Backup State */
+            backup_state: string;
+            /** Backup Error */
+            backup_error: string | null;
+            /** Cleanup State */
+            cleanup_state: string;
+            /** Results Version */
+            results_version: number;
         };
         /** RecordingUpload */
         RecordingUpload: {
@@ -284,6 +803,120 @@ export interface components {
             /** Refresh Token */
             refresh_token: string;
         };
+        /** ReviewChange */
+        ReviewChange: {
+            /** State */
+            state?: ("waiting" | "accepted" | "done" | "dismissed") | null;
+            /**
+             * Text
+             * @description The owner's wording; empty resets it
+             */
+            text?: string | null;
+        };
+        /** ReviewView */
+        ReviewView: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "waiting" | "accepted" | "done" | "dismissed";
+            /** Text */
+            text: string;
+            /** Suggested Text */
+            suggested_text: string;
+            conversation: components["schemas"]["ConversationSummary"];
+            /**
+             * At Ms
+             * Format: int64
+             */
+            at_ms: number;
+            /** Sources */
+            sources: number[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** SearchHit */
+        SearchHit: {
+            /**
+             * Where
+             * @enum {string}
+             */
+            where: "transcript" | "summary" | "note";
+            /**
+             * Snippet
+             * @description Matched words are wrapped in [[ ]]
+             */
+            snippet: string;
+            /**
+             * At Ms
+             * Format: int64
+             */
+            at_ms: number;
+            /**
+             * Segment Id
+             * Format: int64
+             */
+            segment_id?: number | null;
+        };
+        /** SearchResult */
+        SearchResult: {
+            conversation: components["schemas"]["ConversationSummary"];
+            /** Hits */
+            hits: components["schemas"]["SearchHit"][];
+        };
+        /** SegmentEdit */
+        SegmentEdit: {
+            /** Text */
+            text: string;
+            /**
+             * Edited At
+             * Format: date-time
+             * @description When the owner made the edit; the latest edit wins
+             */
+            edited_at: string;
+        };
+        /** SegmentView */
+        SegmentView: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /** Idx */
+            idx: number;
+            /** Speaker */
+            speaker: string;
+            /** Speaker Name */
+            speaker_name: string | null;
+            /**
+             * Start Ms
+             * Format: int64
+             */
+            start_ms: number;
+            /**
+             * End Ms
+             * Format: int64
+             */
+            end_ms: number;
+            /** Text */
+            text: string;
+            /** Original Text */
+            original_text: string;
+            /** Corrections */
+            corrections: {
+                [key: string]: string;
+            }[];
+            /** Edited */
+            edited: boolean;
+        };
         /** SessionTokens */
         SessionTokens: {
             /** Access Token */
@@ -337,6 +970,78 @@ export interface components {
              */
             drive_error?: string | null;
         };
+        /** SpeakerRename */
+        SpeakerRename: {
+            /** Name */
+            name: string;
+        };
+        /** SpeakerView */
+        SpeakerView: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string | null;
+        };
+        /** SyncDigest */
+        SyncDigest: {
+            /** Day */
+            day: string;
+            /** State */
+            state: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** SyncView */
+        SyncView: {
+            /**
+             * Server Time
+             * Format: date-time
+             */
+            server_time: string;
+            /** Recordings */
+            recordings: components["schemas"]["RecordingSummary"][];
+            /** Digests */
+            digests: components["schemas"]["SyncDigest"][];
+            /** Unread Updates */
+            unread_updates: number;
+            /** Waiting Review */
+            waiting_review: number;
+        };
+        /** UpdateView */
+        UpdateView: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Action */
+            action: string | null;
+            /** Recording Id */
+            recording_id: string | null;
+            /** Conversation Id */
+            conversation_id: string | null;
+            /** Read */
+            read: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -349,6 +1054,33 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** WordChange */
+        WordChange: {
+            /** Confirmed */
+            confirmed: boolean;
+        };
+        /** WordRequest */
+        WordRequest: {
+            /** Term */
+            term: string;
+        };
+        /** WordView */
+        WordView: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /** Term */
+            term: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "manual" | "learned";
+            /** Confirmed */
+            confirmed: boolean;
         };
     };
     responses: never;
@@ -593,6 +1325,580 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordingUpload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                day: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DayView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getRecordingAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recording_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioLink"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    askConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clearAsk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    setNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                segment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SegmentEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SegmentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    renameSpeaker: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                speaker_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeakerRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeakerView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listReview: {
+        parameters: {
+            query?: {
+                state?: ("waiting" | "accepted" | "done" | "dismissed") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listWords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WordView"][];
+                };
+            };
+        };
+    };
+    addWord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WordView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deleteWord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                word_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateWord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                word_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WordChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WordView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listUpdates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateView"][];
+                };
+            };
+        };
+    };
+    markUpdatesRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    search: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync: {
+        parameters: {
+            query?: {
+                since?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getRecordingConversations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recording_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingConversations"];
                 };
             };
             /** @description Validation Error */

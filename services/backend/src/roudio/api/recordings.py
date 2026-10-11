@@ -23,6 +23,7 @@ from sqlalchemy import select
 
 from roudio.api.deps import AppServices, AppSettings, CurrentSession, Db, error
 from roudio.models import Recording, TransferState
+from roudio.pipeline.process import enqueue_processing
 from roudio.storage import Part, StorageError
 
 log = logging.getLogger(__name__)
@@ -206,6 +207,7 @@ async def complete_upload(
         recording.transfer_state = TransferState.UPLOADED.value
         recording.uploaded_at = datetime.now(UTC)
         await db.commit()
+        await enqueue_processing(db, recording)
     except StorageError as exc:
         await db.rollback()
         raise _storage_unavailable(exc) from exc

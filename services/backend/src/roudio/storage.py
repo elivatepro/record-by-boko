@@ -8,6 +8,7 @@ import asyncio
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 import boto3
@@ -46,6 +47,14 @@ class AudioStore(Protocol):
         ...
 
     async def delete(self, key: str) -> None: ...
+
+    async def download(self, key: str, target: Path) -> None:
+        """Copy a stored file to a local path (the worker processes from disk)."""
+        ...
+
+    async def presigned_url(self, key: str, *, seconds: int = 3600) -> str:
+        """A short-lived link to stream the file (players on the phone and web)."""
+        ...
 
 
 class S3AudioStore:
@@ -149,6 +158,20 @@ class S3AudioStore:
 
         await self._run(call)
 
+    async def download(self, key: str, target: Path) -> None:
+        def call() -> None:
+            self._s3.download_file(self._bucket, key, str(target))
+
+        await self._run(call)
+
+    async def presigned_url(self, key: str, *, seconds: int = 3600) -> str:
+        def call() -> str:
+            return self._s3.generate_presigned_url(
+                "get_object", Params={"Bucket": self._bucket, "Key": key}, ExpiresIn=seconds
+            )
+
+        return await self._run(call)
+
     @staticmethod
     async def _run[T](call: Callable[[], T]) -> T:
         try:
@@ -181,4 +204,10 @@ class UnconfiguredAudioStore:
         raise StorageError(self.message)
 
     async def delete(self, key: str) -> None:
+        raise StorageError(self.message)
+
+    async def download(self, key: str, target: Path) -> None:
+        raise StorageError(self.message)
+
+    async def presigned_url(self, key: str, *, seconds: int = 3600) -> str:
         raise StorageError(self.message)
