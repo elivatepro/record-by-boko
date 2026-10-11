@@ -203,7 +203,7 @@ Done:
   an Update with how to recover; retries hourly and on "Try again now".
 - Clean-up gate on the phone (`transfer/CleanupGate.kt`): deletes from the recorder only the
   candidates the server lists (phone, server and Drive all match) and only when the local SHA-256
-  matches too. Deleting is off by default (Settings switch). The phone copy is never deleted by
+  matches too. Deleting is off by default (switch on Backups & clean-up). The phone copy is never deleted by
   the gate.
 - Screens: Updates (03, 03b), Backups & clean-up (14), Recording More menu (06c: rename, share
   notes, share audio, write up again), delete from this phone with where every copy is (06d),
