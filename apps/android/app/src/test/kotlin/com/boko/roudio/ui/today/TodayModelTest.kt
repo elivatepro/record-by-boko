@@ -145,6 +145,7 @@ class TodayModelTest {
             day = "2026-10-11", kind = "conversation", title = "Studio call", summary = "",
             startedAt = Instant.parse("2026-10-11T08:30:00Z"), endedAt = Instant.parse("2026-10-11T09:14:00Z"),
             startMs = 30 * 60_000, endMs = 74 * 60_000, resultsVersion = 1,
+            people = "Daniel, Speaker 2", decisions = 2,
         )
         val model = TodayModel.build(listOf(recording), linked, null, today, now, lagos, listOf(call))
         assertEquals(setOf(SpanKind.Quiet, SpanKind.Conversation), model.kinds)
@@ -156,6 +157,8 @@ class TodayModelTest {
         assertEquals(RowStatus.WrittenUp, row.status)
         assertEquals(BackupWord.BackedUp, row.backup)
         assertEquals("c1", row.conversationId)
+        assertEquals("Daniel, Speaker 2", row.people)
+        assertEquals(2, row.decisions)
         assertEquals("09:30", row.time)
     }
 

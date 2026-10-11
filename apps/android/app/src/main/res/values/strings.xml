@@ -288,6 +288,10 @@
     <string name="row_waiting_on_plaud">Waiting on your Plaud</string>
     <string name="row_recording_length">Recording · %1$s</string>
     <string name="row_words">%1$s · %2$s</string>
+    <plurals name="row_decisions">
+        <item quantity="one">%1$d decision</item>
+        <item quantity="other">%1$d decisions</item>
+    </plurals>
     <string name="word_recording_now">Recording now</string>
     <string name="word_not_transferred">Not transferred</string>
     <string name="word_transferring">Transferring %1$d%%</string>

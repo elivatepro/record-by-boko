@@ -1,5 +1,6 @@
 package com.boko.roudio.store
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Fts4
 import androidx.room.Index
@@ -27,6 +28,9 @@ data class ConversationEntity(
     val endMs: Long,
     val resultsVersion: Int,
     val detail: String? = null,
+    /** Who spoke, in speaking order ("Daniel, Speaker 2"), from the detail; "" until it's fetched. */
+    @ColumnInfo(defaultValue = "") val people: String = "",
+    @ColumnInfo(defaultValue = "0") val decisions: Int = 0,
 )
 
 /** A day's digest as the server's DigestView JSON. */

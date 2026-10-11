@@ -17,10 +17,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Database(
     entities = [Recording::class, ConversationEntity::class, DigestEntity::class, SearchEntry::class],
-    version = 3,
+    version = 4,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // upload fields
         AutoMigration(from = 2, to = 3), // server states, conversations, digests, search
+        AutoMigration(from = 3, to = 4), // who spoke and decisions on each conversation
     ],
 )
 @TypeConverters(Converters::class)
@@ -76,8 +77,8 @@ interface LibraryDao {
     @Query("DELETE FROM conversations WHERE serverRecordingId = :recordingId AND id NOT IN (:keep)")
     suspend fun dropConversationsExcept(recordingId: String, keep: List<String>)
 
-    @Query("UPDATE conversations SET detail = :detail WHERE id = :id")
-    suspend fun putDetail(id: String, detail: String)
+    @Query("UPDATE conversations SET detail = :detail, people = :people, decisions = :decisions WHERE id = :id")
+    suspend fun putDetail(id: String, detail: String, people: String, decisions: Int)
 
     @Query("SELECT * FROM digests")
     fun observeDigests(): Flow<List<DigestEntity>>

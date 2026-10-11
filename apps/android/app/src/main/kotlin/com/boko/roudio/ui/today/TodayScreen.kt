@@ -473,6 +473,11 @@ private fun TimelineRowView(row: TimelineRow, onClick: () -> Unit) {
 @Composable
 private fun statusText(row: TimelineRow): String {
     if (row.status == RowStatus.MaybeRecording) return stringResource(R.string.row_maybe_recording)
+    // Written up: who spoke and the decisions say more than "Written up" (01 "Daniel, Priya · 2 decisions").
+    if (row.status == RowStatus.WrittenUp && row.people.isNotEmpty()) {
+        val decided = if (row.decisions > 0) pluralStringResource(R.plurals.row_decisions, row.decisions, row.decisions) else null
+        return listOfNotNull(row.people, decided, backupWord(row.backup)).joinToString(" · ")
+    }
     val word = when (val status = row.status) {
         RowStatus.RecordingNow -> stringResource(R.string.word_recording_now)
         RowStatus.MaybeRecording -> ""
@@ -486,16 +491,18 @@ private fun statusText(row: TimelineRow): String {
         RowStatus.WrittenUp -> stringResource(R.string.word_written_up)
         RowStatus.NothingSaid -> stringResource(R.string.word_nothing_said)
     }
-    val backup = stringResource(
-        when (row.backup) {
-            BackupWord.Later -> R.string.backup_later
-            BackupWord.NotYet -> R.string.backup_not_yet
-            BackupWord.BackedUp -> R.string.backup_done
-            BackupWord.Failed -> R.string.backup_failed_word
-        },
-    )
-    return stringResource(R.string.row_words, word, backup)
+    return stringResource(R.string.row_words, word, backupWord(row.backup))
 }
+
+@Composable
+private fun backupWord(backup: BackupWord): String = stringResource(
+    when (backup) {
+        BackupWord.Later -> R.string.backup_later
+        BackupWord.NotYet -> R.string.backup_not_yet
+        BackupWord.BackedUp -> R.string.backup_done
+        BackupWord.Failed -> R.string.backup_failed_word
+    },
+)
 
 /** "8h 27m", "12 min", "7 s". */
 @Composable

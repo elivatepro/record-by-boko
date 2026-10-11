@@ -1,5 +1,7 @@
 package com.boko.roudio.data
 
+import com.boko.roudio.api.models.ItemView
+import com.boko.roudio.ui.conversation.ConversationModel
 import android.util.Log
 import com.boko.roudio.api.apis.LibraryApi
 import com.boko.roudio.api.apis.OrganiseApi
@@ -92,7 +94,9 @@ class Sync(
             )
         }
         val cached = dao.conversationsOf(server.id.toString())
-        val upToDate = cached.isNotEmpty() && cached.all { it.resultsVersion == server.resultsVersion && it.detail != null }
+        // Conversations always have someone speaking; no people means the detail predates them.
+        val upToDate = cached.isNotEmpty() &&
+            cached.all { it.resultsVersion == server.resultsVersion && it.detail != null && it.people.isNotEmpty() }
         if (server.resultsVersion == 0 || upToDate) return
         val list = organise.getRecordingConversations(server.id).body() ?: return
         dao.putConversations(list.conversations.map { entity(it, server) })
@@ -105,7 +109,12 @@ class Sync(
     private suspend fun saveDetail(detail: ConversationDetail) {
         val id = detail.conversation.id.toString()
         if (dao.conversation(id) == null) dao.putConversations(listOf(entity(detail.conversation, detail.recording)))
-        dao.putDetail(id, Serializer.kotlinxSerializationJson.encodeToString(ConversationDetail.serializer(), detail))
+        dao.putDetail(
+            id,
+            Serializer.kotlinxSerializationJson.encodeToString(ConversationDetail.serializer(), detail),
+            people = ConversationModel.speakerNames(detail).values.joinToString(", "),
+            decisions = detail.items.count { it.kind == ItemView.Kind.DECISION },
+        )
         dao.clearSearch(id)
         dao.putSearch(
             buildList {

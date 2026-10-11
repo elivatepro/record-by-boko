@@ -123,6 +123,8 @@ data class TodayModel(
                 backup = recording.backupWord(),
                 stillOnPlaud = false,
                 conversationId = c.id,
+                people = c.people,
+                decisions = c.decisions,
             )
         }
 
@@ -227,6 +229,9 @@ data class TimelineRow(
     val conversationId: String? = null,
     /** Set on recordings on the server but not written up: tapping opens S3 / S8. */
     val pendingId: Long? = null,
+    /** On written-up rows: who spoke ("Daniel, Speaker 2") and how many decisions. */
+    val people: String = "",
+    val decisions: Int = 0,
 )
 
 sealed interface RowTitle {
