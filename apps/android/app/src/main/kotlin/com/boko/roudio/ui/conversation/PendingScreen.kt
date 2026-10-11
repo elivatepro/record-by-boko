@@ -1,5 +1,7 @@
 package com.boko.roudio.ui.conversation
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.OutlinedButton
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -97,7 +99,7 @@ fun PendingRoute(app: RoudioApp, recordingId: Long, onBack: () -> Unit) {
         Text("%02d:%02d".format(start.hour, start.minute), style = roudioText(14.sp, 20.sp), color = c.muted)
         PendingPlayer(position, length.toMillis(), playing, player)
         val failed = recording.processing == ProcessingState.Failed && !retried
-        val quiet = recording.processing == ProcessingState.Done
+        val quiet = recording.processing == ProcessingState.Done && !retried
         Row(
             Modifier
                 .fillMaxWidth()
@@ -138,6 +140,17 @@ fun PendingRoute(app: RoudioApp, recordingId: Long, onBack: () -> Unit) {
                 retried = true
                 scope.launch { runCatching { app.api.backups.reprocess(UUID.fromString(serverId)) } }
             })
+        }
+        // No conversation found, and the owner thinks there was one: look again.
+        if (quiet && !retried && serverId != null) {
+            OutlinedButton(
+                onClick = {
+                    retried = true
+                    scope.launch { runCatching { app.api.backups.reprocess(UUID.fromString(serverId)) } }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(28.dp),
+            ) { Text(stringResource(R.string.write_up_again), style = roudioText(16.sp, 20.sp, FontWeight.SemiBold), color = c.ink) }
         }
     }
 }
