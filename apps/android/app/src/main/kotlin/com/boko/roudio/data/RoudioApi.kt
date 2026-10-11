@@ -3,6 +3,7 @@ package com.boko.roudio.data
 import com.boko.roudio.BuildConfig
 import com.boko.roudio.api.apis.AuthApi
 import com.boko.roudio.api.apis.PlaudApi
+import com.boko.roudio.api.apis.RecordingsApi
 import com.boko.roudio.api.infrastructure.Serializer
 import com.boko.roudio.api.models.RefreshRequest
 import kotlinx.coroutines.runBlocking
@@ -42,6 +43,7 @@ class RoudioApi(private val session: SessionStore, baseUrl: String = BuildConfig
 
     val auth: AuthApi = retrofit.create(AuthApi::class.java)
     val plaud: PlaudApi = retrofit.create(PlaudApi::class.java)
+    val recordings: RecordingsApi = retrofit.create(RecordingsApi::class.java)
 
     @Synchronized
     private fun refresh(): String? {

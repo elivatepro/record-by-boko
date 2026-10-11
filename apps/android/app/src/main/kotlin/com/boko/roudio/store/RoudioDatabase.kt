@@ -1,6 +1,7 @@
 package com.boko.roudio.store
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Insert
@@ -14,7 +15,11 @@ import androidx.room.Update
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 
-@Database(entities = [Recording::class], version = 1)
+@Database(
+    entities = [Recording::class],
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)], // upload fields
+)
 @TypeConverters(Converters::class)
 abstract class RoudioDatabase : RoomDatabase() {
     abstract fun recordings(): RecordingDao

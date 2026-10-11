@@ -518,6 +518,7 @@
           },
           "received_bytes": {
             "type": "integer",
+            "format": "int64",
             "title": "Received Bytes",
             "description": "Bytes stored so far, counted from the start"
           },
@@ -563,7 +564,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0.0,
+                "format": "int64"
               },
               {
                 "type": "null"
@@ -575,6 +577,7 @@
             "type": "integer",
             "maximum": 2147483648.0,
             "exclusiveMinimum": 0.0,
+            "format": "int64",
             "title": "Size Bytes"
           },
           "sha256": {

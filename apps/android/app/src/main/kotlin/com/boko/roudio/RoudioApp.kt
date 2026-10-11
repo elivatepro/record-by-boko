@@ -15,6 +15,8 @@ import com.boko.roudio.store.RoomRecordingStore
 import com.boko.roudio.store.RoudioDatabase
 import com.boko.roudio.transfer.RecordingFiles
 import com.boko.roudio.transfer.Transfers
+import com.boko.roudio.transfer.Uploader
+import com.boko.roudio.transfer.Uploads
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,5 +46,15 @@ class RoudioApp : Application() {
     val recordingFiles by lazy { RecordingFiles(File(filesDir, "recordings")) }
 
     /** Started by [com.boko.roudio.recorder.RecorderService], so it runs with the screen off. */
-    val transfers by lazy { Transfers(plaudSource, recorder, recordings, recordingFiles, appScope) }
+    val transfers by lazy {
+        Transfers(plaudSource, recorder, recordings, recordingFiles, appScope, onPhone = { Uploads.enqueue(this) })
+    }
+
+    val uploader by lazy { Uploader(api.recordings, recordings, recordingFiles) }
+
+    override fun onCreate() {
+        super.onCreate()
+        // Anything left waiting from before (no network, app stopped) goes up when it can.
+        Uploads.enqueue(this)
+    }
 }

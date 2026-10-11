@@ -1,5 +1,6 @@
 package com.boko.roudio.store
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -33,6 +34,14 @@ data class Recording(
     val fileBytes: Long? = null,
     val sha256: String? = null,
     val durationMs: Long? = null,
+
+    /** The server's id once an upload has started. */
+    val serverId: String? = null,
+    /** Bytes the server has, counted from the start (resuming continues from here). */
+    @ColumnInfo(defaultValue = "0") val uploadedBytes: Long = 0,
+    @ColumnInfo(defaultValue = "0") val uploadAttempts: Int = 0,
+    /** Why the last upload try stopped, in plain words; null once it worked. */
+    val uploadError: String? = null,
 
     val processing: ProcessingState = ProcessingState.Waiting,
     val backup: BackupState = BackupState.Waiting,

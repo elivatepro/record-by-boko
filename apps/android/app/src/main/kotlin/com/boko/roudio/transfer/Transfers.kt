@@ -47,6 +47,8 @@ class Transfers(
     private val now: () -> Instant = Instant::now,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     private val checkEvery: Duration = CHECK_EVERY,
+    /** Called each time a recording reaches the phone, to start the upload queue. */
+    private val onPhone: () -> Unit = {},
 ) {
     private val wanted = Channel<Unit>(Channel.CONFLATED)
     private var job: Job? = null
@@ -171,6 +173,7 @@ class Transfers(
                 ),
             )
             Log.i(TAG, "on phone: session ${recording.sessionId}, $bytes bytes")
+            onPhone()
             true
         } catch (e: CancellationException) {
             withContext(NonCancellable) { giveBack(recording, partial, error = null, failed = false) }

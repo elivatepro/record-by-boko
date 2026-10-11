@@ -18,6 +18,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Path, Request, status
 from pydantic import BaseModel, Field, field_validator
+from pydantic.config import JsonDict
 from sqlalchemy import select
 
 from roudio.api.deps import AppServices, AppSettings, CurrentSession, Db, error
@@ -31,13 +32,15 @@ router = APIRouter(prefix="/recordings", tags=["recordings"])
 MAX_RECORDING_BYTES = 2 * 1024 * 1024 * 1024
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _SERIAL = r"^[0-9A-Za-z]{4,32}$"
+# Byte counts and milliseconds: int64, so generated clients don't use 32-bit ints.
+_INT64: JsonDict = {"format": "int64"}
 
 
 class RecordingUploadRequest(BaseModel):
     started_at: datetime = Field(description="When the recording began, in UTC")
     zone_offset_seconds: int = Field(ge=-14 * 3600, le=14 * 3600)
-    duration_ms: int | None = Field(default=None, ge=0)
-    size_bytes: int = Field(gt=0, le=MAX_RECORDING_BYTES)
+    duration_ms: Annotated[int, Field(ge=0, json_schema_extra=_INT64)] | None = None
+    size_bytes: int = Field(gt=0, le=MAX_RECORDING_BYTES, json_schema_extra=_INT64)
     sha256: str = Field(description="Lower-case hex SHA-256 of the whole file")
 
     @field_validator("sha256")
@@ -53,7 +56,9 @@ class RecordingUpload(BaseModel):
     state: Literal["uploading", "uploaded"]
     part_bytes: int = Field(description="Size of every part but the last")
     parts: int = Field(description="How many parts the whole file takes")
-    received_bytes: int = Field(description="Bytes stored so far, counted from the start")
+    received_bytes: int = Field(
+        description="Bytes stored so far, counted from the start", json_schema_extra=_INT64
+    )
     next_part: int | None = Field(description="The part to send next; null when all are in")
 
 
@@ -64,7 +69,7 @@ SerialPath = Annotated[str, Path(pattern=_SERIAL)]
 async def start_upload(
     serial: SerialPath,
     # Unix seconds: int64, so generated clients don't use a 32-bit int (2038).
-    session_id: Annotated[int, Path(ge=0, json_schema_extra={"format": "int64"})],
+    session_id: Annotated[int, Path(ge=0, json_schema_extra=_INT64)],
     body: RecordingUploadRequest,
     _: CurrentSession,
     db: Db,

@@ -246,6 +246,7 @@ export interface components {
             parts: number;
             /**
              * Received Bytes
+             * Format: int64
              * @description Bytes stored so far, counted from the start
              */
             received_bytes: number;
@@ -267,7 +268,10 @@ export interface components {
             zone_offset_seconds: number;
             /** Duration Ms */
             duration_ms?: number | null;
-            /** Size Bytes */
+            /**
+             * Size Bytes
+             * Format: int64
+             */
             size_bytes: number;
             /**
              * Sha256
