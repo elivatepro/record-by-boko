@@ -364,7 +364,7 @@ private fun Bell(unread: Int, onClick: () -> Unit) {
     ) {
         Icon(
             RoudioIcons.Bell,
-            contentDescription = if (unread > 0) pluralStringResource(R.plurals.updates_unread, unread, unread) else stringResource(R.string.updates),
+            contentDescription = if (unread > 0) pluralStringResource(R.plurals.bell_updates_unread, unread, unread) else stringResource(R.string.updates),
             tint = c.ink,
             modifier = Modifier.size(22.dp),
         )

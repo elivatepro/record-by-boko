@@ -103,6 +103,8 @@ private class FakeBackups : BackupsApi {
 
     override suspend fun getBackups(): Response<BackupsView> = throw NotImplementedError()
 
+    override suspend fun getCosts(): Response<com.boko.roudio.api.models.CostsView> = throw NotImplementedError()
+
     override suspend fun getSettings(): Response<Settings> = throw NotImplementedError()
 
     override suspend fun putSettings(settings: Settings): Response<Settings> = throw NotImplementedError()

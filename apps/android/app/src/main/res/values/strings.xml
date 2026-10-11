@@ -295,7 +295,7 @@
     <string name="legend_conversation">Conversation</string>
     <string name="legend_quiet">Quiet · asleep</string>
     <string name="updates">Updates</string>
-    <plurals name="updates_unread">
+    <plurals name="bell_updates_unread">
         <item quantity="one">Updates, %1$d unread</item>
         <item quantity="other">Updates, %1$d unread</item>
     </plurals>
