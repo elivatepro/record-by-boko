@@ -81,15 +81,27 @@ Done so far (11 Oct 2026):
   the battery exemption) and 11e (unlink from the Plaud app), built from Paper with Navigation 3.
 - The recorder check screen still stands in after 11e and once a recorder is linked.
 
-Still to do before milestone 1 is done:
-- 11f–11i (finding, found, linking, linked) and error screens 12a–12e, each triggered by the
-  real condition (30 s with nothing found, Bluetooth off, permission refused for good, linked
-  elsewhere / handshake refused, linking failed or no internet).
-- Recorder screen 13a/13b (transfer rows wait for milestone 2) and the recorder chip on Today
-  (a Today shell; the dial and timeline are milestone 2). Then delete the check screen.
-- "Done when" pass on the phone: fresh install links; live battery and recording state;
-  Bluetooth off and walking away show the right screens.
+Done since (11 Oct 2026):
+- 11f–11i: real 30 s search, found list (a recorder bound to an app that isn't ours is greyed and
+  opens 12d), link steps from SDK events, linked with live readings. Linking the recorder Roudio
+  already has uses the ordinary handshake, not force-clear (tested on the phone: relinked fine).
+- 12a–12e, each from its real condition: search timed out; Bluetooth off (any step); Nearby
+  devices refused for good (from 11c or 11f); handshake refused / HTTP 403 / bound in the scan;
+  dropped, no internet or other (with "Show details").
+- 13a/13b recorder screen (card, last-seen values, "Unknown" recording, reconnect / turn on
+  Bluetooth, unlink behind a confirmation) and a Today shell with the recorder chip (01 / S1).
+  The check screen is gone. Sign-out comes back with Settings (milestone 5).
+- Fix: a finished search left on screen used to stop KeepConnected reconnecting.
+- Checked on the phone: Today chip, 13a live, 13b with Bluetooth off, 12b → 11f → 11g → 11h → 11i.
+
+Still to do before milestone 1 is done (owner chose to do these later, 11 Oct 2026):
+- "Done when" pass: start/stop a recording (13a shows it live), walk away with the recorder
+  (Today chip, 13b "out of range", 12a after 30 s), come back (reconnects by itself).
+- Not yet seen on the phone: 12a, 12c, 12d, 12e. A true fresh install (re-link with force-clear
+  as our own user) is untested on purpose; if it fails, relinking needs the Plaud app.
 - Owner: turn on Autostart and battery "No restrictions" for Roudio (11d shows both off).
+- 12d step 2 now says to unlink with the recorder next to the phone; update Paper to match.
+- 11i's "On the recorder" row waits for the file list (milestone 2).
 
 Learned:
 - **The SDK logs secrets.** Its own logger writes whole HTTP exchanges (user token, the RSA

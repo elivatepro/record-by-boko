@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.boko.roudio.R
+import com.boko.roudio.recorder.FoundRecorder
 import com.boko.roudio.recorder.LinkFailure
 import com.boko.roudio.recorder.LinkPhase
 import com.boko.roudio.recorder.Recorder
@@ -58,6 +59,7 @@ fun FindRecorderRoute(recorder: Recorder, onLinking: () -> Unit, onUnlinkHelp: (
         if (allowed && state.bluetoothOn && idle) recorder.search()
     }
 
+    var lastFound by remember { mutableStateOf(emptyList<FoundRecorder>()) }
     val searching = state.link is LinkPhase.Searching
     var seconds by remember { mutableIntStateOf(0) }
     LaunchedEffect(searching) {
@@ -90,7 +92,10 @@ fun FindRecorderRoute(recorder: Recorder, onLinking: () -> Unit, onUnlinkHelp: (
             onBack = leave,
         )
         else -> {
-            val found = (state.link as? LinkPhase.Searching)?.found.orEmpty()
+            // Once a recorder is picked the phase moves on, but this screen is still fading out:
+            // keep showing the list that was tapped.
+            val found = (state.link as? LinkPhase.Searching)?.found ?: lastFound
+            lastFound = found
             if (found.isEmpty()) {
                 FindingScreen(seconds, onStop = leave, onBack = leave)
             } else {
