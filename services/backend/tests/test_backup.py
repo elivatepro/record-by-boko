@@ -153,3 +153,19 @@ async def test_the_gate_only_lists_verified_recordings_with_deleting_on(
     backups = (await client.get("/backups", headers=auth)).json()
     assert backups["cleared"] == 1 and backups["deleting_enabled"] is True
     assert datetime.now(UTC)
+
+
+async def test_costs_add_up(
+    client: AsyncClient,
+    auth: dict[str, str],
+    db: AsyncSession,
+    s3: Any,
+    audio_file: Path,
+    pipeline: Any,
+) -> None:
+    recording = await on_server(db, s3, audio_file)
+    await process_recording(db, job_for(recording))
+    costs = (await client.get("/costs", headers=auth)).json()
+    assert costs["total_usd"] >= 0
+    assert any(line["service"] == "scribe" for line in costs["total"])
+    assert costs["stored_audio_bytes"] == recording.size_bytes

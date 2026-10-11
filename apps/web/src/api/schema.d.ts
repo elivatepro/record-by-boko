@@ -490,6 +490,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Costs */
+        get: operations["getCosts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings": {
         parameters: {
             query?: never;
@@ -713,6 +730,38 @@ export interface components {
              * Format: int64
              */
             end_ms: number;
+        };
+        /** CostLine */
+        CostLine: {
+            /** Service */
+            service: string;
+            /** Unit */
+            unit: string;
+            /** Units */
+            units: number;
+            /** Usd */
+            usd: number;
+        };
+        /**
+         * CostsView
+         * @description What outside services cost (milestone 7), this calendar month and in total.
+         */
+        CostsView: {
+            /** Month */
+            month: components["schemas"]["CostLine"][];
+            /** Total */
+            total: components["schemas"]["CostLine"][];
+            /** Month Usd */
+            month_usd: number;
+            /** Total Usd */
+            total_usd: number;
+            /**
+             * Stored Audio Bytes
+             * Format: int64
+             */
+            stored_audio_bytes: number;
+            /** Speech Hours */
+            speech_hours: number;
         };
         /** DayView */
         DayView: {
@@ -2161,6 +2210,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getCosts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostsView"];
                 };
             };
         };

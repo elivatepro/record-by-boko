@@ -1397,6 +1397,32 @@
         }
       }
     },
+    "/costs": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Get Costs",
+        "operationId": "getCosts",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostsView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/settings": {
       "get": {
         "tags": [
@@ -1926,6 +1952,80 @@
           "end_ms"
         ],
         "title": "ConversationSummary"
+      },
+      "CostLine": {
+        "properties": {
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "units": {
+            "type": "number",
+            "title": "Units"
+          },
+          "usd": {
+            "type": "number",
+            "title": "Usd"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service",
+          "unit",
+          "units",
+          "usd"
+        ],
+        "title": "CostLine"
+      },
+      "CostsView": {
+        "properties": {
+          "month": {
+            "items": {
+              "$ref": "#/components/schemas/CostLine"
+            },
+            "type": "array",
+            "title": "Month"
+          },
+          "total": {
+            "items": {
+              "$ref": "#/components/schemas/CostLine"
+            },
+            "type": "array",
+            "title": "Total"
+          },
+          "month_usd": {
+            "type": "number",
+            "title": "Month Usd"
+          },
+          "total_usd": {
+            "type": "number",
+            "title": "Total Usd"
+          },
+          "stored_audio_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Stored Audio Bytes"
+          },
+          "speech_hours": {
+            "type": "number",
+            "title": "Speech Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "total",
+          "month_usd",
+          "total_usd",
+          "stored_audio_bytes",
+          "speech_hours"
+        ],
+        "title": "CostsView",
+        "description": "What outside services cost (milestone 7), this calendar month and in total."
       },
       "DayView": {
         "properties": {

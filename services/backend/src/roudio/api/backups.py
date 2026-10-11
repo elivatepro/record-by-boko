@@ -82,6 +82,60 @@ async def reprocess(recording_id: UUID, _: CurrentSession, db: Db) -> None:
     await jobs.enqueue(db, PROCESS, {"recording_id": str(recording.id)})
 
 
+class CostLine(BaseModel):
+    service: str
+    unit: str
+    units: float
+    usd: float
+
+
+class CostsView(BaseModel):
+    """What outside services cost (milestone 7), this calendar month and in total."""
+
+    month: list[CostLine]
+    total: list[CostLine]
+    month_usd: float
+    total_usd: float
+    stored_audio_bytes: int = Field(json_schema_extra=INT64)
+    speech_hours: float
+
+
+@router.get("/costs", operation_id="getCosts")
+async def get_costs(_: CurrentSession, db: Db) -> CostsView:
+    from sqlalchemy import func
+
+    from roudio.models import CostEntry
+
+    start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    async def lines(since: datetime | None) -> list[CostLine]:
+        query = select(
+            CostEntry.service, CostEntry.unit, func.sum(CostEntry.units), func.sum(CostEntry.usd)
+        ).group_by(CostEntry.service, CostEntry.unit)
+        if since is not None:
+            query = query.where(CostEntry.created_at >= since)
+        return [
+            CostLine(service=service, unit=unit, units=float(units or 0), usd=float(usd or 0))
+            for service, unit, units, usd in (await db.execute(query)).all()
+        ]
+
+    month, total = await lines(start), await lines(None)
+    stored = await db.scalar(
+        select(func.coalesce(func.sum(Recording.size_bytes), 0)).where(
+            Recording.transfer_state == "uploaded"
+        )
+    )
+    speech = await db.scalar(select(func.coalesce(func.sum(Recording.speech_ms), 0)))
+    return CostsView(
+        month=month,
+        total=total,
+        month_usd=round(sum(line.usd for line in month), 4),
+        total_usd=round(sum(line.usd for line in total), 4),
+        stored_audio_bytes=int(stored or 0),
+        speech_hours=round(float(speech or 0) / 3_600_000, 3),
+    )
+
+
 class Settings(BaseModel):
     deleting_enabled: bool
 
