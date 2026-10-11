@@ -72,6 +72,7 @@ import com.boko.roudio.R
 import com.boko.roudio.RoudioApp
 import com.boko.roudio.api.models.AskRequest
 import com.boko.roudio.api.models.ConversationDetail
+import com.boko.roudio.api.models.ConversationRename
 import com.boko.roudio.api.models.ItemView
 import com.boko.roudio.api.models.NoteRequest
 import com.boko.roudio.api.models.SegmentEdit
@@ -129,20 +130,27 @@ fun ConversationRoute(app: RoudioApp, id: String, atMs: Long?, onBack: () -> Uni
         }
     }
 
+    val recordings by app.recordings.recordings.collectAsState(initial = emptyList())
+    val localRecording = detail?.recording?.let { r ->
+        recordings.firstOrNull { it.serial == r.recorderSerial && it.sessionId == r.sessionId }
+    }
+    val phoneFile = localRecording?.takeIf { it.transfer >= TransferState.OnPhone }
+        ?.fileName?.let { File(app.recordingFiles.dir, it) }?.takeIf { it.exists() }
+
     // The phone's own copy when it has one (spec §2: the phone keeps every recording).
-    LaunchedEffect(detail?.recording?.id) {
+    LaunchedEffect(detail?.recording?.id, phoneFile?.path) {
         val recording = detail?.recording ?: return@LaunchedEffect
-        val start = atMs ?: detail.conversation.startMs
-        val local = app.recordings.bySession(recording.recorderSerial, recording.sessionId)
-            ?.takeIf { it.transfer >= TransferState.OnPhone }
-            ?.fileName?.let { File(app.recordingFiles.dir, it) }?.takeIf { it.exists() }
-        val uri = local?.let(Uri::fromFile) ?: try {
+        val start = if (player.positionMs > 0) player.positionMs else atMs ?: detail.conversation.startMs
+        val uri = phoneFile?.let(Uri::fromFile) ?: try {
             app.api.library.getRecordingAudio(recording.id).body()?.url?.let(Uri::parse)
         } catch (e: IOException) {
             null
         }
         if (uri != null) player.load(uri, start)
     }
+    var menu by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
+    var downloading by remember { mutableStateOf(false) }
 
     if (detail == null) {
         Message(if (offline) stringResource(R.string.not_on_this_phone) else "", onBack)
@@ -172,7 +180,19 @@ fun ConversationRoute(app: RoudioApp, id: String, atMs: Long?, onBack: () -> Uni
 
     when (pane) {
         Pane.Notes -> NotesPane(
-            detail, names, controls, onBack, onPane = { pane = it }, onSeek = seek,
+            detail, names, controls.copy(streaming = phoneFile == null), onBack, onPane = { pane = it }, onSeek = seek,
+            phoneCopy = phoneFile != null,
+            notOnPhone = phoneFile == null && localRecording?.transfer == TransferState.Uploaded,
+            downloading = downloading,
+            onMore = { menu = true },
+            onDownload = {
+                val local = localRecording ?: return@NotesPane
+                downloading = true
+                scope.launch {
+                    downloadAgain(app, detail, local)
+                    downloading = false
+                }
+            },
             onRetryBackup = { scope.launch { runCatching { app.api.backups.retryBackup(detail.recording.id) } } },
             onSaveNote = { text ->
                 scope.launch {
@@ -219,6 +239,78 @@ fun ConversationRoute(app: RoudioApp, id: String, atMs: Long?, onBack: () -> Uni
             },
         )
     }
+    if (menu) {
+        RecordingMenu(
+            title = detail.conversation.title,
+            phoneCopy = phoneFile != null,
+            onRename = { title ->
+                menu = false
+                scope.launch {
+                    runCatching { app.api.library.renameConversation(detail.conversation.id, ConversationRename(title)) }
+                    refresh()
+                }
+            },
+            onShareNotes = {
+                menu = false
+                context.startActivity(shareTextIntent(shareText(detail, names), detail.conversation.title))
+            },
+            onShareAudio = phoneFile?.let { file ->
+                {
+                    menu = false
+                    context.startActivity(shareAudioIntent(context, file, detail.conversation.title))
+                }
+            },
+            onWriteUpAgain = {
+                menu = false
+                scope.launch { runCatching { app.api.backups.reprocess(detail.recording.id) } }
+            },
+            onDelete = {
+                menu = false
+                deleting = true
+            },
+            onDismiss = { menu = false },
+        )
+    }
+    if (deleting && phoneFile != null && localRecording != null) {
+        DeleteFromPhoneSheet(
+            sizeBytes = phoneFile.length(),
+            backupState = detail.recording.backupState,
+            onRetryBackup = {
+                deleting = false
+                scope.launch { runCatching { app.api.backups.retryBackup(detail.recording.id) } }
+            },
+            onDelete = {
+                deleting = false
+                // Only the owner deletes the phone copy, and only from here (decision 13).
+                scope.launch {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { phoneFile.delete() }
+                    app.recordings.update(localRecording.copy(fileName = null, updatedAt = java.time.Instant.now()))
+                }
+            },
+            onDismiss = { deleting = false },
+        )
+    }
+}
+
+/** Downloads the server's copy back to this phone, kept only if its SHA-256 matches. */
+private suspend fun downloadAgain(app: RoudioApp, detail: ConversationDetail, local: com.boko.roudio.store.Recording) {
+    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        runCatching {
+            val url = app.api.library.getRecordingAudio(detail.recording.id).body()?.url ?: return@runCatching
+            val target = app.recordingFiles.final(local)
+            val partial = app.recordingFiles.partial(local)
+            okhttp3.OkHttpClient().newCall(okhttp3.Request.Builder().url(url).build()).execute().use { response ->
+                if (!response.isSuccessful) return@runCatching
+                partial.outputStream().use { out -> response.body.byteStream().copyTo(out) }
+            }
+            if (com.boko.roudio.transfer.Transfers.sha256(partial) != local.sha256) {
+                partial.delete()
+                return@runCatching
+            }
+            partial.renameTo(target)
+            app.recordings.update(local.copy(fileName = target.name, updatedAt = java.time.Instant.now()))
+        }
+    }
 }
 
 /** Everything the player shows and does; times count from the conversation's start. */
@@ -233,6 +325,7 @@ private data class PlayerControls(
     val onForward30: () -> Unit,
     val onSpeed: () -> Unit,
     val onSeek: (Long) -> Unit,
+    val streaming: Boolean = false,
 )
 
 @Composable
@@ -321,12 +414,18 @@ private fun NotesPane(
     onSeek: (Long) -> Unit,
     onRetryBackup: () -> Unit,
     onSaveNote: (String) -> Unit,
+    phoneCopy: Boolean = true,
+    notOnPhone: Boolean = false,
+    downloading: Boolean = false,
+    onMore: () -> Unit = {},
+    onDownload: () -> Unit = {},
 ) {
     val c = RoudioTheme.colors
     val start = detail.conversation.startMs
     Column(Modifier.fillMaxSize().background(c.ground).safeDrawingPadding().verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             RoundButton(RoudioIcons.Back, stringResource(R.string.back), onBack)
+            RoundButton(RoudioIcons.More, stringResource(R.string.more_options), onMore)
         }
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
@@ -342,7 +441,12 @@ private fun NotesPane(
                 color = c.muted,
             )
         }
-        StateChips(detail, onRetryBackup)
+        StateChips(detail, onRetryBackup, notOnPhone)
+        if (notOnPhone) {
+            Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp)) {
+                NotOnPhoneCard(detail.recording.backupState == "backed_up", downloading, onDownload)
+            }
+        }
         Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp)) { PlayerCard(controls) }
         Spacer(Modifier.height(16.dp))
         Segmented(Pane.Notes, onPane)
@@ -362,7 +466,7 @@ private fun NotesPane(
 }
 
 @Composable
-private fun StateChips(detail: ConversationDetail, onRetryBackup: () -> Unit) {
+private fun StateChips(detail: ConversationDetail, onRetryBackup: () -> Unit, notOnPhone: Boolean = false) {
     val c = RoudioTheme.colors
     val recording = detail.recording
     Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -373,6 +477,10 @@ private fun StateChips(detail: ConversationDetail, onRetryBackup: () -> Unit) {
         }
         StateChip(RoudioIcons.CheckCircle, stringResource(processing), warn = recording.processingState == "failed", onClick = null)
         val backupFailed = recording.backupState == "failed"
+        if (notOnPhone && !backupFailed) {
+            StateChip(RoudioIcons.Cloud, stringResource(R.string.chip_not_on_phone), warn = false, onClick = null)
+            return@Row
+        }
         StateChip(
             RoudioIcons.Cloud,
             stringResource(
@@ -499,8 +607,11 @@ private fun PlayerCard(controls: PlayerControls) {
                 color = c.onHeroCard,
             )
             Text(
-                controls.chapter?.let { stringResource(R.string.player_of_chapter, ConversationModel.clock(controls.lengthMs), it) }
-                    ?: stringResource(R.string.player_of, ConversationModel.clock(controls.lengthMs)),
+                when {
+                    controls.streaming -> stringResource(R.string.player_streaming, ConversationModel.clock(controls.lengthMs))
+                    controls.chapter != null -> stringResource(R.string.player_of_chapter, ConversationModel.clock(controls.lengthMs), controls.chapter)
+                    else -> stringResource(R.string.player_of, ConversationModel.clock(controls.lengthMs))
+                },
                 style = roudioText(12.sp, 16.sp, FontWeight.Medium),
                 color = c.onHeroCardMuted,
             )

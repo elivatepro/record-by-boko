@@ -96,6 +96,12 @@ object RoudioIcons {
     val Info = icon("Info", lines = listOf("M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z", "M12 11v5"), thickLines = listOf("M12 7.9v.1"))
     val ArrowUp = line("M12 19V5M6 11l6-6 6 6", width = 2f)
 
+    // 06c More menu
+    val More = icon("More", fills = listOf("M12 4.2a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6z", "M12 10.7a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6z", "M12 17.2a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6z"))
+    val Download = line("M12 4v11M7 10.5l5 5 5-5M5 20h14")
+    val Note = icon("Note", lines = listOf("M9 18V6l10-2v12", "M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z", "M19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"))
+    val Bin = line("M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13")
+
     // 01 Today digest card
     val Sunrise = icon("Sunrise", lines = listOf("M4 17.5h16M7 17.5a5 5 0 0 1 10 0M12 7.5V5M5.8 10.3 4.4 8.9M18.2 10.3l1.4-1.4M8 20.5h8"))
 
