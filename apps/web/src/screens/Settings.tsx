@@ -10,19 +10,19 @@ import type { Word } from "../api/types";
 import { clearSession } from "../auth/session";
 import { ErrorState, Loading } from "../components/common";
 import { Icon } from "../components/Icon";
-import { bytes, costLine, usd } from "../lib/costs";
+import { bytes, grouped, percent, provider, purposeLine, usd } from "../lib/costs";
 import { useNow } from "../lib/hooks";
 import { type Glass, setGlass, setTheme, type Theme, useLook } from "../lib/theme";
 import { localToday, whenLabel } from "../lib/time";
 
 const route = getRouteApi("/app/settings");
-type Section = "look" | "writing" | "recorder" | "costs" | "account";
+type Section = "look" | "writing" | "recorder" | "usage" | "account";
 
 const SECTIONS: [Section, string][] = [
   ["look", "Look and feel"],
   ["writing", "Writing up"],
   ["recorder", "Recorder"],
-  ["costs", "Costs"],
+  ["usage", "Usage"],
   ["account", "Account"],
 ];
 
@@ -74,7 +74,7 @@ export function Settings() {
           {section === "look" && <LookAndFeel />}
           {section === "writing" && <WritingUp />}
           {section === "recorder" && <Recorder />}
-          {section === "costs" && <Costs />}
+          {section === "usage" && <Usage />}
           {section === "account" && <Account />}
         </div>
       </div>
@@ -338,41 +338,110 @@ function Recorder() {
   );
 }
 
-function Costs() {
+function Usage() {
   const costs = useCosts();
   if (costs.isPending) return <Loading />;
   if (costs.isError) return <ErrorState error={costs.error} onRetry={() => void costs.refetch()} />;
   const c = costs.data;
+  const el = c.elevenlabs;
+  const openai = c.month.filter((l) => l.service === "openai");
+  const tokens = openai.filter((l) => l.unit === "tokens").reduce((n, l) => n + l.units, 0);
+  const searches = openai.filter((l) => l.unit === "searches").reduce((n, l) => n + l.units, 0);
+  const openaiUsd = openai.reduce((n, l) => n + l.usd, 0);
+  const scribe = c.month.filter((l) => l.service === "scribe");
+  const scribeHours = scribe.reduce((n, l) => n + (l.unit === "seconds" ? l.units / 3600 : l.units), 0);
+  const scribeUsd = scribe.reduce((n, l) => n + l.usd, 0);
+  const used = el ? percent(el.credits_used, el.credits_limit) : 0;
   return (
-    <section aria-labelledby="costs-title">
-      <h2 id="costs-title" className="section-title">
-        Costs
+    <section aria-labelledby="usage-title">
+      <h2 id="usage-title" className="section-title">
+        Usage
       </h2>
-      <div className="setting-row">
-        <div>
-          <p className="setting-row__title">This month</p>
-          <p className="setting-row__sub">What the speech and AI services have charged since the 1st</p>
+      <p className="usage__lead">
+        What Roudio uses: ElevenLabs turns speech into text, and OpenAI writes the notes, digests and Ask answers.
+        Amounts are Roudio’s own estimates from what each call reported.
+      </p>
+
+      <div className="usage__stats">
+        <div className="usage__stat">
+          <span className="usage__stat-value tabular">{usd(c.today_usd)}</span>
+          <span className="usage__stat-label">Today</span>
         </div>
-        <strong className="setting-row__value">{usd(c.month_usd)}</strong>
+        <div className="usage__stat">
+          <span className="usage__stat-value tabular">{usd(c.month_usd)}</span>
+          <span className="usage__stat-label">This month</span>
+        </div>
+        <div className="usage__stat">
+          <span className="usage__stat-value tabular">{usd(c.total_usd)}</span>
+          <span className="usage__stat-label">Since you started</span>
+        </div>
       </div>
-      {c.month.map((line) => {
-        const words = costLine(line);
-        return (
-          <div className="setting-row" key={`${line.service}-${line.unit}`}>
-            <div>
-              <p className="setting-row__title">{words.name}</p>
-              <p className="setting-row__sub">{words.amount} this month</p>
+
+      <div className="usage__cards">
+        <article className="usage__card" aria-labelledby="usage-el">
+          <h3 id="usage-el" className="usage__card-title">ElevenLabs · speech to text</h3>
+          {el ? (
+            <>
+              <p className="usage__card-sub">
+                {el.tier.charAt(0).toUpperCase() + el.tier.slice(1)} plan · {el.status}
+                {el.resets_at ? ` · resets ${new Date(el.resets_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}
+              </p>
+              <div className="usage__meter" role="meter" aria-valuemin={0} aria-valuemax={el.credits_limit} aria-valuenow={el.credits_used} aria-label="ElevenLabs credits used">
+                <span style={{ width: `${used}%` }} className={used >= 90 ? "usage__meter-fill usage__meter-fill--high" : "usage__meter-fill"} />
+              </div>
+              <p className="usage__card-sub tabular">
+                {grouped(el.credits_used)} of {grouped(el.credits_limit)} credits used ({used}%)
+              </p>
+            </>
+          ) : (
+            <p className="usage__card-sub">The plan and credits couldn’t be read from ElevenLabs just now.</p>
+          )}
+          <p className="usage__card-line tabular">
+            This month: {scribeHours.toFixed(1)} h of speech · {usd(scribeUsd)}
+          </p>
+        </article>
+
+        <article className="usage__card" aria-labelledby="usage-oa">
+          <h3 id="usage-oa" className="usage__card-title">OpenAI · notes, digests and Ask</h3>
+          <p className="usage__card-sub">GPT-6.1 Sol. OpenAI doesn’t share the account balance with an app key.</p>
+          <p className="usage__card-line tabular">
+            This month: {grouped(tokens)} tokens{searches > 0 ? ` · ${grouped(searches)} web searches` : ""} · {usd(openaiUsd)}
+          </p>
+          <a className="usage__link" href="https://platform.openai.com/usage" target="_blank" rel="noreferrer">
+            Balance and billing on OpenAI <Icon name="external" />
+          </a>
+        </article>
+      </div>
+
+      <h3 className="usage__heading">What it was used for this month</h3>
+      {c.purposes.length === 0 ? (
+        <p className="setting-row__sub">Nothing yet this month.</p>
+      ) : (
+        c.purposes.map((line) => {
+          const words = purposeLine(line);
+          return (
+            <div className="setting-row" key={`${line.purpose}-${line.service}-${line.unit}`}>
+              <div>
+                <p className="setting-row__title">{words.name}</p>
+                <p className="setting-row__sub">
+                  {provider(line.service)} · {words.amount}
+                </p>
+              </div>
+              <span className="setting-row__value">{usd(line.usd)}</span>
             </div>
-            <span className="setting-row__value">{usd(line.usd)}</span>
-          </div>
-        );
-      })}
+          );
+        })
+      )}
+
+      <h3 className="usage__heading">Your recordings</h3>
       <div className="setting-row">
         <div>
-          <p className="setting-row__title">Since you started</p>
-          <p className="setting-row__sub">{c.speech_hours.toFixed(1)} h of speech written up</p>
+          <p className="setting-row__title">Recorded</p>
+          <p className="setting-row__sub">
+            {c.recorded_hours.toFixed(1)} h in total · {c.speech_hours.toFixed(1)} h of it was speech, the only part sent to ElevenLabs
+          </p>
         </div>
-        <strong className="setting-row__value">{usd(c.total_usd)}</strong>
+        <span className="setting-row__value">{c.recordings_written_up} written up</span>
       </div>
       <div className="setting-row">
         <div>

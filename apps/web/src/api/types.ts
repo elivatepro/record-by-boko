@@ -22,3 +22,5 @@ export type Sync = Schemas["SyncView"];
 export type Me = Schemas["Me"];
 export type Costs = Schemas["CostsView"];
 export type CostLine = Schemas["CostLine"];
+export type PurposeLine = Schemas["PurposeLine"];
+export type ElevenLabsAccount = Schemas["ElevenLabsAccount"];

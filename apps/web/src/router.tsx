@@ -31,7 +31,7 @@ export type PanelTab = (typeof PANEL_TABS)[number];
 export const SEARCH_WHEN = ["any", "week", "today"] as const;
 export const SEARCH_IN = ["all", "transcript", "summary", "note"] as const;
 export const REVIEW_TABS = ["waiting", "accepted", "done"] as const;
-export const SETTINGS_SECTIONS = ["look", "writing", "recorder", "costs", "account"] as const;
+export const SETTINGS_SECTIONS = ["look", "writing", "recorder", "usage", "account"] as const;
 
 const rootRoute = createRootRoute({ component: Outlet, notFoundComponent: NotFound });
 

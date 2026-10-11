@@ -1,6 +1,6 @@
-// The cost dashboard's words (milestone 7): Scribe hours, OpenAI tokens, stored audio.
+// The Usage page's words (milestone 7): what Roudio uses ElevenLabs and OpenAI for, and what it costs.
 
-import type { CostLine } from "../api/types";
+import type { CostLine, PurposeLine } from "../api/types";
 
 export function usd(amount: number): string {
   if (amount > 0 && amount < 0.01) return "under $0.01";
@@ -29,4 +29,35 @@ function compact(n: number): string {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
   if (n >= 1e3) return `${Math.round(n / 1e3)}k`;
   return `${Math.round(n)}`;
+}
+
+const PURPOSES: Record<string, string> = {
+  transcribe: "Speech to text",
+  tidy: "Tidying transcripts",
+  understand: "Notes, titles and tasks",
+  digest: "Daily digests",
+  ask: "Ask",
+  web_search: "Ask · web searches",
+  other: "Earlier, before usage was labelled",
+};
+
+/** "Speech to text · 0.4 h", "Ask · 31k tokens", "Ask · web searches · 2". */
+export function purposeLine(line: PurposeLine): { name: string; amount: string } {
+  const name = PURPOSES[line.purpose] ?? line.purpose;
+  if (line.unit === "seconds") return { name, amount: `${(line.units / 3600).toFixed(1)} h of speech` };
+  if (line.unit === "searches") return { name, amount: `${Math.round(line.units)} search${line.units === 1 ? "" : "es"}` };
+  return { name, amount: `${compact(line.units)} ${line.unit}` };
+}
+
+/** The service's own name for a purpose line. */
+export function provider(service: string): string {
+  return service === "scribe" ? "ElevenLabs" : service === "openai" ? "OpenAI" : service;
+}
+
+export function percent(used: number, limit: number): number {
+  return limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+}
+
+export function grouped(n: number): string {
+  return Math.round(n).toLocaleString("en-GB");
 }

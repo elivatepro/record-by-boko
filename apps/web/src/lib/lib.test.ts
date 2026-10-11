@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { bytes, costLine, usd } from "./costs";
+import { bytes, costLine, percent, purposeLine, usd } from "./costs";
 import { arcPath, daySpans, point, recordedMs } from "./dial";
 import { conversation, recording, segment } from "./fixtures";
 import { backupStatus, processingStatus, recorderStatus } from "./status";
@@ -199,5 +199,20 @@ describe("costs", () => {
     expect(costLine({ service: "openai", unit: "tokens", units: 1_400_000, usd: 3 }).amount).toBe("1.4M tokens");
     expect(bytes(2_300_000_000)).toBe("2.3 GB");
     expect(bytes(48_000_000)).toBe("48 MB");
+  });
+});
+
+describe("usage", () => {
+  it("names what each service was used for", () => {
+    expect(purposeLine({ purpose: "transcribe", service: "scribe", unit: "seconds", units: 1440, usd: 0.1 })).toEqual({
+      name: "Speech to text",
+      amount: "0.4 h of speech",
+    });
+    expect(purposeLine({ purpose: "web_search", service: "openai", unit: "searches", units: 2, usd: 0.02 }).amount).toBe("2 searches");
+    expect(purposeLine({ purpose: "ask", service: "openai", unit: "tokens", units: 31_000, usd: 0.07 })).toEqual({
+      name: "Ask",
+      amount: "31k tokens",
+    });
+    expect(percent(88_204, 140_000)).toBe(63);
   });
 });
