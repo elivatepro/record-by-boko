@@ -346,6 +346,7 @@ class PlaudRecorderSource(
             emit(RecorderEvent.Connected(serial))
             // Recordings are stamped with the recorder's clock; keep it on the phone's time.
             sdk("syncTime") { PlaudDeviceAgent.syncTime() }
+            runCatching { checkFirmware(serial) }.onFailure { Log.w(TAG, "firmware check failed", it) }
         }
     }
 
@@ -370,6 +371,31 @@ class PlaudRecorderSource(
     private fun linkFailed(serial: String, reason: LinkFailure) {
         firstLink = false
         emit(RecorderEvent.LinkFailed(serial, reason))
+    }
+
+    /**
+     * Asks Plaud for the newest firmware, as Plaud's template does: the SDK's own check needs an
+     * endpoint the developer platform doesn't have. Signed with the recorder's serial signature.
+     * Only reads; nothing is downloaded or installed.
+     */
+    private suspend fun checkFirmware(serial: String) = withContext(Dispatchers.IO) {
+        val raw = withContext(Dispatchers.Main) { PlaudDeviceAgent.getConnectedDeviceVersion() }.orEmpty()
+        val signature = withContext(Dispatchers.Main) { PlaudDeviceAgent.getSnSignature() }
+            ?.takeIf { it.isNotBlank() } ?: return@withContext Log.w(TAG, "firmware check: no signature")
+        val token = tokens.current()
+        val request = Request.Builder()
+            .url("https://${token.domain}/developer/api/open/partner/sdk/version/latest?type=${deviceType(serial)}&sn=$serial&current_version=-1")
+            .header("X-Device-Signature", signature)
+            .build()
+        http.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return@withContext Log.w(TAG, "firmware check: HTTP ${response.code}")
+            val json = JSONObject(response.body.string())
+            val latest = json.optLong("version_code", 0L)
+            val current = raw.removePrefix("V").removePrefix("v").toLongOrNull() ?: 0L
+            val newer = latest > current && json.optString("download_url").isNotBlank()
+            Log.i(TAG, "firmware: current $current, latest $latest")
+            emit(RecorderEvent.Firmware(firmwareName(current), if (newer) firmwareName(latest) else null))
+        }
     }
 
     /** `POST /open/partner/sdk/{bind|unbind}` with the user token. Returns the HTTP status. */
@@ -529,5 +555,9 @@ class PlaudRecorderSource(
         }.getOrNull()
 
         fun sessionStart(sessionId: Long): Instant? = RecorderFile.sessionStart(sessionId)
+
+        /** Plaud's firmware codes are major×65536 + minor×256 + patch: 67328 is "1.7.0". */
+        fun firmwareName(code: Long): String =
+            if (code < 65_536) "$code" else "${code / 65_536}.${(code % 65_536) / 256}.${code % 256}"
     }
 }

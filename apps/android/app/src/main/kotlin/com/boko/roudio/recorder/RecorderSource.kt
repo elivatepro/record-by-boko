@@ -82,6 +82,9 @@ sealed interface RecorderEvent {
 
     data class Storage(val totalBytes: Long, val freeBytes: Long) : RecorderEvent
 
+    /** The recorder's firmware and the newest Plaud offers; [latest] null when it's up to date. */
+    data class Firmware(val current: String, val latest: String?) : RecorderEvent
+
     /** [startedAt] is when the current recording began, when the recorder says. */
     data class Recording(val isRecording: Boolean, val startedAt: Instant? = null) : RecorderEvent
 }

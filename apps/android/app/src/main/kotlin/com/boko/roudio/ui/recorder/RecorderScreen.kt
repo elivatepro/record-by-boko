@@ -57,6 +57,7 @@ import com.boko.roudio.recorder.StorageReading
 import com.boko.roudio.recorder.serialEnding
 import com.boko.roudio.store.Recording
 import com.boko.roudio.store.TransferState
+import com.boko.roudio.transfer.FirmwareGate
 import com.boko.roudio.transfer.Transfers
 import com.boko.roudio.ui.today.durationText
 import com.boko.roudio.ui.RoudioIcons
@@ -132,6 +133,33 @@ fun RecorderScreen(
             SafeNote(
                 stringResource(if (state.bluetoothOn) R.string.recorder_away_safe else R.string.recorder_bluetooth_safe),
             ) { reconnect() }
+        }
+        val gate = FirmwareGate.gate(state, recordings)
+        if (gate != FirmwareGate.Gate.NoUpdate) {
+            Column {
+                Text(
+                    stringResource(R.string.options),
+                    style = roudioText(13.sp, 18.sp, FontWeight.SemiBold),
+                    color = c.muted,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+                Row(Modifier.padding(vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(stringResource(R.string.update_title), style = roudioText(16.sp, 22.sp, FontWeight.SemiBold), color = c.ink)
+                        Text(
+                            stringResource(if (gate == FirmwareGate.Gate.Ready) R.string.update_ready_body else R.string.update_waiting_body),
+                            style = roudioText(13.sp, 18.sp),
+                            color = c.muted,
+                        )
+                    }
+                    Text(
+                        stringResource(if (gate == FirmwareGate.Gate.Ready) R.string.update_ready else R.string.update_waiting),
+                        style = roudioText(14.sp, 18.sp, FontWeight.SemiBold),
+                        color = c.muted,
+                    )
+                }
+                Box(Modifier.fillMaxWidth().height(1.dp).background(c.hairline))
+            }
         }
         Text(
             stringResource(R.string.unlink_recorder),

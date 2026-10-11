@@ -13,6 +13,9 @@ data class StorageReading(val totalBytes: Long, val freeBytes: Long)
 
 data class RecordingReading(val isRecording: Boolean, val startedAt: Instant?)
 
+/** [latest] is set when Plaud offers newer firmware. Updating erases the recorder (spec §4). */
+data class FirmwareReading(val current: String, val latest: String?)
+
 /** Where linking stands. Only the setup flow and the error screens look at this. */
 sealed interface LinkPhase {
     data object Idle : LinkPhase
@@ -49,6 +52,7 @@ data class RecorderState(
     val battery: Seen<BatteryReading>? = null,
     val storage: Seen<StorageReading>? = null,
     val recording: Seen<RecordingReading>? = null,
+    val firmware: FirmwareReading? = null,
 ) {
     val isConnected: Boolean get() = connectedSince != null
 
@@ -165,6 +169,8 @@ data class RecorderState(
             storage = Seen(StorageReading(event.totalBytes, event.freeBytes), now),
             lastSeen = now,
         )
+
+        is RecorderEvent.Firmware -> copy(firmware = FirmwareReading(event.current, event.latest))
 
         is RecorderEvent.Recording -> copy(
             recording = Seen(RecordingReading(event.isRecording, event.startedAt), now),

@@ -240,6 +240,12 @@
     </plurals>
     <string name="transfer_done_uploaded">On this phone and uploaded</string>
     <string name="transfer_done_uploading">On this phone · uploading</string>
+    <string name="options">Options</string>
+    <string name="update_title">Recorder update available</string>
+    <string name="update_waiting_body">Updates erase the recorder. We’ll offer it once everything on it is safely uploaded.</string>
+    <string name="update_waiting">Waiting</string>
+    <string name="update_ready_body">Updates erase the recorder. Everything on it is uploaded now, so nothing would be lost.</string>
+    <string name="update_ready">Ready</string>
     <string name="unlink_recorder">Unlink this recorder</string>
     <string name="unlink_confirm_title">Unlink this recorder?</string>
     <string name="unlink_confirm_body">Roudio stops bringing recordings across. Nothing is deleted from the recorder. Linking it again later may need the Plaud app to free it first.</string>
