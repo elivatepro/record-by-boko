@@ -213,3 +213,14 @@ async def test_a_rotated_client_secret_is_a_setup_problem_not_lost_access() -> N
     with pytest.raises(DriveSetupError, match="GOOGLE_CLIENT_SECRET") as caught:
         await drive.folder("Roudio", None)
     assert not isinstance(caught.value, DriveAccessLost)
+
+
+async def test_an_update_can_be_swiped_away(
+    client: AsyncClient, db: AsyncSession, auth: dict[str, str]
+) -> None:
+    db.add(Notification(kind="backup_failed", title="Backup failed", body="x"))
+    await db.commit()
+    [update] = (await client.get("/updates", headers=auth)).json()
+    response = await client.delete(f"/updates/{update['id']}", headers=auth)
+    assert response.status_code == 204
+    assert (await client.get("/updates", headers=auth)).json() == []

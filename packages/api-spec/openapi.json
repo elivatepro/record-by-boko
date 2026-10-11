@@ -1178,6 +1178,47 @@
         ]
       }
     },
+    "/updates/{update_id}": {
+      "delete": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Dismiss Update",
+        "description": "Swiped away on the phone: gone for good. A new failure raises a new update.",
+        "operationId": "dismissUpdate",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "update_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Update Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/search": {
       "get": {
         "tags": [

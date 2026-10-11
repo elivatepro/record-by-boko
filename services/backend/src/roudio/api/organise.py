@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy import func, literal, select, update
+from sqlalchemy import delete, func, literal, select, update
 from sqlalchemy.exc import IntegrityError
 
 from roudio.api.deps import CurrentSession, Db, error
@@ -217,6 +217,13 @@ async def mark_updates_read(_: CurrentSession, db: Db) -> None:
     await db.execute(
         update(Notification).where(Notification.read_at.is_(None)).values(read_at=func.now())
     )
+    await db.commit()
+
+
+@router.delete("/updates/{update_id}", operation_id="dismissUpdate", status_code=204)
+async def dismiss_update(update_id: int, _: CurrentSession, db: Db) -> None:
+    """Swiped away on the phone: gone for good. A new failure raises a new update."""
+    await db.execute(delete(Notification).where(Notification.id == update_id))
     await db.commit()
 
 
