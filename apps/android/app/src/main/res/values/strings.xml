@@ -381,7 +381,9 @@
     <string name="ask_not_enough">Not enough in this recording</string>
     <string name="ask_hint">Ask about this call…</string>
     <string name="ask_send">Send</string>
-    <string name="ask_clear">Start over</string>
+    <string name="ask_clear">Clear questions</string>
+    <string name="ask_clear_title">Clear these questions?</string>
+    <string name="ask_clear_body">Every question and answer for this call is deleted. The recording, transcript and notes stay.</string>
     <string name="ask_suggest_decide">What did we decide?</string>
     <string name="ask_suggest_next">What happens next?</string>
     <string name="ask_suggest_who">Who said they’d do what?</string>

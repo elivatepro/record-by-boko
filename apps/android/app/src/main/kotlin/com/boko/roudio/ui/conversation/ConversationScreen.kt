@@ -939,7 +939,26 @@ private fun AskPane(
         }
     }
     Column(Modifier.fillMaxSize().background(c.ground).safeDrawingPadding().imePadding()) {
-        CompactHeader(detail, onBack) { RoundButton(RoudioIcons.Restart, stringResource(R.string.ask_clear), onClear) }
+        // Clearing deletes the history for good: a bin, not a refresh arrow, and it asks first.
+        var confirmClear by remember { mutableStateOf(false) }
+        CompactHeader(detail, onBack) {
+            if (turns.isNotEmpty()) RoundButton(RoudioIcons.Bin, stringResource(R.string.ask_clear)) { confirmClear = true }
+        }
+        if (confirmClear) {
+            AlertDialog(
+                onDismissRequest = { confirmClear = false },
+                title = { Text(stringResource(R.string.ask_clear_title)) },
+                text = { Text(stringResource(R.string.ask_clear_body)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        confirmClear = false
+                        answered = emptyList()
+                        onClear()
+                    }) { Text(stringResource(R.string.ask_clear), color = c.alert) }
+                },
+                dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.cancel)) } },
+            )
+        }
         Spacer(Modifier.height(4.dp))
         Segmented(Pane.Ask, onPane)
         Column(
