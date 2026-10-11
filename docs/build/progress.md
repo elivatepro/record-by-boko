@@ -193,8 +193,10 @@ Done (`services/backend/src/roudio/pipeline`, phone and web screens):
   whole path can be checked end to end. One real recording went through it on 11 Oct 2026.
 
 Still to do:
-- Owner: add `ELEVENLABS_API_KEY` and `OPENAI_API_KEY` on Railway (api and worker), remove
-  `PIPELINE_FAKES`, then run `roudio-reprocess`.
+- Done 11 Oct 2026: the real keys are on Railway and `PIPELINE_FAKES` is gone. Results record
+  who wrote them (`written_by`); stand-in results are redone by themselves, and each worker start
+  gives failed write-ups one fresh try. All four recordings so far were written up by Scribe and
+  GPT-6.1 Sol.
 - Run the tuning tool on a real day and settle the thresholds before trusting what's dropped.
 - "Done when": a real conversation written up within about 15 minutes of upload, every summary
   point jumping to the right moment, Ask refusing questions from outside the recording.
@@ -214,9 +216,8 @@ Done:
   only on the server with Download (06e).
 
 Still to do:
-- Owner: turn on the Google Drive API in the Google Cloud project behind Roudio's sign-in
-  (project number 921109748576: APIs & Services → Library → Google Drive API → Enable). Until
-  then every backup fails with a 403 and the Update says so; they retry by themselves after.
+- Done 11 Oct 2026: the Drive API is on and the rotated Google client secret is on Railway
+  (production and staging). Backups verify and land in Drive; failed ones retry hourly.
 - Owner: watch a week of recordings clear only after their Drive copy is checked, then decide
   whether to turn deleting on. Check that a Drive failure blocks clean-up and says what's safe.
 
