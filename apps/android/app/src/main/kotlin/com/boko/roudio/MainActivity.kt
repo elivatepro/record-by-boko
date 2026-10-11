@@ -27,6 +27,7 @@ import com.boko.roudio.auth.GoogleAuth
 import com.boko.roudio.auth.GoogleSignInCancelled
 import com.boko.roudio.data.ApiException
 import com.boko.roudio.data.errorDetail
+import com.boko.roudio.data.Sync
 import com.boko.roudio.data.SyncWork
 import com.boko.roudio.recorder.RecorderService
 import com.boko.roudio.system.PhoneSettings
@@ -45,6 +46,7 @@ import com.boko.roudio.ui.recorder.rememberNow
 import com.boko.roudio.ui.theme.RoudioTheme
 import com.boko.roudio.ui.backups.BackupsRoute
 import com.boko.roudio.ui.conversation.ConversationRoute
+import com.boko.roudio.ui.conversation.PendingRoute
 import com.boko.roudio.ui.digest.DigestRoute
 import com.boko.roudio.ui.nav.Tab
 import com.boko.roudio.ui.nav.TabScaffold
@@ -81,6 +83,7 @@ sealed interface MainKey : NavKey
 @Serializable data object RecorderDetails : MainKey // 13a, 13b
 @Serializable data class ConversationKey(val id: String, val atMs: Long? = null) : MainKey // 06, 07, 08
 @Serializable data class DigestKey(val day: String) : MainKey // 09
+@Serializable data class PendingKey(val recordingId: Long) : MainKey // S3, S8
 @Serializable data object UpdatesKey : MainKey // 03
 @Serializable data object BackupsKey : MainKey // 14
 @Serializable data object WordListKey : MainKey // 15b
@@ -203,6 +206,7 @@ class MainActivity : ComponentActivity() {
                             onConversation = openConversation,
                             onDigest = { day -> backStack.add(DigestKey(day)) },
                             onUpdates = { backStack.add(UpdatesKey) },
+                            onPending = { id -> backStack.add(PendingKey(id)) },
                             unreadUpdates = waiting.unreadUpdates,
                         )
                     }
@@ -230,6 +234,7 @@ class MainActivity : ComponentActivity() {
                 }
                 entry<ConversationKey> { key -> ConversationRoute(app, key.id, key.atMs, onBack = pop) }
                 entry<DigestKey> { key -> DigestRoute(app, key.day, openConversation, onBack = pop) }
+                entry<PendingKey> { key -> PendingRoute(app, key.recordingId, onBack = pop) }
                 entry<UpdatesKey> { UpdatesRoute(app, openConversation, onBackups = { backStack.add(BackupsKey) }, onBack = pop) }
                 entry<BackupsKey> { BackupsRoute(app, onBack = pop) }
                 entry<WordListKey> { WordListRoute(app, onBack = pop) }
@@ -325,6 +330,7 @@ class MainActivity : ComponentActivity() {
         onConversation: (String, Long?) -> Unit,
         onDigest: (String) -> Unit,
         onUpdates: () -> Unit,
+        onPending: (Long) -> Unit,
         unreadUpdates: Int,
     ) {
         val recorder by app.recorder.state.collectAsState()
@@ -336,8 +342,11 @@ class MainActivity : ComponentActivity() {
         BackHandler(enabled = daysBack > 0) { daysBack = 0 }
         val offset = ZoneId.systemDefault().rules.getOffset(now)
         val day = now.atOffset(offset).toLocalDate().minusDays(daysBack.toLong())
-        val model = remember(recordings, recorder, progress, day, now) {
-            TodayModel.build(recordings, recorder, progress, day, now, offset)
+        val conversations by app.database.library().observeConversations().collectAsState(initial = emptyList())
+        val digestRow by app.database.library().observeDigest(day.toString()).collectAsState(initial = null)
+        val digest = remember(digestRow) { digestRow?.json?.let { runCatching { Sync.decodeDigest(it) }.getOrNull() } }
+        val model = remember(recordings, recorder, progress, day, now, conversations) {
+            TodayModel.build(recordings, recorder, progress, day, now, offset, conversations)
         }
         TodayScreen(
             model = model,
@@ -347,6 +356,12 @@ class MainActivity : ComponentActivity() {
             onRecorder = onRecorder,
             onPreviousDay = { daysBack++ },
             onBackToToday = { daysBack = 0 },
+            digest = digest,
+            unreadUpdates = unreadUpdates,
+            onDigest = { onDigest(day.toString()) },
+            onUpdates = onUpdates,
+            onConversation = { id -> onConversation(id, null) },
+            onPending = onPending,
         )
     }
 

@@ -1,7 +1,7 @@
 """Review, the word list, the Updates feed, search and the phone's sync (milestones 3 to 5)."""
 
 from datetime import UTC, datetime, timedelta
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Query, status
@@ -226,7 +226,7 @@ class SearchHit(BaseModel):
     where: Literal["transcript", "summary", "note"]
     snippet: str = Field(description="Matched words are wrapped in [[ ]]")
     at_ms: int = Field(json_schema_extra=INT64)
-    segment_id: int | None = Field(default=None, json_schema_extra=INT64)
+    segment_id: Annotated[int, Field(json_schema_extra=INT64)] | None = None
 
 
 class SearchResult(BaseModel):

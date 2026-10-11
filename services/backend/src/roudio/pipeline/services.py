@@ -48,13 +48,13 @@ def build(settings: Settings) -> PipelineServices:
         transcriber = ScribeTranscriber(
             settings.elevenlabs_api_key.get_secret_value(), settings.elevenlabs_model
         )
-    elif settings.is_production_like:
+    elif settings.is_production_like and not settings.pipeline_fakes:
         transcriber = UnconfiguredTranscriber()
     else:
         transcriber = FakeTranscriber()
     if settings.openai_api_key:
         brain = OpenAIBrain(settings.openai_api_key.get_secret_value(), settings.openai_model)
-    elif settings.is_production_like:
+    elif settings.is_production_like and not settings.pipeline_fakes:
         brain = UnconfiguredBrain()
     else:
         brain = FakeBrain()

@@ -65,6 +65,23 @@ async def retry_backup(recording_id: UUID, _: CurrentSession, db: Db) -> None:
     await jobs.enqueue(db, BACKUP, {"recording_id": str(recording.id)})
 
 
+@router.post("/recordings/{recording_id}/process", operation_id="reprocess", status_code=202)
+async def reprocess(recording_id: UUID, _: CurrentSession, db: Db) -> None:
+    """Write a recording up again (S8 "Try again now", or after the keys change)."""
+    recording = await db.get(Recording, recording_id)
+    if recording is None or recording.transfer_state != "uploaded":
+        raise error(
+            status.HTTP_404_NOT_FOUND, "not_found", "That recording isn't on the server yet."
+        )
+    from roudio import jobs
+    from roudio.pipeline.process import PROCESS
+
+    recording.processing_state = "waiting"
+    recording.processing_error = None
+    await db.commit()
+    await jobs.enqueue(db, PROCESS, {"recording_id": str(recording.id)})
+
+
 class Settings(BaseModel):
     deleting_enabled: bool
 

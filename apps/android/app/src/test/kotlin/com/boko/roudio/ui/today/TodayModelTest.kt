@@ -5,6 +5,9 @@ import com.boko.roudio.recorder.RecorderModel
 import com.boko.roudio.recorder.RecorderState
 import com.boko.roudio.recorder.RecordingReading
 import com.boko.roudio.recorder.Seen
+import com.boko.roudio.store.BackupState
+import com.boko.roudio.store.ConversationEntity
+import com.boko.roudio.store.ProcessingState
 import com.boko.roudio.store.Recording
 import com.boko.roudio.store.TransferState
 import com.boko.roudio.transfer.Transfers
@@ -131,5 +134,38 @@ class TodayModelTest {
             model.rows.map { it.status },
         )
         assertEquals(2, model.waitingToUpload)
+    }
+
+    @Test
+    fun `a written-up recording shows its conversations, quiet around them, with the backup word`() {
+        val recording = recording("2026-10-11T08:00:00Z", 120, TransferState.Uploaded)
+            .copy(processing = ProcessingState.Done, backup = BackupState.BackedUp)
+        val call = ConversationEntity(
+            id = "c1", serverRecordingId = "s1", serial = recording.serial, sessionId = recording.sessionId,
+            day = "2026-10-11", kind = "conversation", title = "Studio call", summary = "",
+            startedAt = Instant.parse("2026-10-11T08:30:00Z"), endedAt = Instant.parse("2026-10-11T09:14:00Z"),
+            startMs = 30 * 60_000, endMs = 74 * 60_000, resultsVersion = 1,
+        )
+        val model = TodayModel.build(listOf(recording), linked, null, today, now, lagos, listOf(call))
+        assertEquals(setOf(SpanKind.Quiet, SpanKind.Conversation), model.kinds)
+        val talk = model.spans.single { it.kind == SpanKind.Conversation }
+        assertEquals((9 * 60 + 30) * 60, talk.startSecond)
+        assertEquals((10 * 60 + 14) * 60, talk.endSecond)
+        val row = model.rows.single()
+        assertEquals(RowTitle.Conversation("Studio call"), row.title)
+        assertEquals(RowStatus.WrittenUp, row.status)
+        assertEquals(BackupWord.BackedUp, row.backup)
+        assertEquals("c1", row.conversationId)
+        assertEquals("09:30", row.time)
+    }
+
+    @Test
+    fun `processing states become writing up words, failures included`() {
+        val writing = recording("2026-10-11T08:00:00Z", 10, TransferState.Uploaded).copy(processing = ProcessingState.Transcribing)
+        val failed = recording("2026-10-11T09:00:00Z", 10, TransferState.Uploaded)
+            .copy(processing = ProcessingState.Failed, backup = BackupState.Failed)
+        val rows = build(listOf(writing, failed)).rows
+        assertEquals(listOf(RowStatus.WritingUpFailed, RowStatus.WritingUp), rows.map { it.status })
+        assertEquals(BackupWord.Failed, rows.first().backup)
     }
 }

@@ -18,6 +18,7 @@ coroutines = "1.11.0"
 room = "2.8.5"
 ksp = "2.3.12"
 work = "2.12.0"
+media3 = "1.11.1"
 # Libraries the Plaud SDK aar uses but doesn't declare (see app/libs/README.md).
 gson = "2.14.0"
 javaWebsocket = "1.6.0"
@@ -55,6 +56,7 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 plaud-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }

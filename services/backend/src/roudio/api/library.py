@@ -6,7 +6,7 @@ Times: `*_at` are absolute UTC instants; `*_ms` are offsets into the recording's
 
 import logging
 from datetime import UTC, date, datetime, timedelta
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, status
@@ -43,7 +43,7 @@ class RecordingSummary(BaseModel):
     session_id: int = Field(json_schema_extra=INT64)
     started_at: datetime
     zone_offset_seconds: int
-    duration_ms: int | None = Field(json_schema_extra=INT64)
+    duration_ms: Annotated[int, Field(json_schema_extra=INT64)] | None
     transfer_state: str
     processing_state: str
     processing_error: str | None
@@ -68,7 +68,7 @@ class ConversationSummary(BaseModel):
 
 class DigestMoment(BaseModel):
     conversation_id: UUID
-    item_id: int
+    item_id: int = Field(json_schema_extra=INT64)
     kind: str
     text: str
     at_ms: int = Field(json_schema_extra=INT64)
@@ -111,7 +111,7 @@ class ItemView(BaseModel):
     text: str
     at_ms: int = Field(json_schema_extra=INT64)
     sources: list[int]
-    review_id: int | None = Field(default=None, json_schema_extra=INT64)
+    review_id: Annotated[int, Field(json_schema_extra=INT64)] | None = None
     review_state: str | None = None
 
 

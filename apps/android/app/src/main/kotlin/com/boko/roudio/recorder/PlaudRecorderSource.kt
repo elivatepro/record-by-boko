@@ -90,6 +90,7 @@ class PlaudRecorderSource(
     private val fileLock = Mutex()
     @Volatile private var fileList: CompletableDeferred<List<RecorderFile>>? = null
     @Volatile private var exportDone: CompletableDeferred<File>? = null
+    @Volatile private var deleteDone: Pair<CompletableDeferred<Int>, Long>? = null
 
     init {
         // The SDK's log files. Builds before the silent Timber (src/main/java/timber) wrote
@@ -263,6 +264,22 @@ class PlaudRecorderSource(
         } finally {
             exportDone = null
             dir.deleteRecursively()
+        }
+    }
+
+    override suspend fun deleteFromRecorder(file: RecorderFile): Unit = fileLock.withLock {
+        if (connectedSerial == null) throw ExportException("not connected")
+        val done = CompletableDeferred<Int>().also { deleteDone = it to file.sessionId }
+        try {
+            if (!sdk("deleteFile") { PlaudDeviceAgent.deleteFile(file.sessionId) }) {
+                throw ExportException("the SDK refused to delete")
+            }
+            val status = withTimeoutOrNull(DELETE_WAIT_MS) { done.await() }
+                ?: throw ExportException("the recorder didn't confirm the delete")
+            if (status != 0) throw ExportException("the recorder refused the delete ($status)")
+            Log.i(TAG, "deleted session ${file.sessionId} from the recorder")
+        } finally {
+            deleteDone = null
         }
     }
 
@@ -486,6 +503,11 @@ class PlaudRecorderSource(
             fileList?.complete(files.map { RecorderFile(it.sessionId, it.fileSize) })
         }
 
+        override fun bleDeleteFile(sessionId: Long, status: Int) {
+            Log.i(TAG, "delete session $sessionId: status $status")
+            deleteDone?.takeIf { it.second == sessionId }?.first?.complete(status)
+        }
+
         override fun bleDepair(status: Int) {
             Log.i(TAG, "depair status $status")
             depairDone?.complete(Unit)
@@ -532,6 +554,7 @@ class PlaudRecorderSource(
         const val FILE_LIST_WAIT_MS = 15_000L
         const val STALL_CHECK_MS = 5_000L
         const val STALL_MS = 60_000L
+        const val DELETE_WAIT_MS = 15_000L
 
         /** Note Pro (881) and NotePin S (882), as in Plaud's template. */
         fun isSupported(serial: String) = serial.startsWith("881") || serial.startsWith("882")

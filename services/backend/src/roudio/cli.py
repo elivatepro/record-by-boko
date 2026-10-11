@@ -93,6 +93,29 @@ async def _wait_for_migrations(timeout_s: float = 600) -> None:
     log.warning("database still isn't at %s; starting anyway", head)
 
 
+def reprocess() -> None:
+    """Write every uploaded recording up again (after adding or changing the AI keys)."""
+    _logging()
+    from sqlalchemy import select
+
+    from roudio import jobs
+    from roudio.db import get_sessionmaker
+    from roudio.models import Recording
+    from roudio.pipeline.process import PROCESS
+
+    async def main() -> None:
+        async with get_sessionmaker()() as db:
+            rows = list(
+                await db.scalars(select(Recording).where(Recording.transfer_state == "uploaded"))
+            )
+            for recording in rows:
+                recording.processing_state = "waiting"
+                await jobs.enqueue(db, PROCESS, {"recording_id": str(recording.id)})
+            print(f"Queued {len(rows)} recording(s) for processing")
+
+    asyncio.run(main())
+
+
 def openapi() -> None:
     """Write the OpenAPI description to the path given (default: packages/api-spec)."""
     from roudio.api.app import create_app

@@ -470,6 +470,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/recordings/{recording_id}/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reprocess
+         * @description Write a recording up again (S8 "Try again now", or after the keys change).
+         */
+        post: operations["reprocess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings": {
         parameters: {
             query?: never;
@@ -714,7 +734,10 @@ export interface components {
              * Format: uuid
              */
             conversation_id: string;
-            /** Item Id */
+            /**
+             * Item Id
+             * Format: int64
+             */
             item_id: number;
             /** Kind */
             kind: string;
@@ -808,10 +831,7 @@ export interface components {
             at_ms: number;
             /** Sources */
             sources: number[];
-            /**
-             * Review Id
-             * Format: int64
-             */
+            /** Review Id */
             review_id?: number | null;
             /** Review State */
             review_state?: string | null;
@@ -873,10 +893,7 @@ export interface components {
             started_at: string;
             /** Zone Offset Seconds */
             zone_offset_seconds: number;
-            /**
-             * Duration Ms
-             * Format: int64
-             */
+            /** Duration Ms */
             duration_ms: number | null;
             /** Transfer State */
             transfer_state: string;
@@ -1012,10 +1029,7 @@ export interface components {
              * Format: int64
              */
             at_ms: number;
-            /**
-             * Segment Id
-             * Format: int64
-             */
+            /** Segment Id */
             segment_id?: number | null;
         };
         /** SearchResult */
@@ -2090,6 +2104,37 @@ export interface operations {
         };
     };
     retryBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recording_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reprocess: {
         parameters: {
             query?: never;
             header?: never;

@@ -1350,6 +1350,53 @@
         }
       }
     },
+    "/recordings/{recording_id}/process": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Reprocess",
+        "description": "Write a recording up again (S8 \"Try again now\", or after the keys change).",
+        "operationId": "reprocess",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recording_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recording Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/settings": {
       "get": {
         "tags": [
@@ -1930,6 +1977,7 @@
           },
           "item_id": {
             "type": "integer",
+            "format": "int64",
             "title": "Item Id"
           },
           "kind": {
@@ -2134,13 +2182,13 @@
           "review_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "format": "int64"
               },
               {
                 "type": "null"
               }
             ],
-            "format": "int64",
             "title": "Review Id"
           },
           "review_state": {
@@ -2271,13 +2319,13 @@
           "duration_ms": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "format": "int64"
               },
               {
                 "type": "null"
               }
             ],
-            "format": "int64",
             "title": "Duration Ms"
           },
           "transfer_state": {
@@ -2577,13 +2625,13 @@
           "segment_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "format": "int64"
               },
               {
                 "type": "null"
               }
             ],
-            "format": "int64",
             "title": "Segment Id"
           }
         },

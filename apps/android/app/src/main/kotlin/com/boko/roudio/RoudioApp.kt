@@ -17,6 +17,7 @@ import com.boko.roudio.store.RecordingStore
 import com.boko.roudio.system.NetworkMonitor
 import com.boko.roudio.store.RoomRecordingStore
 import com.boko.roudio.store.RoudioDatabase
+import com.boko.roudio.transfer.CleanupGate
 import com.boko.roudio.transfer.RecordingFiles
 import com.boko.roudio.transfer.Transfers
 import com.boko.roudio.transfer.Uploader
@@ -51,12 +52,22 @@ class RoudioApp : Application() {
 
     /** Started by [com.boko.roudio.recorder.RecorderService], so it runs with the screen off. */
     val transfers by lazy {
-        Transfers(plaudSource, recorder, recordings, recordingFiles, appScope, onPhone = { Uploads.enqueue(this) })
+        Transfers(
+            plaudSource,
+            recorder,
+            recordings,
+            recordingFiles,
+            appScope,
+            onPhone = { Uploads.enqueue(this) },
+            afterSync = { serial -> cleanup.run(serial) },
+        )
     }
 
     val network by lazy { NetworkMonitor(this) }
 
     val sync by lazy { Sync(api.organise, api.library, recordings, database.library(), PrefsSyncCursor(this)) }
+
+    val cleanup by lazy { CleanupGate(api.backups, plaudSource, recordings, recordingFiles) }
 
     val uploader by lazy { Uploader(api.recordings, recordings, recordingFiles) }
 

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -42,10 +43,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.boko.roudio.R
+import com.boko.roudio.api.models.DigestView
+import com.boko.roudio.ui.nav.TAB_BAR_SPACE
 import com.boko.roudio.recorder.BatteryReading
 import com.boko.roudio.recorder.LinkedRecorder
 import com.boko.roudio.recorder.RecorderModel
@@ -77,6 +81,12 @@ fun TodayScreen(
     onRecorder: () -> Unit,
     onPreviousDay: () -> Unit,
     onBackToToday: () -> Unit,
+    digest: DigestView? = null,
+    unreadUpdates: Int = 0,
+    onDigest: () -> Unit = {},
+    onUpdates: () -> Unit = {},
+    onConversation: (String) -> Unit = {},
+    onPending: (Long) -> Unit = {},
 ) {
     val c = RoudioTheme.colors
     Column(
@@ -97,13 +107,15 @@ fun TodayScreen(
                 "roudio",
                 style = roudioText(20.sp, 24.sp, FontWeight.SemiBold).copy(letterSpacing = (-0.03).em),
                 color = c.ink,
+                modifier = Modifier.weight(1f),
             )
+            Bell(unreadUpdates, onUpdates)
         }
         DateRow(model, now, onPreviousDay)
         Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
             Dial(model, now)
         }
-        Legend()
+        Legend(model.kinds)
         Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 6.dp), contentAlignment = Alignment.Center) {
             if (model.isToday) {
                 RecorderChip(recorder, model.onRecorder, onRecorder)
@@ -112,7 +124,8 @@ fun TodayScreen(
             }
         }
         if (!online && model.waitingToUpload > 0) OfflineBanner(model.waitingToUpload)
-        Column(Modifier.padding(top = 14.dp)) {
+        digest?.let { DigestCard(it, onDigest) }
+        Column(Modifier.padding(top = 14.dp, bottom = TAB_BAR_SPACE)) {
             if (model.rows.isEmpty()) {
                 Text(
                     stringResource(if (model.isToday) R.string.today_empty else R.string.past_day_empty),
@@ -122,7 +135,11 @@ fun TodayScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp, vertical = 32.dp),
                 )
             }
-            model.rows.forEach { TimelineRowView(it) }
+            model.rows.forEach { row ->
+                TimelineRowView(row) {
+                    row.conversationId?.let(onConversation) ?: row.pendingId?.let(onPending)
+                }
+            }
         }
     }
 }
@@ -164,15 +181,19 @@ private fun DateRow(model: TodayModel, now: Instant, onPreviousDay: () -> Unit) 
     }
 }
 
-/** The 24-hour dial (Paper "24-hour dial"): midnight at the top, clockwise, 300 dp. */
+/**
+ * The 24-hour dial (Paper "24-hour dial"): midnight at the top, clockwise. 300 dp on Today with
+ * the total in the middle; smaller and plain on the digest (09).
+ */
 @Composable
-private fun Dial(model: TodayModel, now: Instant) {
+fun Dial(model: TodayModel, now: Instant, diameter: Dp = 300.dp, centre: Boolean = true) {
     val c = RoudioTheme.colors
     val measurer = rememberTextMeasurer()
     val label = TextStyle(fontFamily = com.boko.roudio.ui.theme.Lexend, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = c.muted)
     val notWrittenUp = c.ink.copy(alpha = 0.55f)
-    Box(Modifier.size(300.dp), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(300.dp)) {
+    val quiet = c.ink.copy(alpha = 0.28f)
+    Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.size(diameter)) {
             val s = size.width / 300f
             val centre = Offset(150f * s, 150f * s)
             val ring = 122f * s
@@ -184,7 +205,12 @@ private fun Dial(model: TodayModel, now: Instant) {
                 // Even a few seconds stays visible as a sliver.
                 val sweep = maxOf((span.end - span.start) * 360f, MIN_SWEEP)
                 drawArc(
-                    color = if (span.kind == SpanKind.StillOnPlaud) c.buoy else notWrittenUp,
+                    color = when (span.kind) {
+                        SpanKind.Conversation -> c.ink
+                        SpanKind.Quiet -> quiet
+                        SpanKind.NotWrittenUp -> notWrittenUp
+                        SpanKind.StillOnPlaud -> c.buoy
+                    },
                     startAngle = span.start * 360f - 90f,
                     sweepAngle = sweep,
                     useCenter = false,
@@ -218,7 +244,7 @@ private fun Dial(model: TodayModel, now: Instant) {
                 drawCircle(c.ink, radius = 5f * s, center = at, style = Stroke(2f * s))
             }
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (centre) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 durationText(model.recorded),
                 style = roudioText(34.sp, 40.sp, FontWeight.SemiBold).copy(letterSpacing = (-0.03).em),
@@ -248,13 +274,20 @@ private fun Dial(model: TodayModel, now: Instant) {
 }
 
 @Composable
-private fun Legend() {
+private fun Legend(kinds: Set<SpanKind>) {
     val c = RoudioTheme.colors
     Row(
         Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
     ) {
-        LegendItem(c.ink.copy(alpha = 0.55f), outlined = false, stringResource(R.string.legend_not_written_up))
+        val written = SpanKind.Conversation in kinds || SpanKind.Quiet in kinds
+        if (written) {
+            LegendItem(c.ink, outlined = false, stringResource(R.string.legend_conversation))
+            LegendItem(c.ink.copy(alpha = 0.28f), outlined = false, stringResource(R.string.legend_quiet))
+        }
+        if (SpanKind.NotWrittenUp in kinds || !written) {
+            LegendItem(c.ink.copy(alpha = 0.55f), outlined = false, stringResource(R.string.legend_not_written_up))
+        }
         LegendItem(c.buoy, outlined = true, stringResource(R.string.legend_still_on_plaud))
     }
 }
@@ -313,6 +346,64 @@ private fun Chip(icon: ImageVector, text: String, onClick: () -> Unit, warning: 
     }
 }
 
+/** The bell with its unread dot (01). */
+@Composable
+private fun Bell(unread: Int, onClick: () -> Unit) {
+    val c = RoudioTheme.colors
+    Box(
+        Modifier
+            .size(48.dp)
+            .background(c.raised, CircleShape)
+            .clickable(role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            RoudioIcons.Bell,
+            contentDescription = if (unread > 0) pluralStringResource(R.plurals.updates_unread, unread, unread) else stringResource(R.string.updates),
+            tint = c.ink,
+            modifier = Modifier.size(22.dp),
+        )
+        if (unread > 0) {
+            Box(Modifier.offset(x = 10.dp, y = (-10).dp).size(12.dp).background(c.raised, CircleShape).padding(2.dp).background(c.buoy, CircleShape))
+        }
+    }
+}
+
+/** The digest card (01): updating with "4 of 6", or finished. */
+@Composable
+private fun DigestCard(digest: DigestView, onClick: () -> Unit) {
+    val c = RoudioTheme.colors
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, top = 16.dp)
+            .background(c.heroCard, RoundedCornerShape(24.dp))
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 22.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(RoudioIcons.Sunrise, contentDescription = null, tint = c.buoy, modifier = Modifier.size(22.dp))
+            Text(stringResource(R.string.daily_digest), style = roudioText(15.sp, 20.sp, FontWeight.SemiBold), color = c.onHeroCard, modifier = Modifier.weight(1f))
+            Text(
+                when (digest.state) {
+                    DigestView.State.UPDATING -> stringResource(R.string.digest_updating_count, digest.recordingsDone, digest.recordingsTotal)
+                    DigestView.State.FINISHED -> stringResource(R.string.digest_finished)
+                    DigestView.State.QUIET -> stringResource(R.string.digest_quiet)
+                    DigestView.State.FAILED -> stringResource(R.string.digest_failed)
+                },
+                style = roudioText(13.sp, 16.sp, FontWeight.Medium),
+                color = c.onHeroCardMuted,
+            )
+        }
+        Text(
+            digest.overview ?: stringResource(R.string.digest_waiting),
+            style = roudioText(19.sp, 26.sp, FontWeight.Medium),
+            color = c.onHeroCard,
+        )
+    }
+}
+
 /** S2: no internet, with recordings waiting on the phone. */
 @Composable
 private fun OfflineBanner(waiting: Int) {
@@ -339,11 +430,14 @@ private fun OfflineBanner(waiting: Int) {
 }
 
 @Composable
-private fun TimelineRowView(row: TimelineRow) {
+private fun TimelineRowView(row: TimelineRow, onClick: () -> Unit) {
     val c = RoudioTheme.colors
     Column {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
+            Modifier
+                .fillMaxWidth()
+                .then(if (row.conversationId != null || row.pendingId != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+                .padding(horizontal = 20.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -359,11 +453,12 @@ private fun TimelineRowView(row: TimelineRow) {
                     when (val title = row.title) {
                         RowTitle.WaitingOnPlaud -> stringResource(R.string.row_waiting_on_plaud)
                         is RowTitle.Length -> stringResource(R.string.row_recording_length, durationText(title.length))
+                        is RowTitle.Conversation -> title.title
                     },
                     style = roudioText(15.sp, 20.sp, FontWeight.Medium),
                     color = c.ink,
                 )
-                Text(statusText(row.status), style = roudioText(12.sp, 16.sp), color = c.muted)
+                Text(statusText(row), style = roudioText(12.sp, 16.sp), color = c.muted)
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(c.hairline))
@@ -371,14 +466,29 @@ private fun TimelineRowView(row: TimelineRow) {
 }
 
 @Composable
-private fun statusText(status: RowStatus): String = when (status) {
-    RowStatus.RecordingNow -> stringResource(R.string.row_recording_now)
-    RowStatus.MaybeRecording -> stringResource(R.string.row_maybe_recording)
-    RowStatus.NotTransferred -> stringResource(R.string.row_not_transferred)
-    is RowStatus.Transferring -> stringResource(R.string.row_transferring, status.percent)
-    RowStatus.WaitingToUpload -> stringResource(R.string.row_waiting_to_upload)
-    is RowStatus.Uploading -> stringResource(R.string.row_uploading, status.percent)
-    RowStatus.WaitingToWriteUp -> stringResource(R.string.row_waiting_to_write_up)
+private fun statusText(row: TimelineRow): String {
+    if (row.status == RowStatus.MaybeRecording) return stringResource(R.string.row_maybe_recording)
+    val word = when (val status = row.status) {
+        RowStatus.RecordingNow -> stringResource(R.string.word_recording_now)
+        RowStatus.MaybeRecording -> ""
+        RowStatus.NotTransferred -> stringResource(R.string.word_not_transferred)
+        is RowStatus.Transferring -> stringResource(R.string.word_transferring, status.percent)
+        RowStatus.WaitingToUpload -> stringResource(R.string.word_waiting_upload)
+        is RowStatus.Uploading -> stringResource(R.string.word_uploading, status.percent)
+        RowStatus.WaitingToWriteUp -> stringResource(R.string.word_waiting_write_up)
+        RowStatus.WritingUp -> stringResource(R.string.word_writing_up)
+        RowStatus.WritingUpFailed -> stringResource(R.string.word_writing_up_failed)
+        RowStatus.WrittenUp -> stringResource(R.string.word_written_up)
+    }
+    val backup = stringResource(
+        when (row.backup) {
+            BackupWord.Later -> R.string.backup_later
+            BackupWord.NotYet -> R.string.backup_not_yet
+            BackupWord.BackedUp -> R.string.backup_done
+            BackupWord.Failed -> R.string.backup_failed_word
+        },
+    )
+    return stringResource(R.string.row_words, word, backup)
 }
 
 /** "8h 27m", "12 min", "7 s". */
@@ -406,8 +516,8 @@ private val previewModel = TodayModel(
     recorded = Duration.ofMinutes(152),
     now = (14 * 60 + 32) / 1440f,
     rows = listOf(
-        TimelineRow(null, "14:10", RowTitle.WaitingOnPlaud, RowStatus.RecordingNow, false, true),
-        TimelineRow(2, "09:00", RowTitle.Length(Duration.ofHours(2)), RowStatus.Uploading(40), false, false),
+        TimelineRow(null, "14:10", RowTitle.WaitingOnPlaud, RowStatus.RecordingNow, BackupWord.Later, true),
+        TimelineRow(2, "09:00", RowTitle.Conversation("Studio call"), RowStatus.WrittenUp, BackupWord.BackedUp, false, "c1"),
     ),
     waitingToUpload = 1,
     onRecorder = 1,

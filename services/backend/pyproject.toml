@@ -25,6 +25,7 @@ dependencies = [
 roudio-api = "roudio.cli:api"
 roudio-worker = "roudio.cli:worker"
 roudio-openapi = "roudio.cli:openapi"
+roudio-reprocess = "roudio.cli:reprocess"
 
 [dependency-groups]
 dev = [

@@ -2,6 +2,9 @@ package com.boko.roudio.ui.today
 
 import com.boko.roudio.recorder.RecorderState
 import com.boko.roudio.recorder.RecordingNow
+import com.boko.roudio.store.BackupState
+import com.boko.roudio.store.ConversationEntity
+import com.boko.roudio.store.ProcessingState
 import com.boko.roudio.store.Recording
 import com.boko.roudio.store.TransferState
 import com.boko.roudio.transfer.Transfers
@@ -28,6 +31,8 @@ data class TodayModel(
     val waitingToUpload: Int,
     /** Recordings still on the recorder, including the one being recorded (the chip). */
     val onRecorder: Int,
+    /** Which kinds the dial shows, for the legend. */
+    val kinds: Set<SpanKind> = spans.map { it.kind }.toSet(),
 ) {
     companion object {
         fun build(
@@ -37,14 +42,30 @@ data class TodayModel(
             day: LocalDate,
             now: Instant,
             nowOffset: ZoneOffset,
+            conversations: List<ConversationEntity> = emptyList(),
         ): TodayModel {
             val today = now.atOffset(nowOffset).toLocalDate()
             val open = recorder.openRecording()
             val onDay = recordings.filter { it.localStart().toLocalDate() == day || it.crossesInto(day) }
 
-            val spans = onDay.mapNotNull { recording ->
-                val kind = if (recording.transfer.isOnRecorder()) SpanKind.StillOnPlaud else SpanKind.NotWrittenUp
-                span(recording.localStart(), recording.length(), day, kind)
+            val bySession = conversations.groupBy { it.serial to it.sessionId }
+            val spans = onDay.flatMap { recording ->
+                val written = recording.processing == ProcessingState.Done
+                val kind = when {
+                    recording.transfer.isOnRecorder() -> SpanKind.StillOnPlaud
+                    written -> SpanKind.Quiet
+                    else -> SpanKind.NotWrittenUp
+                }
+                val whole = listOfNotNull(span(recording.localStart(), recording.length(), day, kind))
+                // Written up: the recording is quiet except where a conversation was found.
+                val talk = if (written) {
+                    bySession[recording.serial to recording.sessionId].orEmpty().mapNotNull { c ->
+                        span(recording.localStart().plus(Duration.ofMillis(c.startMs)), Duration.ofMillis(c.endMs - c.startMs), day, SpanKind.Conversation)
+                    }
+                } else {
+                    emptyList()
+                }
+                whole + talk
             }.toMutableList()
             // The file being recorded isn't saved yet; it runs from its start until now.
             val unlisted = open?.takeIf { start -> day == today && onDay.none { it.startedAt.epochSecond == start.epochSecond } }
@@ -53,7 +74,14 @@ data class TodayModel(
                     ?.let(spans::add)
             }
 
-            val rows = onDay.sortedByDescending { it.startedAt }.map { row(it, progress, open) }.toMutableList()
+            val rows = onDay.sortedByDescending { it.startedAt }.flatMap { recording ->
+                val found = bySession[recording.serial to recording.sessionId].orEmpty()
+                if (recording.processing == ProcessingState.Done) {
+                    found.filter { it.day == day.toString() }.sortedByDescending { it.startMs }.map { conversationRow(recording, it) }
+                } else {
+                    listOf(row(recording, progress, open))
+                }
+            }.toMutableList()
             val lastSeenRecording = recorder.recording?.value
             when {
                 unlisted != null -> rows.add(0, openRow(unlisted.atOffset(nowOffset).toLocalTime().toHHmm(), RowStatus.RecordingNow))
@@ -80,7 +108,26 @@ data class TodayModel(
         }
 
         private fun openRow(time: String, status: RowStatus) =
-            TimelineRow(null, time, RowTitle.WaitingOnPlaud, status, backup = false, stillOnPlaud = true)
+            TimelineRow(null, time, RowTitle.WaitingOnPlaud, status, backup = BackupWord.Later, stillOnPlaud = true)
+
+        private fun conversationRow(recording: Recording, c: ConversationEntity): TimelineRow {
+            val local = c.startedAt.atOffset(ZoneOffset.ofTotalSeconds(recording.zoneOffsetSeconds)).toLocalTime()
+            return TimelineRow(
+                recordingId = recording.id,
+                time = local.toHHmm(),
+                title = RowTitle.Conversation(c.title),
+                status = RowStatus.WrittenUp,
+                backup = recording.backupWord(),
+                stillOnPlaud = false,
+                conversationId = c.id,
+            )
+        }
+
+        private fun Recording.backupWord(): BackupWord = when (backup) {
+            BackupState.BackedUp -> BackupWord.BackedUp
+            BackupState.Failed -> BackupWord.Failed
+            else -> BackupWord.NotYet
+        }
 
         private fun row(recording: Recording, progress: Transfers.Progress?, open: Instant?): TimelineRow {
             val status = when (recording.transfer) {
@@ -93,7 +140,12 @@ data class TodayModel(
                     val size = recording.fileBytes ?: 0
                     RowStatus.Uploading(if (size > 0) (recording.uploadedBytes * 100 / size).toInt() else 0)
                 }
-                TransferState.Uploaded -> RowStatus.WaitingToWriteUp
+                TransferState.Uploaded -> when (recording.processing) {
+                    ProcessingState.Waiting -> RowStatus.WaitingToWriteUp
+                    ProcessingState.Failed -> RowStatus.WritingUpFailed
+                    ProcessingState.Done -> RowStatus.WrittenUp
+                    else -> RowStatus.WritingUp
+                }
             }
             val stillOnPlaud = recording.transfer.isOnRecorder()
             return TimelineRow(
@@ -101,8 +153,9 @@ data class TodayModel(
                 time = recording.localStart().toLocalTime().toHHmm(),
                 title = if (stillOnPlaud) RowTitle.WaitingOnPlaud else RowTitle.Length(recording.length()),
                 status = status,
-                backup = false, // Drive backup arrives in milestone 4
+                backup = if (stillOnPlaud) BackupWord.Later else recording.backupWord(),
                 stillOnPlaud = stillOnPlaud,
+                pendingId = recording.id.takeIf { recording.transfer == TransferState.Uploaded },
             )
         }
 
@@ -151,25 +204,34 @@ data class DialSpan(val startSecond: Int, val endSecond: Int, val kind: SpanKind
 }
 
 /**
- * [NotWrittenUp]: on the phone or server but not processed, so not yet split into conversation
- * and quiet (milestone 3). [StillOnPlaud]: not transferred yet.
+ * [Conversation] and [Quiet] once written up; [NotWrittenUp] before that (not yet split);
+ * [StillOnPlaud] not transferred yet.
  */
-enum class SpanKind { NotWrittenUp, StillOnPlaud }
+enum class SpanKind { Conversation, Quiet, NotWrittenUp, StillOnPlaud }
+
+/** The separate backup word on each row (spec §3: processing never implies backed up). */
+enum class BackupWord { Later, NotYet, BackedUp, Failed }
 
 data class TimelineRow(
     val recordingId: Long?,
     val time: String,
     val title: RowTitle,
     val status: RowStatus,
-    val backup: Boolean,
+    val backup: BackupWord,
     val stillOnPlaud: Boolean,
+    /** Set on written-up rows: tapping opens the conversation. */
+    val conversationId: String? = null,
+    /** Set on recordings on the server but not written up: tapping opens S3 / S8. */
+    val pendingId: Long? = null,
 )
 
 sealed interface RowTitle {
     data object WaitingOnPlaud : RowTitle
 
-    /** No title until it's written up (milestone 3); its length stands in. */
+    /** No title until it's written up; its length stands in. */
     data class Length(val length: Duration) : RowTitle
+
+    data class Conversation(val title: String) : RowTitle
 }
 
 /** The transfer / processing word. The backup word is separate ([TimelineRow.backup]). */
@@ -188,4 +250,10 @@ sealed interface RowStatus {
     data class Uploading(val percent: Int) : RowStatus
 
     data object WaitingToWriteUp : RowStatus
+
+    data object WritingUp : RowStatus
+
+    data object WritingUpFailed : RowStatus
+
+    data object WrittenUp : RowStatus
 }

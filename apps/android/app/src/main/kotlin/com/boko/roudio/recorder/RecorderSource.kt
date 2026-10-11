@@ -46,6 +46,13 @@ interface RecorderSource {
      * transfer stops; cancelling the coroutine stops it too. A partial [target] is removed.
      */
     suspend fun export(file: RecorderFile, target: File, onProgress: (Int) -> Unit)
+
+    /**
+     * Delete one recording from the recorder. Only [com.boko.roudio.transfer.CleanupGate] calls
+     * this, and only for recordings whose phone, server and Drive copies all match (spec §8).
+     * Throws [ExportException] if the recorder refuses or disconnects.
+     */
+    suspend fun deleteFromRecorder(file: RecorderFile)
 }
 
 /** A recording on the recorder. Plaud's session id is its start time in Unix seconds. */

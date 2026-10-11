@@ -81,6 +81,24 @@ object RoudioIcons {
         lines = listOf("M4 7.5h8.5M16.5 7.5H20M4 16.5h3M11 16.5h9", "M16.5 7.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0z", "M11 16.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"),
     )
 
+    // 06–08 Recording, player
+    val Play = icon("Play", fills = listOf("M8 5.6v12.8a.8.8 0 0 0 1.2.7l10.3-6.4a.8.8 0 0 0 0-1.4L9.2 4.9A.8.8 0 0 0 8 5.6z"))
+    val PlaySmall = Play
+    val Pause = icon("Pause", fills = listOf("M7.2 5h1.6A1.2 1.2 0 0 1 10 6.2v11.6A1.2 1.2 0 0 1 8.8 19H7.2A1.2 1.2 0 0 1 6 17.8V6.2A1.2 1.2 0 0 1 7.2 5z", "M15.2 5h1.6A1.2 1.2 0 0 1 18 6.2v11.6A1.2 1.2 0 0 1 16.8 19h-1.6A1.2 1.2 0 0 1 14 17.8V6.2A1.2 1.2 0 0 1 15.2 5z"))
+    val Back10 = icon("Back10", lines = listOf("M4.5 12a7.5 7.5 0 1 0 2.2-5.3", "M4.5 4.5v3.7h3.7"), fills = listOf("M10 10h1v5h-1zM13.5 10a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 1-3 0v-2a1.5 1.5 0 0 1 1.5-1.5zm0 1a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 1 0v-2a.5.5 0 0 0-.5-.5z"))
+    val Forward30 = icon("Forward30", lines = listOf("M19.5 12a7.5 7.5 0 1 1-2.2-5.3", "M19.5 4.5v3.7h-3.7"), fills = listOf("M9 10h2a1 1 0 0 1 1 1v.8a.7.7 0 0 1-.4.7.7.7 0 0 1 .4.7v.8a1 1 0 0 1-1 1H9v-1h2v-1h-1.2v-1H11v-1H9zM14.5 10a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 1-3 0v-2a1.5 1.5 0 0 1 1.5-1.5zm0 1a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 1 0v-2a.5.5 0 0 0-.5-.5z"))
+    val CheckCircle = icon("CheckCircle", lines = listOf("M20.25 12a8.25 8.25 0 1 1-16.5 0 8.25 8.25 0 0 1 16.5 0z", "m8.5 12.2 2.4 2.4 4.6-4.6"))
+    val Tick = line("m5 12.5 4.5 4.5L19 7.5", width = 2.2f)
+    val Diamond = line("M12 4.5 19.5 12 12 19.5 4.5 12z", width = 2f)
+    val Pencil = line("M4.5 19.5h4l10-10a2.8 2.8 0 0 0-4-4l-10 10z")
+    val Waveform = line("M4 9.5v5M8 6.5v11M12 4v16M16 7.5v9M20 10.5v3", width = 2f)
+    val Restart = icon("Restart", lines = listOf("M4.5 12a7.5 7.5 0 1 0 2.2-5.3", "M4.5 4.5v3.7h3.7"))
+    val Info = icon("Info", lines = listOf("M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z", "M12 11v5"), thickLines = listOf("M12 7.9v.1"))
+    val ArrowUp = line("M12 19V5M6 11l6-6 6 6", width = 2f)
+
+    // 01 Today digest card
+    val Sunrise = icon("Sunrise", lines = listOf("M4 17.5h16M7 17.5a5 5 0 0 1 10 0M12 7.5V5M5.8 10.3 4.4 8.9M18.2 10.3l1.4-1.4M8 20.5h8"))
+
     // 01 Today recorder chip
     val RecorderChip = icon(
         "RecorderChip",

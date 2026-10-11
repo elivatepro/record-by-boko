@@ -49,6 +49,8 @@ class Transfers(
     private val checkEvery: Duration = CHECK_EVERY,
     /** Called each time a recording reaches the phone, to start the upload queue. */
     private val onPhone: () -> Unit = {},
+    /** Runs after each check while connected and idle: the clean-up gate. */
+    private val afterSync: suspend (serial: String) -> Unit = {},
 ) {
     private val wanted = Channel<Unit>(Channel.CONFLATED)
     private var job: Job? = null
@@ -137,6 +139,7 @@ class Transfers(
             if (!recorder.state.value.isConnected) return
             if (!export(recording, file)) return
         }
+        if (recorder.state.value.isConnected) afterSync(serial)
     }
 
     private fun newRecording(serial: String, file: RecorderFile): Recording {

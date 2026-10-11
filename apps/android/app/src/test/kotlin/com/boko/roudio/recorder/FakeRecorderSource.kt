@@ -45,6 +45,14 @@ class FakeRecorderSource(var bluetoothOn: Boolean = true) : RecorderSource {
         return files
     }
 
+    /** Throw from here to make a delete fail. */
+    var deleter: suspend (RecorderFile) -> Unit = {}
+
+    override suspend fun deleteFromRecorder(file: RecorderFile) {
+        commands += "delete ${file.sessionId}"
+        deleter(file)
+    }
+
     override suspend fun export(file: RecorderFile, target: File, onProgress: (Int) -> Unit) {
         commands += "export ${file.sessionId}"
         exporter(file, target, onProgress)

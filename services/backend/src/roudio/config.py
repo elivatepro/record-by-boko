@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     elevenlabs_model: str = "scribe_v2"
     openai_api_key: SecretStr | None = None
     openai_model: str = "gpt-6.1-sol"
+    # Testing only: a deployed server uses the stand-in transcriber and AI when keys are missing,
+    # so the apps can be checked end to end. Their write-ups are obviously fake. Off by default.
+    pipeline_fakes: bool = False
     # FireRedVAD weights (the Docker image downloads them here). Empty: a simple energy detector.
     vad_model_dir: str = ""
     # Tuned to miss as little speech as possible (spec §5): low threshold, padding, gaps merged.
