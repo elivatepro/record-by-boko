@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.boko.roudio.ui.fastMotionRecomposer
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.SystemBarStyle
@@ -113,7 +114,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent {
+        setContent(parent = fastMotionRecomposer()) {
             val choice by app.theme.choice.collectAsState()
             val dark = when (choice) {
                 ThemeChoice.System -> isSystemInDarkTheme()

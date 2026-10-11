@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.boko.roudio.R
 import com.boko.roudio.ui.RoudioIcons
+import com.boko.roudio.ui.loopMillis
 import com.boko.roudio.ui.rememberReduceMotion
 import com.boko.roudio.ui.theme.RoudioTheme
 import com.boko.roudio.ui.theme.roudioText
@@ -437,7 +438,7 @@ fun Spinner(size: Dp, stroke: Dp) {
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            tween(1000, easing = LinearEasing),
+            tween(loopMillis(1000), easing = LinearEasing),
         ),
         label = "turn",
     )
