@@ -178,6 +178,193 @@
           }
         ]
       }
+    },
+    "/recordings/{serial}/{session_id}": {
+      "put": {
+        "tags": [
+          "recordings"
+        ],
+        "summary": "Start Upload",
+        "operationId": "startRecordingUpload",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "serial",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-Za-z]{4,32}$",
+              "title": "Serial"
+            }
+          },
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "format": "int64",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordingUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordingUpload"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recordings/{recording_id}/parts/{number}": {
+      "put": {
+        "tags": [
+          "recordings"
+        ],
+        "summary": "Upload Part",
+        "operationId": "uploadRecordingPart",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recording_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recording Id"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordingUpload"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recordings/{recording_id}/complete": {
+      "post": {
+        "tags": [
+          "recordings"
+        ],
+        "summary": "Complete Upload",
+        "operationId": "completeRecordingUpload",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recording_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recording Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordingUpload"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -303,6 +490,107 @@
           "domain"
         ],
         "title": "PlaudToken"
+      },
+      "RecordingUpload": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "uploading",
+              "uploaded"
+            ],
+            "title": "State"
+          },
+          "part_bytes": {
+            "type": "integer",
+            "title": "Part Bytes",
+            "description": "Size of every part but the last"
+          },
+          "parts": {
+            "type": "integer",
+            "title": "Parts",
+            "description": "How many parts the whole file takes"
+          },
+          "received_bytes": {
+            "type": "integer",
+            "title": "Received Bytes",
+            "description": "Bytes stored so far, counted from the start"
+          },
+          "next_part": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Part",
+            "description": "The part to send next; null when all are in"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "part_bytes",
+          "parts",
+          "received_bytes",
+          "next_part"
+        ],
+        "title": "RecordingUpload"
+      },
+      "RecordingUploadRequest": {
+        "properties": {
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At",
+            "description": "When the recording began, in UTC"
+          },
+          "zone_offset_seconds": {
+            "type": "integer",
+            "maximum": 50400.0,
+            "minimum": -50400.0,
+            "title": "Zone Offset Seconds"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "maximum": 2147483648.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Size Bytes"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256",
+            "description": "Lower-case hex SHA-256 of the whole file"
+          }
+        },
+        "type": "object",
+        "required": [
+          "started_at",
+          "zone_offset_seconds",
+          "size_bytes",
+          "sha256"
+        ],
+        "title": "RecordingUploadRequest"
       },
       "RefreshRequest": {
         "properties": {

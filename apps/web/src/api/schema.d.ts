@@ -106,6 +106,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/recordings/{serial}/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Start Upload */
+        put: operations["startRecordingUpload"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recording_id}/parts/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Upload Part */
+        put: operations["uploadRecordingPart"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recording_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Upload */
+        post: operations["completeRecordingUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -170,6 +221,59 @@ export interface components {
              * @description Host to pass to the SDK, e.g. platform-us.plaud.ai
              */
             domain: string;
+        };
+        /** RecordingUpload */
+        RecordingUpload: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "uploading" | "uploaded";
+            /**
+             * Part Bytes
+             * @description Size of every part but the last
+             */
+            part_bytes: number;
+            /**
+             * Parts
+             * @description How many parts the whole file takes
+             */
+            parts: number;
+            /**
+             * Received Bytes
+             * @description Bytes stored so far, counted from the start
+             */
+            received_bytes: number;
+            /**
+             * Next Part
+             * @description The part to send next; null when all are in
+             */
+            next_part: number | null;
+        };
+        /** RecordingUploadRequest */
+        RecordingUploadRequest: {
+            /**
+             * Started At
+             * Format: date-time
+             * @description When the recording began, in UTC
+             */
+            started_at: string;
+            /** Zone Offset Seconds */
+            zone_offset_seconds: number;
+            /** Duration Ms */
+            duration_ms?: number | null;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Sha256
+             * @description Lower-case hex SHA-256 of the whole file
+             */
+            sha256: string;
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -391,6 +495,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlaudToken"];
+                };
+            };
+        };
+    };
+    startRecordingUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serial: string;
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingUpload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    uploadRecordingPart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recording_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingUpload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    completeRecordingUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recording_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingUpload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

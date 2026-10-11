@@ -62,12 +62,19 @@ def openapi() -> None:
     from roudio.api.deps import Services
     from roudio.auth.google import GoogleIdentity
     from roudio.plaud import FakePlaudAuth
+    from roudio.storage import UnconfiguredAudioStore
 
     class _Unused:
         async def verify(self, id_token: str) -> GoogleIdentity:
             raise NotImplementedError
 
-    services = Services(google=_Unused(), drive=None, cipher=None, plaud=FakePlaudAuth())
+    services = Services(
+        google=_Unused(),
+        drive=None,
+        cipher=None,
+        plaud=FakePlaudAuth(),
+        audio=UnconfiguredAudioStore(),
+    )
     app = create_app(services=services)
     default = Path(__file__).resolve().parents[4] / "packages" / "api-spec" / "openapi.json"
     target = Path(sys.argv[1]) if len(sys.argv) > 1 else default

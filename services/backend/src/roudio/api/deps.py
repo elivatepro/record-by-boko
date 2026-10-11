@@ -14,6 +14,7 @@ from roudio.config import Settings, get_settings
 from roudio.db import get_db
 from roudio.models import AuthSession
 from roudio.plaud import PlaudAuth
+from roudio.storage import AudioStore
 
 
 @dataclass
@@ -24,6 +25,7 @@ class Services:
     drive: DriveCodeExchanger | None
     cipher: TokenCipher | None
     plaud: PlaudAuth
+    audio: AudioStore
 
 
 def get_services(request: Request) -> Services:

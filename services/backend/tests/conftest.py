@@ -6,13 +6,15 @@ os.environ["DATABASE_URL"] = os.environ.get(
 )
 os.environ.setdefault("OWNER_EMAIL", "owner@example.com")
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 
+import boto3
 import pytest
 from alembic import command
 from alembic.config import Config
 from cryptography.fernet import Fernet
 from httpx import ASGITransport, AsyncClient
+from moto import mock_aws
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +30,7 @@ from roudio.auth.google import (
 from roudio.config import Settings, get_settings
 from roudio.db import get_sessionmaker
 from roudio.plaud import FakePlaudAuth
+from roudio.storage import S3AudioStore
 
 OWNER = GoogleIdentity(sub="google-sub-owner", email="owner@example.com", email_verified=True)
 
@@ -70,7 +73,9 @@ def _migrate() -> None:
 async def _clean() -> AsyncIterator[None]:
     yield
     async with get_sessionmaker()() as db:
-        await db.execute(text("TRUNCATE job, auth_session, drive_grant, owner RESTART IDENTITY"))
+        await db.execute(
+            text("TRUNCATE recording, job, auth_session, drive_grant, owner RESTART IDENTITY")
+        )
         await db.commit()
 
 
@@ -85,13 +90,32 @@ def settings() -> Settings:
     return get_settings()
 
 
+TEST_BUCKET = "roudio-test-audio"
+
+
 @pytest.fixture
-def services() -> Services:
+def s3() -> Iterator[object]:
+    """A fake S3 (moto) with an empty bucket; the real S3AudioStore talks to it."""
+    with mock_aws():
+        client = boto3.client("s3", region_name="us-east-1")
+        client.create_bucket(Bucket=TEST_BUCKET)
+        yield client
+
+
+@pytest.fixture
+def services(s3: object) -> Services:
     return Services(
         google=FakeGoogle(),
         drive=FakeDrive(),
         cipher=TokenCipher(Fernet.generate_key().decode()),
         plaud=FakePlaudAuth(),
+        audio=S3AudioStore(
+            TEST_BUCKET,
+            endpoint=None,
+            access_key_id="test",
+            secret_access_key="test",
+            region="us-east-1",
+        ),
     )
 
 

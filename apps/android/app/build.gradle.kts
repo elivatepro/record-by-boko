@@ -71,8 +71,11 @@ android {
 val generateApiClient by tasks.registering(GenerateTask::class) {
     generatorName.set("kotlin")
     library.set("jvm-retrofit2")
-    // A file:// URI, because the repo path may contain spaces.
-    inputSpec.set(rootProject.file("../../packages/api-spec/openapi.json").toURI().toString())
+    // A file:// URI, because the repo path may contain spaces. The URI is only a string to Gradle,
+    // so the file is declared as an input too, or a changed spec wouldn't regenerate the client.
+    val spec = rootProject.file("../../packages/api-spec/openapi.json")
+    inputSpec.set(spec.toURI().toString())
+    inputs.file(spec)
     outputDir.set(layout.buildDirectory.dir("generated/openapi").get().asFile.path)
     packageName.set("com.boko.roudio.api")
     generateApiTests.set(false)
@@ -87,6 +90,9 @@ val generateApiClient by tasks.registering(GenerateTask::class) {
             "enumPropertyNaming" to "UPPERCASE",
         ),
     )
+    // Binary request bodies (recording parts) as OkHttp bodies, which Retrofit sends as they are.
+    typeMappings.set(mapOf("file" to "okhttp3.RequestBody"))
+    importMappings.set(mapOf("okhttp3.RequestBody" to "okhttp3.RequestBody"))
 }
 
 tasks.named("preBuild") { dependsOn(generateApiClient) }

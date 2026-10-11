@@ -15,6 +15,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
     text,
 )
@@ -107,3 +108,50 @@ class Job(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class TransferState(StrEnum):
+    """The server's half of the transfer track (spec §3): the phone does the steps before."""
+
+    UPLOADING = "uploading"
+    UPLOADED = "uploaded"
+
+
+class Recording(Base):
+    """One file from the recorder. Its audio is in the bucket under `storage_key`.
+
+    The track states are separate columns: "done processing" never implies "backed up".
+    """
+
+    __tablename__ = "recording"
+    __table_args__ = (
+        UniqueConstraint("recorder_serial", "session_id", name="uq_recording_recorder_session"),
+        CheckConstraint(
+            "transfer_state IN ('uploading', 'uploaded')", name="ck_recording_transfer_state"
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    recorder_serial: Mapped[str] = mapped_column(String(32))
+    # Plaud's id for the file on the recorder: its start in Unix seconds.
+    session_id: Mapped[int] = mapped_column(BigInteger)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # The phone's UTC offset when it was recorded, so days and the dial stay right.
+    zone_offset_seconds: Mapped[int] = mapped_column(Integer)
+    duration_ms: Mapped[int | None] = mapped_column(BigInteger)
+    size_bytes: Mapped[int] = mapped_column(BigInteger)
+    # SHA-256 the phone computed. The upload only counts once the stored file matches it.
+    sha256: Mapped[str] = mapped_column(String(64))
+    storage_key: Mapped[str] = mapped_column(Text)
+    # The bucket's multipart upload while parts are arriving.
+    upload_id: Mapped[str | None] = mapped_column(Text)
+    transfer_state: Mapped[str] = mapped_column(
+        String(16), server_default=TransferState.UPLOADING.value
+    )
+    processing_state: Mapped[str] = mapped_column(String(16), server_default="waiting")
+    backup_state: Mapped[str] = mapped_column(String(16), server_default="waiting")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    uploaded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

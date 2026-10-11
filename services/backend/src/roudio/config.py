@@ -30,6 +30,17 @@ class Settings(BaseSettings):
 
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
+    # The Railway bucket for original audio. Railway provides these as BUCKET, ENDPOINT, …
+    # on the bucket; the services get them as AUDIO_* (see .railway/railway.ts).
+    audio_bucket: str | None = None
+    audio_endpoint: str | None = None
+    audio_access_key_id: str | None = None
+    audio_secret_access_key: SecretStr | None = None
+    audio_region: str = "auto"
+    audio_path_style: bool = False
+    # Uploads arrive in parts of this size (S3 needs at least 5 MiB for all but the last).
+    upload_part_bytes: int = 8 * 1024 * 1024
+
     worker_poll_seconds: float = 2.0
     job_lease_minutes: int = 15
 
