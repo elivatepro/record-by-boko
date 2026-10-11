@@ -285,6 +285,7 @@ async def _backup(db: AsyncSession, recording: Recording, drive: Drive, tmp: Pat
         )
 
     await db.refresh(recording)
+    log.info("recording %s backed up to Drive", recording.id)
     recording.backup_state = BackupState.BACKED_UP.value
     recording.backup_error = None
     recording.backed_up_at = datetime.now(UTC)

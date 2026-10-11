@@ -96,11 +96,13 @@ async def process_recording(db: AsyncSession, job: Job) -> None:
     if recording.transfer_state != TransferState.UPLOADED:
         raise PermanentJobError("The recording isn't fully uploaded.")
     svc = services.get()
+    log.info("processing recording %s (%s bytes)", recording.id, recording.size_bytes)
     async with _heartbeat(job):
         try:
             with tempfile.TemporaryDirectory(prefix="roudio-") as tmp:
                 await _run(db, recording, Path(tmp), svc)
         except (TranscriptionNotConfigured, BrainNotConfigured) as exc:
+            log.info("recording %s waits: %s", recording.id, exc)
             await db.rollback()
             await _set_state(db, recording, ProcessingState.WAITING, str(exc))
             await jobs.enqueue(
@@ -170,6 +172,12 @@ async def _run(
     await db.execute(delete(SpeechSegment).where(SpeechSegment.recording_id == recording.id))
     db.add_all(SpeechSegment(recording_id=recording.id, start_ms=s, end_ms=e) for s, e in segments)
     recording.speech_ms = sum(e - s for s, e in segments)
+    log.info(
+        "recording %s: %d speech segments, %d ms of speech",
+        recording.id,
+        len(segments),
+        recording.speech_ms,
+    )
     if recording.duration_ms is None:
         recording.duration_ms = total_ms
     await db.commit()
@@ -249,6 +257,7 @@ async def _run(
     db.add_all(rows)
     recording.language = language
     await db.commit()
+    log.info("recording %s: %d turns, language %s", recording.id, len(rows), language)
 
     lines = [Line(r.idx, r.speaker, r.start_ms, r.text) for r in rows]
     if lines:
@@ -287,6 +296,7 @@ async def _run(
         .values(read_at=func.now())
     )
     await db.commit()
+    log.info("recording %s written up (version %d)", recording.id, recording.results_version)
     for day in {local_day(recording, 0), local_day(recording, recording.duration_ms or 0)}:
         await enqueue_digest(db, day)
     # The transcript and notes go to Drive too (and again whenever they change).
