@@ -1998,6 +1998,19 @@
             "type": "integer",
             "format": "int64",
             "title": "End Ms"
+          },
+          "speakers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeakerView"
+            },
+            "type": "array",
+            "title": "Speakers",
+            "default": []
+          },
+          "decisions": {
+            "type": "integer",
+            "title": "Decisions",
+            "default": 0
           }
         },
         "type": "object",

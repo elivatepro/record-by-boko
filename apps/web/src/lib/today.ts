@@ -4,6 +4,7 @@
 
 import type { Conversation, Recording } from "../api/types";
 import { backupStatus, processingStatus, type Status } from "./status";
+import { speakerName } from "./text";
 import { duration, wallMs, wallTime } from "./time";
 
 export type TimelineRow =
@@ -39,6 +40,17 @@ const KIND: Record<string, string> = {
 
 export function conversationKind(kind: string): string {
   return KIND[kind] ?? "Conversation";
+}
+
+/** "Daniel, Speaker 2 · 2 decisions · 44 min"; without speakers, the length and kind. */
+export function conversationMeta(c: Conversation): string {
+  const length = duration(c.end_ms - c.start_ms);
+  const names = c.speakers.map((s) => speakerName(s.label, s.name));
+  if (names.length === 0) return `${length} · ${conversationKind(c.kind).toLowerCase()}`;
+  const people = names.length > 3 ? `${names.slice(0, 3).join(", ")} +${names.length - 3}` : names.join(", ");
+  const decisions = c.decisions;
+  const decided = decisions === 0 ? "" : ` · ${decisions} decision${decisions === 1 ? "" : "s"}`;
+  return `${people}${decided} · ${length}`;
 }
 
 export function timelineRows(recordings: Recording[], conversations: Conversation[]): TimelineRow[] {
@@ -94,7 +106,7 @@ export function timelineRows(recordings: Recording[], conversations: Conversatio
         sortMs: wallMs(c.started_at, offset),
         time: wallTime(c.started_at, offset),
         title: c.title,
-        meta: `${duration(c.end_ms - c.start_ms)} · ${conversationKind(c.kind).toLowerCase()}`,
+        meta: conversationMeta(c),
         conversationId: c.id,
         processing,
         backup,

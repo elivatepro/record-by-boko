@@ -15,6 +15,7 @@ from roudio.api.library import (
     RecordingSummary,
     conversation_view,
     recording_view,
+    with_people,
 )
 from roudio.api.schema import INT64, Id64
 from roudio.models import (
@@ -385,5 +386,5 @@ async def recording_conversations(
     )
     return RecordingConversations(
         recording=recording_view(recording),
-        conversations=[conversation_view(c, recording) for c in rows],
+        conversations=await with_people(db, [conversation_view(c, recording) for c in rows]),
     )

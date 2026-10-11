@@ -739,6 +739,16 @@ export interface components {
              * Format: int64
              */
             end_ms: number;
+            /**
+             * Speakers
+             * @default []
+             */
+            speakers: components["schemas"]["SpeakerView"][];
+            /**
+             * Decisions
+             * @default 0
+             */
+            decisions: number;
         };
         /** CostLine */
         CostLine: {

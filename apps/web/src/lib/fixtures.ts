@@ -32,6 +32,8 @@ export function conversation(overrides: Partial<Conversation> = {}): Conversatio
     ended_at: "2026-10-10T09:14:00Z",
     start_ms: 0,
     end_ms: 44 * 60_000,
+    speakers: [],
+    decisions: 0,
     ...overrides,
   };
 }

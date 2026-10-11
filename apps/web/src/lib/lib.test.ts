@@ -16,7 +16,7 @@ import {
   wallDay,
   wallTime,
 } from "./time";
-import { timelineRows } from "./today";
+import { conversationMeta, timelineRows } from "./today";
 import { activeIndex, around, findMatches } from "./transcript";
 
 describe("time", () => {
@@ -174,6 +174,16 @@ describe("timeline", () => {
     expect(rows[0]).toMatchObject({ time: "12:40", title: "Recording · 44 min" });
     expect(rows[1]).toMatchObject({ time: "09:30", title: "Studio call", meta: "44 min · conversation" });
     expect(rows[2]).toMatchObject({ time: "00:00", title: "Quiet · until 07:00" });
+  });
+
+  it("names who spoke and the decisions on a conversation row", () => {
+    const speakers = [
+      { id: 1, label: "speaker_0", name: "Daniel" },
+      { id: 2, label: "speaker_1", name: null },
+    ];
+    expect(conversationMeta(conversation({ speakers, decisions: 2 }))).toBe("Daniel, Speaker 2 · 2 decisions · 44 min");
+    expect(conversationMeta(conversation({ speakers: speakers.slice(0, 1), decisions: 1 }))).toBe("Daniel · 1 decision · 44 min");
+    expect(conversationMeta(conversation())).toBe("44 min · conversation");
   });
 });
 

@@ -258,8 +258,8 @@ API gaps found while building (the web works around each one):
   sync). The rail can't show "Plaud linked · 64% · 2 still on recorder", and Today can't show
   "Waiting on your Plaud" rows.
 - No processing progress (the designs' "Writing up 62%"); the web names the step instead.
-- `ConversationSummary` has no speakers or decision count (Today's "Daniel, Priya, you · 2
-  decisions"), no chapters (key moments stand in), and segments have no word timings (no
+- `ConversationSummary` had no speakers or decision count; added for the day and recording
+  lists, and web Today shows "Daniel, Speaker 2 · 2 decisions". Still no chapters (key moments stand in), and segments have no word timings (no
   current-word highlight).
 - `ReviewView` has no item kind (only tasks reach Review today, so decisions never appear
   there); `RecordingSummary` has no size or `backed_up_at` (Backups shows counts, not "checked

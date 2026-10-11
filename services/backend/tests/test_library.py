@@ -44,6 +44,13 @@ async def test_a_day_lists_its_recordings_and_conversations(
     assert body["recordings"][0]["processing_state"] == "done"
     assert body["conversations"][0]["id"] == str(processed.id)
     assert body["conversations"][0]["started_at"].startswith("2026-10-11T09:00")
+    # Who spoke and how many decisions, matching the conversation's own detail.
+    summary = body["conversations"][0]
+    detail = (await client.get(f"/conversations/{processed.id}", headers=auth)).json()
+    decided = [i for i in detail["items"] if i["kind"] == "decision"]
+    assert summary["decisions"] == len(decided)
+    assert summary["speakers"]
+    assert {s["label"] for s in summary["speakers"]} <= {s["label"] for s in detail["speakers"]}
 
 
 async def test_a_conversation_has_its_notes_transcript_and_sources(

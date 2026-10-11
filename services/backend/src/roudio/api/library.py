@@ -11,7 +11,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from roudio.api.deps import AppServices, CurrentSession, Db, error
@@ -53,6 +53,12 @@ class RecordingSummary(BaseModel):
     results_version: int
 
 
+class SpeakerView(BaseModel):
+    id: int = Field(json_schema_extra=INT64)
+    label: str
+    name: str | None
+
+
 class ConversationSummary(BaseModel):
     id: UUID
     recording_id: UUID
@@ -64,6 +70,9 @@ class ConversationSummary(BaseModel):
     ended_at: datetime
     start_ms: int = Field(json_schema_extra=INT64)
     end_ms: int = Field(json_schema_extra=INT64)
+    # Filled in on the day and recording lists (Today's "Daniel, Priya · 2 decisions").
+    speakers: list[SpeakerView] = []
+    decisions: int = 0
 
 
 class DigestMoment(BaseModel):
@@ -113,12 +122,6 @@ class ItemView(BaseModel):
     sources: list[int]
     review_id: Annotated[int, Field(json_schema_extra=INT64)] | None = None
     review_state: str | None = None
-
-
-class SpeakerView(BaseModel):
-    id: int = Field(json_schema_extra=INT64)
-    label: str
-    name: str | None
 
 
 class AskView(BaseModel):
@@ -175,6 +178,53 @@ def conversation_view(c: Conversation, r: Recording) -> ConversationSummary:
     )
 
 
+async def with_people(
+    db: AsyncSession, views: list[ConversationSummary]
+) -> list[ConversationSummary]:
+    """Add who spoke (in order of first words) and the decision count to each summary."""
+    if not views:
+        return views
+    ids = [v.id for v in views]
+    decisions = dict(
+        (
+            await db.execute(
+                select(GeneratedItem.conversation_id, func.count())
+                .where(GeneratedItem.conversation_id.in_(ids), GeneratedItem.kind == "decision")
+                .group_by(GeneratedItem.conversation_id)
+            )
+        ).all()
+    )
+    recording_ids = {v.recording_id for v in views}
+    speakers = {
+        (s.recording_id, s.label): s
+        for s in await db.scalars(select(Speaker).where(Speaker.recording_id.in_(recording_ids)))
+    }
+    segments = (
+        await db.execute(
+            select(
+                TranscriptSegment.recording_id,
+                TranscriptSegment.speaker,
+                TranscriptSegment.start_ms,
+            )
+            .where(TranscriptSegment.recording_id.in_(recording_ids))
+            .order_by(TranscriptSegment.start_ms)
+        )
+    ).all()
+    for view in views:
+        labels: list[str] = []
+        for recording_id, label, start_ms in segments:
+            if recording_id == view.recording_id and view.start_ms <= start_ms < view.end_ms:
+                if label not in labels:
+                    labels.append(label)
+        view.speakers = [
+            SpeakerView(id=s.id, label=s.label, name=s.name)
+            for label in labels
+            if (s := speakers.get((view.recording_id, label))) is not None
+        ]
+        view.decisions = decisions.get(view.id, 0)
+    return views
+
+
 @router.get("/days/{day}", operation_id="getDay")
 async def get_day(day: date, _: CurrentSession, db: Db) -> DayView:
     recordings = sorted(await _recordings_on(db, day), key=lambda r: r.started_at)
@@ -185,6 +235,7 @@ async def get_day(day: date, _: CurrentSession, db: Db) -> DayView:
         if c.recording_id in by_id
     ]
     conversations.sort(key=lambda c: c.started_at)
+    await with_people(db, conversations)
     digest = await db.get(DayDigest, day)
     return DayView(
         day=day,
