@@ -184,3 +184,32 @@ async def test_drive_api_switched_off_says_how_to_fix_it() -> None:
     )
     with pytest.raises(DriveNotEnabled, match="Google Drive API is off"):
         await drive.folder("Roudio", None)
+
+
+async def test_reading_back_an_empty_drive_file_is_not_an_error() -> None:
+    import httpx
+
+    from roudio.backup.drive import HttpDrive
+
+    drive = HttpDrive("id", "secret", "refresh")
+    drive._access = "token"
+    drive._http = httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda _: httpx.Response(416, text="range"))
+    )
+    assert await drive.read_head("file") == b""
+
+
+async def test_a_rotated_client_secret_is_a_setup_problem_not_lost_access() -> None:
+    import httpx
+
+    from roudio.backup.drive import DriveAccessLost, DriveSetupError, HttpDrive
+
+    drive = HttpDrive("id", "old-secret", "refresh")
+    drive._http = httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(401, json={"error": "invalid_client"})
+        )
+    )
+    with pytest.raises(DriveSetupError, match="GOOGLE_CLIENT_SECRET") as caught:
+        await drive.folder("Roudio", None)
+    assert not isinstance(caught.value, DriveAccessLost)

@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from roudio import jobs
 from roudio.auth.crypto import TokenCipher
-from roudio.backup.drive import Drive, DriveAccessLost, DriveError, DriveNotEnabled, HttpDrive
+from roudio.backup.drive import Drive, DriveAccessLost, DriveError, DriveSetupError, HttpDrive
 from roudio.config import get_settings
 from roudio.models import (
     AppSetting,
@@ -135,7 +135,8 @@ async def backup_recording(db: AsyncSession, job: Job) -> None:
         await db.rollback()
         await _fail(db, recording, str(exc))
         raise PermanentJobError(str(exc)) from exc
-    except DriveNotEnabled as exc:
+    except DriveSetupError as exc:
+        # Something the owner fixes in Google Cloud or on Railway; the message says what.
         await db.rollback()
         await _fail(db, recording, str(exc))
         raise exc
@@ -232,7 +233,9 @@ async def _put(
         existing.verified_at = None
         await db.commit()
         raise DriveError(f"The Drive copy of the {kind} doesn't match")
-    if not await drive.read_head(existing.drive_file_id):
+    # An empty file (the transcript of a recording with no speech) has nothing to read back; its
+    # MD5 and size already matched.
+    if size > 0 and not await drive.read_head(existing.drive_file_id):
         raise DriveError(f"The Drive copy of the {kind} can't be read back")
     existing.verified_at = datetime.now(UTC)
     await db.commit()

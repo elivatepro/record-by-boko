@@ -23,8 +23,12 @@ class DriveAccessLost(DriveError):
     """The grant was revoked or expired: the owner has to reconnect Drive."""
 
 
-class DriveNotEnabled(DriveError):
-    """The Drive API is switched off in Roudio's Google Cloud project; retried until it's on."""
+class DriveSetupError(DriveError):
+    """Roudio's own Google setup is wrong; retried until the owner fixes it. Says what to fix."""
+
+
+class DriveNotEnabled(DriveSetupError):
+    """The Drive API is switched off in Roudio's Google Cloud project."""
 
 
 @dataclass(frozen=True)
@@ -72,6 +76,13 @@ class HttpDrive:
                 "grant_type": "refresh_token",
             },
         )
+        if response.status_code == 401 and "invalid_client" in response.text:
+            # The server's GOOGLE_CLIENT_SECRET is wrong (rotated in Google Cloud); retried until
+            # it's fixed, the owner's grant is fine.
+            raise DriveSetupError(
+                "Roudio's Google client secret on the server is out of date. Update "
+                "GOOGLE_CLIENT_SECRET on Railway and backups start again by themselves."
+            )
         if response.status_code in (400, 401):
             raise DriveAccessLost("Drive access was removed. Reconnect Google Drive.")
         if not response.is_success:
@@ -184,9 +195,17 @@ class HttpDrive:
         )
 
     async def read_head(self, file_id: str) -> bytes:
-        response = await self._request(
-            "GET", f"{API}/{file_id}", params={"alt": "media"}, headers={"Range": "bytes=0-4095"}
-        )
+        try:
+            response = await self._request(
+                "GET",
+                f"{API}/{file_id}",
+                params={"alt": "media"},
+                headers={"Range": "bytes=0-4095"},
+            )
+        except DriveError as exc:
+            if "Drive answered 416" in str(exc):
+                return b""  # an empty file: no range to read
+            raise
         return response.content
 
 

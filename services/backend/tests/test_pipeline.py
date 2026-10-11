@@ -216,3 +216,36 @@ async def test_stand_in_results_are_written_up_again_once_the_real_services_exis
         select(func.count()).select_from(Job).where(Job.kind == PROCESS, Job.status == "queued")
     )
     assert queued == 1
+
+
+async def test_scribe_gets_a_multipart_upload_with_the_audio_and_keyterms(tmp_path: Path) -> None:
+    import httpx
+
+    from roudio.pipeline.transcribe import ScribeTranscriber
+
+    seen: dict[str, Any] = {}
+
+    async def answer(request: httpx.Request) -> httpx.Response:
+        body = await request.aread()
+        seen["body"] = body
+        seen["key"] = request.headers["xi-api-key"]
+        return httpx.Response(
+            200,
+            json={
+                "language_code": "en",
+                "words": [
+                    {"type": "word", "text": "hello", "start": 0.1, "end": 0.4, "speaker_id": "s0"}
+                ],
+            },
+        )
+
+    audio = tmp_path / "speech.ogg"
+    audio.write_bytes(b"OggS-not-really")
+    client = httpx.AsyncClient(transport=httpx.MockTransport(answer))
+    transcript = await ScribeTranscriber("key", "scribe_v2", client=client).transcribe(
+        audio, keyterms=["Roudio", "Plaud"]
+    )
+    assert [w.text for w in transcript.words] == ["hello"]
+    assert seen["key"] == "key"
+    assert b"OggS-not-really" in seen["body"]
+    assert seen["body"].count(b'name="keyterms"') == 2

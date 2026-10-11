@@ -1,5 +1,6 @@
 """Transcription with ElevenLabs Scribe v2 (decision 5), behind an interface with a fake."""
 
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -67,22 +68,26 @@ class ScribeTranscriber:
 
     async def transcribe(self, audio: Path, *, keyterms: list[str]) -> Transcript:
         terms = clean_keyterms(keyterms)
-        data: list[tuple[str, str]] = [
-            ("model_id", self._model),
-            ("diarize", "true"),
-            ("timestamps_granularity", "word"),
-            ("tag_audio_events", "false"),
-        ] + [("keyterms", term) for term in terms]
-        with audio.open("rb") as handle:
-            try:
-                response = await self._client.post(
-                    SCRIBE_URL,
-                    headers={"xi-api-key": self._key},
-                    data=data,  # type: ignore[arg-type]
-                    files={"file": (audio.name, handle, "audio/ogg")},
-                )
-            except httpx.HTTPError as exc:
-                raise TranscriptionError(f"Couldn't reach ElevenLabs: {exc}") from exc
+        data: dict[str, str | list[str]] = {
+            "model_id": self._model,
+            "diarize": "true",
+            "timestamps_granularity": "word",
+            "tag_audio_events": "false",
+        }
+        if terms:
+            data["keyterms"] = terms
+        # Bytes, not the open file: an AsyncClient can't stream a sync file in a multipart body.
+        # The speech-only audio is small (Opus at 32 kbit/s is about 14 MB an hour).
+        content = await asyncio.to_thread(audio.read_bytes)
+        try:
+            response = await self._client.post(
+                SCRIBE_URL,
+                headers={"xi-api-key": self._key},
+                data=data,
+                files={"file": (audio.name, content, "audio/ogg")},
+            )
+        except httpx.HTTPError as exc:
+            raise TranscriptionError(f"Couldn't reach ElevenLabs: {exc}") from exc
         if response.status_code >= 400:
             # The body can echo request details; keep only the status and a short message.
             raise TranscriptionError(
