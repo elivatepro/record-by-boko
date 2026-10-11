@@ -280,6 +280,12 @@ async def _run(
         await _set_state(db, recording, ProcessingState.UNDERSTANDING)
         understood = await svc.brain.understand(lines)
         await _ai_cost(db, recording, understood.usage, svc)
+        log.info(
+            "recording %s: the model found %d conversation(s) with %d item(s)",
+            recording.id,
+            len(understood.value),
+            sum(len(c.items) for c in understood.value),
+        )
         await _save_conversations(db, recording, rows, understood.value)
     else:
         await _save_conversations(db, recording, rows, [])
@@ -343,6 +349,13 @@ async def _save_conversations(
     for c in sorted(understood, key=lambda c: c.start_idx):
         start, end = max(c.start_idx, 0), min(c.end_idx, len(rows) - 1)
         if start > end or start not in by_idx:
+            log.warning(
+                "recording %s: dropped a conversation with segments %d-%d of %d",
+                recording.id,
+                c.start_idx,
+                c.end_idx,
+                len(rows),
+            )
             continue
         inside = set(range(start, end + 1))
         conversation = Conversation(
