@@ -169,6 +169,9 @@ class Recording(Base):
     speech_ms: Mapped[int | None] = mapped_column(BigInteger)
     # Bumped whenever processed results are replaced, so the phone knows to fetch them again.
     results_version: Mapped[int] = mapped_column(Integer, server_default="0")
+    # "real" (Scribe and OpenAI) or "stand_in" (the fakes); stand-in results are written up
+    # again once the real services are configured.
+    written_by: Mapped[str | None] = mapped_column(String(16))
 
     # Drive backup (spec §8).
     backup_error: Mapped[str | None] = mapped_column(Text)

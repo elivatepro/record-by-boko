@@ -290,6 +290,7 @@ async def _run(
     recording.processing_error = None
     recording.processed_at = datetime.now(UTC)
     recording.results_version += 1
+    recording.written_by = "real" if svc.real else "stand_in"
     await db.execute(
         update(Notification)
         .where(Notification.recording_id == recording.id, Notification.kind == "processing_failed")

@@ -191,3 +191,28 @@ async def test_costs_are_logged(db: AsyncSession, s3: Any, audio_file: Path, pip
     await process_recording(db, job_for(recording))
     services_used = set(await db.scalars(select(CostEntry.service)))
     assert "scribe" in services_used
+
+
+async def test_stand_in_results_are_written_up_again_once_the_real_services_exist(
+    db: AsyncSession, s3: Any, audio_file: Path, pipeline: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from roudio.pipeline import services
+    from roudio.pipeline.digest import tick
+
+    recording = await uploaded(db, s3, audio_file)
+    await process_recording(db, job_for(recording))
+    await db.refresh(recording)
+    assert recording.written_by == "stand_in"
+
+    await tick(db, job_for(recording))  # still the stand-ins: nothing to redo
+    await db.refresh(recording)
+    assert recording.processing_state == "done"
+
+    monkeypatch.setattr(services.PipelineServices, "real", property(lambda _: True))
+    await tick(db, job_for(recording))
+    await db.refresh(recording)
+    assert recording.processing_state == "waiting"
+    queued = await db.scalar(
+        select(func.count()).select_from(Job).where(Job.kind == PROCESS, Job.status == "queued")
+    )
+    assert queued == 1

@@ -23,6 +23,13 @@ class PipelineServices:
     brain: Brain
     settings: Settings
 
+    @property
+    def real(self) -> bool:
+        """Scribe and OpenAI, not the stand-ins: what they write never needs writing again."""
+        return isinstance(self.transcriber, ScribeTranscriber) and isinstance(
+            self.brain, OpenAIBrain
+        )
+
 
 def audio_store(settings: Settings) -> AudioStore:
     if not settings.audio_bucket:

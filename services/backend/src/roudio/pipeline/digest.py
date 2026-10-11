@@ -118,10 +118,27 @@ async def build_digest(db: AsyncSession, job: Job) -> None:
     await db.commit()
 
 
+async def redo_stand_in_results(db: AsyncSession) -> None:
+    """Once Scribe and OpenAI are configured, write up again what the stand-ins wrote."""
+    if not services.get().real:
+        return
+    for recording in await db.scalars(
+        select(Recording).where(
+            Recording.processing_state == ProcessingState.DONE,
+            Recording.written_by.is_distinct_from("real"),
+        )
+    ):
+        log.info("recording %s was written up by the stand-ins; writing it up again", recording.id)
+        recording.processing_state = ProcessingState.WAITING.value
+        await db.commit()
+        await jobs.ensure(db, PROCESS, {"recording_id": str(recording.id)})
+
+
 async def tick(db: AsyncSession, job: Job) -> None:
     """Hourly: finish the digests of days that have ended, make sure every uploaded recording
     waiting to be written up or backed up has a job, then schedule the next tick."""
     now = datetime.now(UTC)
+    await redo_stand_in_results(db)
     for recording in await db.scalars(
         select(Recording).where(
             Recording.transfer_state == TransferState.UPLOADED,
@@ -129,13 +146,14 @@ async def tick(db: AsyncSession, job: Job) -> None:
         )
     ):
         await jobs.ensure(db, PROCESS, {"recording_id": str(recording.id)})
-    # Backups too: recordings uploaded before Drive backup existed, or whose job was lost.
+    # Backups too: recordings uploaded before Drive backup existed, whose job was lost, or that
+    # failed (Drive was down, or switched off); a backup is safe to try again.
     from roudio.backup.job import BACKUP
 
     for recording in await db.scalars(
         select(Recording).where(
             Recording.transfer_state == TransferState.UPLOADED,
-            Recording.backup_state == "waiting",
+            Recording.backup_state.in_(["waiting", "failed"]),
         )
     ):
         await jobs.ensure(db, BACKUP, {"recording_id": str(recording.id)})
