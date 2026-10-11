@@ -129,6 +129,16 @@ async def tick(db: AsyncSession, job: Job) -> None:
         )
     ):
         await enqueue_processing(db, recording)
+    # Backups too: recordings uploaded before Drive backup existed, or whose job was lost.
+    from roudio.backup.job import enqueue_backup
+
+    for recording in await db.scalars(
+        select(Recording).where(
+            Recording.transfer_state == TransferState.UPLOADED,
+            Recording.backup_state == "waiting",
+        )
+    ):
+        await enqueue_backup(db, recording)
     for digest in await db.scalars(
         select(DayDigest).where(DayDigest.state == DigestState.UPDATING)
     ):

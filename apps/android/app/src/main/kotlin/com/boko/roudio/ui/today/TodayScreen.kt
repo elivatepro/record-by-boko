@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -273,12 +275,15 @@ fun Dial(model: TodayModel, now: Instant, diameter: Dp = 300.dp, centre: Boolean
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Legend(kinds: Set<SpanKind>) {
     val c = RoudioTheme.colors
-    Row(
+    // Wraps onto a second line when all four kinds are on the dial.
+    FlowRow(
         Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         val written = SpanKind.Conversation in kinds || SpanKind.Quiet in kinds
         if (written) {
