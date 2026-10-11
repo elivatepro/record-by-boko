@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared by Search, Review, Settings, Updates and Backups -->
+    <string name="organise_day_time">%1$s %2$s</string>
+    <string name="organise_play_from">Play from %1$s</string>
+
+    <!-- 05 Search, 05b results, S4 no results, S5 offline -->
+    <string name="search_hint">Words, people or moments</string>
+    <string name="search_clear">Clear search</string>
+    <string name="search_any_time">Any time</string>
+    <string name="search_this_week">This week</string>
+    <string name="search_transcripts">Transcripts</string>
+    <string name="search_notes">Notes</string>
+    <string name="search_summaries">Summaries</string>
+    <string name="search_recent">Recent</string>
+    <string name="search_clear_recent">Clear</string>
+    <string name="search_start">Search your transcripts, notes and summaries. It works offline too, with what’s saved on this phone.</string>
+    <plurals name="search_matches">
+        <item quantity="one">%1$d match in %2$s</item>
+        <item quantity="other">%1$d matches in %2$s</item>
+    </plurals>
+    <plurals name="search_in_recordings">
+        <item quantity="one">%d recording</item>
+        <item quantity="other">%d recordings</item>
+    </plurals>
+    <string name="search_kind_summary">Summary</string>
+    <string name="search_kind_note">Note</string>
+    <string name="search_kind_transcript">Transcript</string>
+    <string name="search_offline">Offline · searching what’s saved on this phone. Recordings still being written up aren’t included.</string>
+    <string name="search_server_unreachable">Couldn’t reach Roudio’s server · searching what’s saved on this phone. Recordings still being written up aren’t included.</string>
+    <string name="search_nothing_for">Nothing for “%1$s”</string>
+    <string name="search_nothing_body">Searched all your transcripts, notes and summaries. Try fewer or different words.</string>
+    <string name="search_nothing_body_offline">Searched what’s saved on this phone. Try fewer or different words, or search again when you’re online.</string>
+    <string name="search_instead">Search “%1$s” instead</string>
+    <plurals name="search_still_writing_up">
+        <item quantity="one">%d recording is still being written up. Try again when it’s done.</item>
+        <item quantity="other">%d recordings are still being written up. Try again when they’re done.</item>
+    </plurals>
+    <string name="search_filtered_out_title">Nothing with these filters</string>
+    <string name="search_filtered_out_body">There are matches, just not at this time or in these places.</string>
+    <string name="search_clear_filters">Show every match</string>
+
+    <!-- 10 Review, 10b Accepted, 10c edit sheet, S6 all caught up -->
+    <string name="review_subtitle">One at a time. Swipe right to accept, left to dismiss.</string>
+    <string name="review_waiting">Waiting</string>
+    <string name="review_accepted">Accepted</string>
+    <string name="review_done">Done</string>
+    <string name="review_not_done">Not done</string>
+    <string name="review_suggested_task">Suggested task</string>
+    <string name="review_accept">Accept</string>
+    <string name="review_edit">Edit</string>
+    <string name="review_dismiss">Dismiss</string>
+    <string name="review_position">%1$d of %2$d</string>
+    <string name="review_position_next">%1$d of %2$d · next: %3$s</string>
+    <string name="review_save_failed">Couldn’t save that. Check your connection and try again.</string>
+    <string name="review_task_detail">%1$s · %2$s · %3$s</string>
+    <string name="review_today">today</string>
+    <string name="review_yesterday">yesterday</string>
+    <string name="review_edited_by_you">edited by you</string>
+    <string name="review_done_just_now">Done just now ·</string>
+    <string name="review_undo">Undo</string>
+    <string name="review_accepted_footer">Accepted tasks stay here until you tick them. They’re never sent anywhere.</string>
+    <string name="review_accepted_empty">No accepted tasks. Accept a suggestion in Waiting and it lands here.</string>
+    <string name="review_done_empty">Nothing ticked off yet.</string>
+    <string name="review_caught_up">All caught up</string>
+    <plurals name="review_went_through">
+        <item quantity="one">You went through %1$d suggestion today: %2$d accepted, %3$d dismissed.</item>
+        <item quantity="other">You went through %1$d suggestions today: %2$d accepted, %3$d dismissed.</item>
+    </plurals>
+    <string name="review_nothing_waiting">Nothing is waiting. New suggestions show up here after a recording is written up.</string>
+    <string name="review_see_accepted">See accepted tasks</string>
+    <string name="review_edit_title">Edit suggestion</string>
+    <string name="review_edit_from">From %1$s · %2$s</string>
+    <string name="review_edit_label">Task</string>
+    <string name="review_save_accept">Save and accept</string>
+
+    <!-- 15 Settings -->
+    <string name="settings_battery_title">Battery saver is limiting Roudio again</string>
+    <string name="settings_battery_body">It was switched back on, maybe by a phone update. Transfers may stop when the screen is off.</string>
+    <string name="settings_autostart_title">Autostart is off for Roudio</string>
+    <string name="settings_autostart_body">After the phone restarts, Roudio can’t reconnect to the recorder until you open it.</string>
+    <string name="settings_fix_it">Fix it</string>
+    <string name="settings_look">Look and feel</string>
+    <string name="settings_theme">Light and dark</string>
+    <string name="settings_theme_body">Follows your phone’s setting</string>
+    <string name="settings_writing_up">Writing up</string>
+    <string name="settings_languages">Languages you speak</string>
+    <string name="settings_languages_body">Worked out for each recording</string>
+    <string name="settings_word_list">Your word list</string>
+    <string name="settings_word_list_body">Names and words the speech service listens for</string>
+    <plurals name="settings_words">
+        <item quantity="one">%d name or word</item>
+        <item quantity="other">%d names and words</item>
+    </plurals>
+    <string name="settings_words_and">%1$s · %2$s</string>
+    <plurals name="settings_words_learned">
+        <item quantity="one">%d learned from your edits</item>
+        <item quantity="other">%d learned from your edits</item>
+    </plurals>
+    <plurals name="settings_words_to_confirm">
+        <item quantity="one">%d to confirm</item>
+        <item quantity="other">%d to confirm</item>
+    </plurals>
+    <string name="settings_services">Services</string>
+    <string name="settings_services_body">Speech: ElevenLabs Scribe v2 · Notes: GPT-6.1 Sol</string>
+    <string name="settings_recorder_backups">Recorder and backups</string>
+    <string name="settings_recorder_body">%1$s · %2$s</string>
+    <string name="settings_recorder_none">No recorder linked</string>
+    <string name="settings_connected">connected</string>
+    <string name="settings_not_connected">not connected</string>
+    <string name="settings_drive_connected">Drive connected</string>
+    <string name="settings_drive_not_connected">Drive not connected</string>
+    <plurals name="settings_backups_failed">
+        <item quantity="one">%d failed</item>
+        <item quantity="other">%d failed</item>
+    </plurals>
+    <plurals name="settings_backups_waiting">
+        <item quantity="one">%d waiting</item>
+        <item quantity="other">%d waiting</item>
+    </plurals>
+    <string name="settings_backups_all">all backed up</string>
+    <string name="settings_account">Account</string>
+    <string name="settings_google">Google account</string>
+    <string name="settings_google_body">Signed in with Google</string>
+    <string name="settings_google_drive">Signed in with Google · Drive connected</string>
+    <string name="settings_google_no_drive">Signed in with Google · Drive not connected</string>
+    <string name="settings_sign_out">Sign out</string>
+    <string name="settings_sign_out_title">Sign out of Roudio?</string>
+    <string name="settings_sign_out_body">Recordings on this phone stay here and the recorder stays linked. Sign in again to see your library.</string>
+
+    <!-- 15b Word list -->
+    <string name="words_intro">Names and words the speech service should listen for. It helps with people, places and terms it doesn’t know.</string>
+    <string name="words_add_hint">Add a name or word</string>
+    <string name="words_add">Add</string>
+    <string name="words_learned_title">Learned from your edits · confirm them</string>
+    <string name="words_learned_body">Learned from a fix you made</string>
+    <string name="words_keep">Keep</string>
+    <string name="words_drop">Don’t keep %1$s</string>
+    <string name="words_in_list">%1$d in your list</string>
+    <string name="words_empty">Nothing yet. Add names of people and places you talk about.</string>
+    <plurals name="words_more">
+        <item quantity="one">+%d more</item>
+        <item quantity="other">+%d more</item>
+    </plurals>
+    <string name="words_cost_note">The list is sent with each recording to help the speech service. It costs a little extra per hour.</string>
+    <string name="words_remove_title">Remove “%1$s”?</string>
+    <string name="words_remove_body">New recordings won’t listen for it. Recordings already written up don’t change.</string>
+    <string name="words_remove">Remove</string>
+    <string name="words_save_failed">Couldn’t save that. Check your connection and try again.</string>
+
+    <!-- 15c Languages -->
+    <string name="languages_intro">The speech service works out the language by itself, for every recording. Mixed conversations are fine.</string>
+    <string name="languages_mostly">Mostly</string>
+    <string name="languages_automatic">Worked out automatically</string>
+    <string name="languages_automatic_body">Each recording, and each part of it</string>
+    <string name="languages_not_yet">Choosing your languages isn’t available yet. Until it is, every recording uses automatic detection.</string>
+    <string name="languages_accuracy">Accuracy is best for English. Expect more fixes in other languages, and add names to your word list.</string>
+
+    <!-- 03 Updates, 03b all read -->
+    <string name="updates_title">Updates</string>
+    <plurals name="updates_unread">
+        <item quantity="one">%d unread</item>
+        <item quantity="other">%d unread</item>
+    </plurals>
+    <string name="updates_all_read">All read</string>
+    <string name="updates_mark_all_read">Mark all read</string>
+    <string name="updates_everything">Everything</string>
+    <string name="updates_needs_you">Needs you</string>
+    <string name="updates_earlier_today">Earlier today</string>
+    <string name="updates_title_with_recording">%1$s · %2$s</string>
+    <string name="updates_open_recording">Open recording</string>
+    <string name="updates_see_cleanup">See clean-up</string>
+    <string name="updates_nothing_title">Nothing needs you</string>
+    <string name="updates_empty_title">No updates yet</string>
+    <string name="updates_nothing_body">Backups, transfers and clean-ups are all fine. We’ll tell you here if something stops.</string>
+
+    <!-- 14 Backups & clean-up -->
+    <string name="backups_title">Backups &amp; clean-up</string>
+    <string name="backups_drive_connected">Google Drive · connected</string>
+    <string name="backups_drive_not_connected">Google Drive · not connected</string>
+    <string name="backups_drive_folder">Folder “Roudio”, one folder a day</string>
+    <string name="backups_drive_reconnect">Backups wait until Drive is connected. Sign out and sign in again to connect it.</string>
+    <string name="backups_count_backed_up">backed up</string>
+    <string name="backups_count_waiting">waiting</string>
+    <string name="backups_count_failed">failed</string>
+    <string name="backups_failed_title">%1$s · backup failed</string>
+    <string name="backups_failed_no_reason">Drive didn’t confirm the upload.</string>
+    <string name="backups_failed_safe">Still safe on this phone, on your Roudio server, and on the recorder. Nothing will be deleted.</string>
+    <string name="backups_retry">Retry backup</string>
+    <string name="backups_retrying">Trying again…</string>
+    <string name="backups_retry_started">Backup started again</string>
+    <string name="backups_retry_failed">Couldn’t reach Roudio’s server. Check your connection and try again.</string>
+    <string name="backups_clearing_title">Clearing the recorder</string>
+    <string name="backups_clearing_body">A recording leaves the recorder only when all three copies match. Your phone keeps everything until you delete it.</string>
+    <string name="backups_deleting_title">Delete from the recorder</string>
+    <string name="backups_deleting_off">Off. Every recording is still checked, but nothing is deleted from the recorder.</string>
+    <string name="backups_deleting_on">On. Recordings leave the recorder once the phone, server and Drive copies all match.</string>
+    <string name="backups_deleting_save_failed">Couldn’t change that. Check your connection and try again.</string>
+    <string name="backups_deleting_confirm_title">Start deleting from the recorder?</string>
+    <string name="backups_deleting_confirm_body">Recordings will be deleted from your Plaud once the phone, server and Drive copies all match. Deleted recordings can’t be put back on the recorder. Your phone keeps its copy. Leave this off until you’ve watched the checks for a while.</string>
+    <string name="backups_deleting_confirm">Turn on</string>
+    <string name="backups_deleting_keep_off">Keep off</string>
+    <string name="backups_no_recordings">Recordings show up here once they reach the server.</string>
+    <string name="backups_row_title">%1$s %2$s</string>
+    <string name="backups_recorder_cleared">Cleared</string>
+    <string name="backups_recorder_clearing">Clearing</string>
+    <string name="backups_recorder_ready">Ready to clear</string>
+    <string name="backups_recorder_kept">Kept · deleting off</string>
+    <string name="backups_recorder_stays">Stays on recorder</string>
+    <string name="backups_recorder_waiting">Waiting</string>
+    <string name="backups_copy_phone">Phone</string>
+    <string name="backups_copy_not_on_phone">Not on this phone</string>
+    <string name="backups_copy_server">Server</string>
+    <string name="backups_copy_server_uploading">Server · uploading</string>
+    <string name="backups_copy_drive_checked">Drive checked</string>
+    <string name="backups_copy_drive_failed">Drive failed</string>
+    <string name="backups_copy_drive_uploading">Drive · uploading</string>
+    <string name="backups_copy_drive_checking">Drive · checking</string>
+    <string name="backups_copy_drive_after_write_up">Drive · after write-up</string>
+    <string name="backups_copy_drive_waiting">Drive · waiting</string>
+</resources>
