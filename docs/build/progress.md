@@ -77,7 +77,19 @@ Done so far (11 Oct 2026):
 - Linked to the owner's Note Pro (…1437) and read live battery, storage and recording state.
 - Debug builds only: adb commands drive the recorder
   (`adb shell am broadcast -n com.boko.roudio/.debug.RecorderCommands --es cmd search|link|state|…`).
-- Temporary check screen instead of the setup flow; steps 5–7 (screens) still to do.
+- Setup screens 11a (welcome), 11c (permissions), 11d (keep running: reads Xiaomi Autostart and
+  the battery exemption) and 11e (unlink from the Plaud app), built from Paper with Navigation 3.
+- The recorder check screen still stands in after 11e and once a recorder is linked.
+
+Still to do before milestone 1 is done:
+- 11f–11i (finding, found, linking, linked) and error screens 12a–12e, each triggered by the
+  real condition (30 s with nothing found, Bluetooth off, permission refused for good, linked
+  elsewhere / handshake refused, linking failed or no internet).
+- Recorder screen 13a/13b (transfer rows wait for milestone 2) and the recorder chip on Today
+  (a Today shell; the dial and timeline are milestone 2). Then delete the check screen.
+- "Done when" pass on the phone: fresh install links; live battery and recording state;
+  Bluetooth off and walking away show the right screens.
+- Owner: turn on Autostart and battery "No restrictions" for Roudio (11d shows both off).
 
 Learned:
 - **The SDK logs secrets.** Its own logger writes whole HTTP exchanges (user token, the RSA
