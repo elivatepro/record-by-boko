@@ -163,3 +163,40 @@ Still to do (needs the owner with the phone and recorder):
   measure Bluetooth vs Wi-Fi speed and a day's battery cost (`docs/build/measurements.md`).
 - Watch `ble.log` size over a full day.
 - Firmware install (behind the gate and the owner's confirmation), when an update exists.
+
+## Milestone 6: Web app (built 11 Oct 2026, on the shared API)
+
+Done (`apps/web`):
+- Routes and deep links: `/` (today), `/day/<date>`, `/day/<date>/digest`, `/c/<conversation>`
+  with `?t=<seconds into the recording>&play=true&tab=ask|mine`, `/search?q=`, `/review?state=`,
+  `/settings?section=`, `/settings/backups`. Left rail (icons only below 1024 px, a bottom bar
+  below 640 px) with Review and unread Updates counts; recorder status is worded "seen by your
+  phone" and only says what the phone has uploaded.
+- W2 Today (dial, digest card, separate Processing / Drive backup lanes, past days, date input),
+  W3/W3b workspace (TanStack Virtual transcript that follows playback, Ctrl F find, line and
+  speaker edits, Notes / Ask / My notes, docked glass player; every chip seeks and plays),
+  W4 Search with preview (↑ ↓, Enter), W5 Review (A / E / D, U, undo), W6 Digest (updating,
+  quiet, failed), W7 Updates drawer, W8 Backups, W9 Settings (theme, glass/solid, word list,
+  account, sign out), W10 narrow layouts. Light and dark from the tokens; solid fallbacks for
+  glass (no backdrop-filter, reduced transparency, or the Settings switch).
+- Vitest for the pure logic (`src/lib`: dial geometry, day spans, timeline rows, status words,
+  snippet and find highlighting, playing segment): `pnpm --filter @roudio/web test`.
+
+API gaps found while building (the web works around each one):
+- No retry endpoints (backup, writing up, digest). The designs' "Retry" buttons are replaced by
+  "Roudio tries again by itself".
+- Nothing from the phone about the recorder (battery, recordings still on it, the phone's last
+  sync). The rail can't show "Plaud linked · 64% · 2 still on recorder", and Today can't show
+  "Waiting on your Plaud" rows.
+- No processing progress (the designs' "Writing up 62%"); the web names the step instead.
+- `ConversationSummary` has no speakers or decision count (Today's "Daniel, Priya, you · 2
+  decisions"), no chapters (key moments stand in), and segments have no word timings (no
+  current-word highlight).
+- `ReviewView` has no item kind (only tasks reach Review today, so decisions never appear
+  there); `RecordingSummary` has no size or `backed_up_at` (Backups shows counts, not "checked
+  today"); updates can only be marked read all at once; there's no per-month day summary for a
+  ring date picker (a native date input is used).
+- Search has no date or type filters on the server; the web filters the results it gets.
+
+Still to do: move the refresh token to an httpOnly cookie (needs the backend), and check the
+screens against real recordings once processed data exists in production.
