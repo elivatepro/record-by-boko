@@ -167,6 +167,48 @@ class TransfersTest {
         assertTrue(source.commands.contains("export ${older.sessionId}"))
         transfers.stop()
     }
+
+    @Test
+    fun `a fast transfer opens the recorder's Wi-Fi, brings everything across over it, then closes it`() = runTest {
+        source.files = listOf(older, newer)
+        val (_, transfers) = setUp()
+        connect(recording = false)
+        transfers.fastTransfer()
+        transfers.sync()
+        runCurrent()
+
+        assertEquals(
+            listOf("listFiles", "openWifi", "wifi export ${older.sessionId}", "wifi export ${newer.sessionId}", "closeWifi"),
+            source.commands.filter { it != "refresh" },
+        )
+        assertEquals(Transfers.Wifi.Off, transfers.wifi.value)
+        assertTrue(store.all().all { it.transfer == TransferState.OnPhone })
+    }
+
+    @Test
+    fun `when the Wi-Fi doesn't come up the transfers carry on over Bluetooth`() = runTest {
+        source.files = listOf(older)
+        source.wifiOpener = { throw ExportException("the recorder's Wi-Fi didn't come up") }
+        val (_, transfers) = setUp()
+        connect(recording = false)
+        transfers.fastTransfer()
+        transfers.sync()
+        runCurrent()
+
+        assertTrue(source.commands.contains("export ${older.sessionId}"))
+        assertFalse(source.commands.contains("closeWifi"))
+        assertEquals(Transfers.Wifi.Failed("the recorder's Wi-Fi didn't come up"), transfers.wifi.value)
+    }
+
+    @Test
+    fun `nothing on the recorder means the Wi-Fi isn't opened`() = runTest {
+        val (_, transfers) = setUp()
+        connect(recording = false)
+        transfers.fastTransfer()
+        transfers.sync()
+        runCurrent()
+        assertFalse(source.commands.contains("openWifi"))
+    }
 }
 
 class MemoryRecordingStore : RecordingStore {

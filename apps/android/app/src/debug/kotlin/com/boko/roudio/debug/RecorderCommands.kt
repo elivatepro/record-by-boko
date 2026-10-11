@@ -23,8 +23,10 @@ import org.json.JSONObject
  * disconnect, unlink, state, binding --es serial … (asks Plaud's cloud who the recorder is bound
  * to; logs only whether it's bound and how many past bindings there are, never the ids),
  * files (lists the recordings), export --el session … (copies one to the app's cache and logs
- * its size, header, duration and SHA-256; nothing is deleted from the recorder), transfer (asks
- * the transfer engine to check now), recordings (logs the saved recordings and their tracks).
+ * its size, header, duration and SHA-256; nothing is deleted from the recorder; add --ez wifi true
+ * to copy it over the recorder's Wi-Fi and log how long joining took), transfer (asks the
+ * transfer engine to check now), fast (the next check goes over Wi-Fi), recordings (logs the
+ * saved recordings and their tracks).
  * Each one logs the resulting state under the tag "RecorderDebug".
  */
 class RecorderCommands : BroadcastReceiver() {
@@ -72,14 +74,16 @@ class RecorderCommands : BroadcastReceiver() {
             }
             "export" -> {
                 val session = intent.getLongExtra("session", -1)
+                val wifi = intent.getBooleanExtra("wifi", false)
                 val pending = goAsync()
                 app.appScope.launch {
-                    runCatching { exportOne(app, session) }.onFailure { Log.w(TAG, "export failed", it) }
+                    runCatching { exportOne(app, session, wifi) }.onFailure { Log.w(TAG, "export failed", it) }
                     pending.finish()
                 }
                 return
             }
             "transfer" -> app.transfers.check()
+            "fast" -> app.transfers.fastTransfer()
             "recordings" -> {
                 val pending = goAsync()
                 app.appScope.launch {
@@ -102,16 +106,25 @@ class RecorderCommands : BroadcastReceiver() {
         Log.i(TAG, "state ${recorder.state.value}")
     }
 
-    private suspend fun exportOne(app: RoudioApp, session: Long) {
+    private suspend fun exportOne(app: RoudioApp, session: Long, wifi: Boolean) {
         val file = app.plaudSource.listFiles().firstOrNull { it.sessionId == session }
         if (file == null) {
             Log.w(TAG, "no recording with session $session")
             return
         }
         val target = File(app.cacheDir, "debug-export/$session.opus")
+        if (wifi) {
+            val joining = System.currentTimeMillis()
+            app.plaudSource.openWifi()
+            Log.i(TAG, "wifi ready in ${(System.currentTimeMillis() - joining) / 1000.0}s")
+        }
         val started = System.currentTimeMillis()
         var last = -1
-        app.plaudSource.export(file, target) { p -> if (p / 10 != last / 10) Log.i(TAG, "export $p%").also { last = p } }
+        try {
+            app.plaudSource.export(file, target, wifi) { p -> if (p / 10 != last / 10) Log.i(TAG, "export $p%").also { last = p } }
+        } finally {
+            if (wifi) app.plaudSource.closeWifi()
+        }
         val seconds = (System.currentTimeMillis() - started) / 1000.0
         val head = ByteArray(64).also { buffer -> target.inputStream().use { it.read(buffer) } }
         val sha = MessageDigest.getInstance("SHA-256").digest(target.readBytes()).joinToString("") { "%02x".format(it) }

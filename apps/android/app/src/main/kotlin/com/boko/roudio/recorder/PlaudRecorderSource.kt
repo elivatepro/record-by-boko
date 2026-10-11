@@ -1,5 +1,8 @@
 package com.boko.roudio.recorder
 
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
+import sdk.ble.wifi.IWifiTransferAgent
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
@@ -201,7 +204,7 @@ class PlaudRecorderSource(
         }
     }
 
-    override suspend fun export(file: RecorderFile, target: File, onProgress: (Int) -> Unit) = fileLock.withLock {
+    override suspend fun export(file: RecorderFile, target: File, viaWifi: Boolean, onProgress: (Int) -> Unit) = fileLock.withLock {
         if (connectedSerial == null) throw ExportException("not connected")
         // Under files/, not cache/: the result is moved into the recordings folder and must never
         // count as cache Android may clear.
@@ -229,8 +232,10 @@ class PlaudRecorderSource(
         }
         exportDone = done
         try {
-            val started = sdk("exportAudio") {
-                PlaudDeviceAgent.exportAudio(file.sessionId, dir, AudioExportFormat.OPUS, 1, callback)
+            val started = if (viaWifi) {
+                sdk("exportAudioViaWiFi") { PlaudDeviceAgent.exportAudioViaWiFi(file.sessionId, dir, AudioExportFormat.OPUS, 1, callback) }
+            } else {
+                sdk("exportAudio") { PlaudDeviceAgent.exportAudio(file.sessionId, dir, AudioExportFormat.OPUS, 1, callback) }
             }
             if (!started) throw ExportException("the SDK refused to start the export")
             // The SDK has no timeout of its own; a transfer that goes quiet has stalled (decision 14).
@@ -258,13 +263,66 @@ class PlaudRecorderSource(
             }
         } catch (e: Throwable) {
             // Stop the recorder sending; the half-written file is thrown away (decision 14).
-            withContext(NonCancellable) { sdk("stopSyncFile") { PlaudDeviceAgent.stopSyncFile() } }
+            if (!viaWifi) withContext(NonCancellable) { sdk("stopSyncFile") { PlaudDeviceAgent.stopSyncFile() } }
             target.delete()
             throw e
         } finally {
             exportDone = null
             dir.deleteRecursively()
         }
+    }
+
+    override suspend fun openWifi() {
+        val serial = connectedSerial ?: throw ExportException("not connected")
+        val ready = CompletableDeferred<Unit>()
+        val callback = object : IWifiTransferAgent.WifiTransferCallback {
+            override fun onConnectionStateChanged(state: IWifiTransferAgent.WifiConnectionState) {
+                Log.i(TAG, "wifi: $state")
+                when (state) {
+                    IWifiTransferAgent.WifiConnectionState.READY -> ready.complete(Unit)
+                    IWifiTransferAgent.WifiConnectionState.ERROR,
+                    IWifiTransferAgent.WifiConnectionState.DISCONNECTED,
+                    -> ready.completeExceptionally(ExportException("the recorder's Wi-Fi dropped ($state)"))
+                    else -> Unit
+                }
+            }
+
+            override fun onError(code: Int, message: String) {
+                Log.w(TAG, "wifi error $code: $message")
+                ready.completeExceptionally(ExportException(message.ifBlank { "Wi-Fi error $code" }))
+            }
+
+            override fun onHandshakeCompleted(version: String) = Unit
+            override fun onFileListReceived(files: List<IWifiTransferAgent.WifiFileInfo>) = Unit
+            override fun onTransferProgress(sessionId: Long, progress: Int, speed: Double) = Unit
+            override fun onFileTransferCompleted(sessionId: Long, path: String) = Unit
+            override fun onBatchDownloadStarted(count: Int) = Unit
+            override fun onBatchDownloadProgress(done: Int, total: Int, name: String) = Unit
+            override fun onBatchDownloadCompleted(ok: Int, failed: Int, results: List<IWifiTransferAgent.BatchDownloadResult>) = Unit
+            override fun onFileDeleteCompleted(ok: Boolean, count: Int, message: String?) = Unit
+            override fun onWifiTransferStopped() {
+                ready.completeExceptionally(ExportException("the recorder stopped its Wi-Fi"))
+            }
+            override fun onDeviceBatteryUpdate(level: Int, charging: Boolean) = Unit
+        }
+        var started = false
+        if (!sdk("startWifiTransfer") { started = PlaudDeviceAgent.startWifiTransfer(serial, callback) } || !started) {
+            throw ExportException("the recorder couldn't start its Wi-Fi")
+        }
+        try {
+            // Long enough for the owner to answer Android's "Connect to device?" prompt.
+            withTimeout(WIFI_JOIN_MS) { ready.await() }
+        } catch (e: TimeoutCancellationException) {
+            closeWifi()
+            throw ExportException("the recorder's Wi-Fi didn't come up")
+        } catch (e: Throwable) {
+            withContext(NonCancellable) { closeWifi() }
+            throw e
+        }
+    }
+
+    override suspend fun closeWifi() {
+        sdk("endWiFiTransfer") { PlaudDeviceAgent.endWiFiTransfer() }
     }
 
     override suspend fun deleteFromRecorder(file: RecorderFile): Unit = fileLock.withLock {
@@ -555,6 +613,7 @@ class PlaudRecorderSource(
         const val STALL_CHECK_MS = 5_000L
         const val STALL_MS = 60_000L
         const val DELETE_WAIT_MS = 15_000L
+        const val WIFI_JOIN_MS = 90_000L
 
         /** Note Pro (881) and NotePin S (882), as in Plaud's template. */
         fun isSupported(serial: String) = serial.startsWith("881") || serial.startsWith("882")

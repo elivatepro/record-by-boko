@@ -66,7 +66,31 @@ class Transfers(
     val stopped: StateFlow<Progress?> = _stopped.asStateFlow()
 
     /** [startedAt] lets the recorder screen say roughly how long is left. */
-    data class Progress(val recordingId: Long, val percent: Int, val startedAt: Instant)
+    data class Progress(val recordingId: Long, val percent: Int, val startedAt: Instant, val viaWifi: Boolean = false)
+
+    /** Fast transfer over the recorder's Wi-Fi, asked for on the recorder screen. */
+    sealed interface Wifi {
+        data object Off : Wifi
+
+        /** Waiting for the recorder's Wi-Fi; Android asks the owner to allow joining it. */
+        data object Joining : Wifi
+
+        data object On : Wifi
+
+        /** It didn't come up; the transfers carry on over Bluetooth. */
+        data class Failed(val reason: String) : Wifi
+    }
+
+    private val _wifi = MutableStateFlow<Wifi>(Wifi.Off)
+    val wifi: StateFlow<Wifi> = _wifi.asStateFlow()
+
+    @Volatile private var fastWanted = false
+
+    /** Bring what's on the recorder across over Wi-Fi this once, then back to Bluetooth. */
+    fun fastTransfer() {
+        fastWanted = true
+        wanted.trySend(Unit)
+    }
 
     fun start() {
         if (job != null) return
@@ -133,13 +157,40 @@ class Transfers(
         store.addNew(finished.map { newRecording(serial, it) })
 
         val bySession = finished.associateBy { it.sessionId }
-        for (recording in store.inTransfer(TransferState.OnRecorder)) {
-            if (recording.serial != serial) continue
-            val file = bySession[recording.sessionId] ?: continue
-            if (!recorder.state.value.isConnected) return
-            if (!export(recording, file)) return
+        val pending = store.inTransfer(TransferState.OnRecorder).mapNotNull { recording ->
+            bySession[recording.sessionId]?.takeIf { recording.serial == serial }?.let { recording to it }
+        }
+        val viaWifi = fastWanted && pending.isNotEmpty() && openWifi()
+        fastWanted = false
+        try {
+            for ((recording, file) in pending) {
+                if (!recorder.state.value.isConnected) return
+                if (!export(recording, file, viaWifi)) return
+            }
+        } finally {
+            if (viaWifi) {
+                withContext(NonCancellable) { runCatching { source.closeWifi() } }
+                _wifi.value = Wifi.Off
+            }
         }
         if (recorder.state.value.isConnected) afterSync(serial)
+    }
+
+    /** True once the recorder's Wi-Fi is up; on failure the exports carry on over Bluetooth. */
+    private suspend fun openWifi(): Boolean {
+        _wifi.value = Wifi.Joining
+        return try {
+            source.openWifi()
+            _wifi.value = Wifi.On
+            true
+        } catch (e: CancellationException) {
+            _wifi.value = Wifi.Off
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "fast transfer didn't start", e)
+            _wifi.value = Wifi.Failed(e.message ?: e.javaClass.simpleName)
+            false
+        }
     }
 
     private fun newRecording(serial: String, file: RecorderFile): Recording {
@@ -157,16 +208,16 @@ class Transfers(
     }
 
     /** Returns false when the export failed, so the rest wait for the next check. */
-    private suspend fun export(recording: Recording, file: RecorderFile): Boolean {
+    private suspend fun export(recording: Recording, file: RecorderFile, viaWifi: Boolean = false): Boolean {
         val current = recording.copy(transfer = TransferState.Transferring, updatedAt = now())
         store.update(current)
         val started = now()
-        _progress.value = Progress(recording.id, 0, started)
+        _progress.value = Progress(recording.id, 0, started, viaWifi)
         _stopped.value = null
         val partial = files.partial(recording)
         val target = files.final(recording)
         return try {
-            source.export(file, partial) { percent -> _progress.value = Progress(recording.id, percent, started) }
+            source.export(file, partial, viaWifi) { percent -> _progress.value = Progress(recording.id, percent, started, viaWifi) }
             val (sha, bytes, duration) = withContext(io) {
                 val facts = Triple(sha256(partial), partial.length(), OggOpus.durationMs(partial))
                 check(partial.renameTo(target)) { "couldn't move the file into place" }

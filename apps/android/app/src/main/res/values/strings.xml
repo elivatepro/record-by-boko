@@ -226,6 +226,15 @@
     <string name="transfer_title">%1$s · %2$s</string>
     <string name="transfer_bluetooth">Transferring over Bluetooth</string>
     <string name="transfer_bluetooth_left">Transferring over Bluetooth · about %1$d min left</string>
+    <string name="transfer_wifi">Transferring over Wi-Fi</string>
+    <string name="transfer_wifi_left">Transferring over Wi-Fi · about %1$d min left</string>
+    <string name="fast_transfer">Fast transfer over Wi-Fi</string>
+    <string name="fast_transfer_body">Much quicker for long recordings. Android asks to join the recorder’s Wi-Fi.</string>
+    <string name="fast_transfer_start">Start</string>
+    <string name="fast_transfer_joining">Joining the recorder’s Wi-Fi</string>
+    <string name="fast_transfer_joining_body">Allow it when Android asks to connect</string>
+    <string name="fast_transfer_failed">Wi-Fi didn’t connect</string>
+    <string name="fast_transfer_failed_body">Carrying on over Bluetooth. Nothing is lost.</string>
     <string name="transfer_percent">%1$d%%</string>
     <string name="transfer_stopped_range">Stopped at %1$d%% when the recorder went out of range</string>
     <string name="transfer_stopped_bluetooth">Stopped at %1$d%% when Bluetooth was turned off</string>

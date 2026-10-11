@@ -1,5 +1,6 @@
 package com.boko.roudio.ui.recorder
 
+import com.boko.roudio.ui.setup.Spinner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -86,6 +87,8 @@ fun RecorderScreen(
     onTurnOnBluetooth: () -> Unit,
     onUnlink: () -> Unit,
     onBack: () -> Unit,
+    wifi: Transfers.Wifi = Transfers.Wifi.Off,
+    onFastTransfer: () -> Unit = {},
 ) {
     val c = RoudioTheme.colors
     var confirmUnlink by remember { mutableStateOf(false) }
@@ -128,7 +131,7 @@ fun RecorderScreen(
         // A stopped transfer carries its own "what's safe" note and the reconnect button (13b).
         val stoppedRecording = stopped?.takeIf { !state.isConnected }
             ?.let { s -> recordings.firstOrNull { it.id == s.recordingId && it.transfer == TransferState.OnRecorder } }
-        TransfersSection(state, now, recordings, progress, stopped?.takeIf { stoppedRecording != null }, stoppedRecording, reconnect)
+        TransfersSection(state, now, recordings, progress, stopped?.takeIf { stoppedRecording != null }, stoppedRecording, reconnect, wifi, onFastTransfer)
         if (!state.isConnected && stoppedRecording == null) {
             SafeNote(
                 stringResource(if (state.bluetoothOn) R.string.recorder_away_safe else R.string.recorder_bluetooth_safe),
@@ -314,6 +317,8 @@ private fun TransfersSection(
     stopped: Transfers.Progress?,
     stoppedRecording: Recording?,
     reconnect: @Composable () -> Unit,
+    wifi: Transfers.Wifi,
+    onFastTransfer: () -> Unit,
 ) {
     val c = RoudioTheme.colors
     val stillOnRecorder = recordings.count { it.transfer == TransferState.OnRecorder || it.transfer == TransferState.Transferring }
@@ -342,6 +347,10 @@ private fun TransfersSection(
         val rows = mutableListOf<@Composable () -> Unit>()
         recordings.firstOrNull { it.id == progress?.recordingId }?.let { recording ->
             rows += { TransferringRow(recording, progress!!, now) }
+        }
+        // Fast transfer: only worth offering while something is still waiting on the recorder.
+        if (state.isConnected && stillOnRecorder > 0 && progress?.viaWifi != true) {
+            rows += { FastTransferRow(wifi, onFastTransfer) }
         }
         if (stopped != null && stoppedRecording != null) {
             rows += { StoppedRow(recording = stoppedRecording, percent = stopped.percent, bluetoothOn = state.bluetoothOn, reconnect = reconnect) }
@@ -397,7 +406,11 @@ private fun TransferringRow(recording: Recording, progress: Transfers.Progress, 
             Bar(RoudioTheme.colors.buoy)
             RowLines(
                 transferTitle(recording),
-                minutesLeft?.let { stringResource(R.string.transfer_bluetooth_left, it) } ?: stringResource(R.string.transfer_bluetooth),
+                if (progress.viaWifi) {
+                    minutesLeft?.let { stringResource(R.string.transfer_wifi_left, it) } ?: stringResource(R.string.transfer_wifi)
+                } else {
+                    minutesLeft?.let { stringResource(R.string.transfer_bluetooth_left, it) } ?: stringResource(R.string.transfer_bluetooth)
+                },
                 Modifier.weight(1f),
             )
             Percent(progress.percent)
@@ -420,6 +433,33 @@ private fun StoppedRow(recording: Recording, percent: Int, bluetoothOn: Boolean,
         }
         ProgressBar(percent, RoudioTheme.colors.muted.copy(alpha = 0.6f))
         SafeNote(stringResource(R.string.transfer_stopped_safe), Modifier.padding(start = 16.dp)) { reconnect() }
+    }
+}
+
+/** "Fast transfer over Wi-Fi", then joining, or why it didn't connect. */
+@Composable
+private fun FastTransferRow(wifi: Transfers.Wifi, onFastTransfer: () -> Unit) {
+    val c = RoudioTheme.colors
+    Row(
+        Modifier.padding(vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Bar(c.hairline)
+        when (wifi) {
+            Transfers.Wifi.Joining, Transfers.Wifi.On -> {
+                RowLines(stringResource(R.string.fast_transfer_joining), stringResource(R.string.fast_transfer_joining_body), Modifier.weight(1f))
+                Spinner(20.dp, 2.dp)
+            }
+            is Transfers.Wifi.Failed -> {
+                RowLines(stringResource(R.string.fast_transfer_failed), stringResource(R.string.fast_transfer_failed_body), Modifier.weight(1f))
+                SmallButton(stringResource(R.string.try_again), onFastTransfer, filled = false, height = 40.dp)
+            }
+            Transfers.Wifi.Off -> {
+                RowLines(stringResource(R.string.fast_transfer), stringResource(R.string.fast_transfer_body), Modifier.weight(1f))
+                SmallButton(stringResource(R.string.fast_transfer_start), onFastTransfer, filled = true, height = 40.dp)
+            }
+        }
     }
 }
 

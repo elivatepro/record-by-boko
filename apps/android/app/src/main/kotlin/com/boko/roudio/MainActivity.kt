@@ -263,6 +263,7 @@ class MainActivity : ComponentActivity() {
                     val recordings by app.recordings.recordings.collectAsState(initial = emptyList())
                     val progress by app.transfers.progress.collectAsState()
                     val stopped by app.transfers.stopped.collectAsState()
+                    val wifi by app.transfers.wifi.collectAsState()
                     RecorderScreen(
                         state = state,
                         now = rememberNow(),
@@ -271,6 +272,8 @@ class MainActivity : ComponentActivity() {
                         stopped = stopped,
                         onReconnect = app.recorder::reconnect,
                         onTurnOnBluetooth = { turnOnBluetooth.launch(PhoneSettings.enableBluetooth(this@MainActivity)) },
+                        wifi = wifi,
+                        onFastTransfer = app.transfers::fastTransfer,
                         onUnlink = { scope.launch { app.recorder.unlink() } },
                         onBack = pop,
                     )

@@ -45,7 +45,17 @@ interface RecorderSource {
      * recorder. Never deletes anything from the recorder. Throws [ExportException] when the
      * transfer stops; cancelling the coroutine stops it too. A partial [target] is removed.
      */
-    suspend fun export(file: RecorderFile, target: File, onProgress: (Int) -> Unit)
+    suspend fun export(file: RecorderFile, target: File, viaWifi: Boolean = false, onProgress: (Int) -> Unit)
+
+    /**
+     * Fast transfer: the recorder opens its own Wi-Fi and the phone joins it (Android asks the owner
+     * to allow it each time). Returns once exports can run with `viaWifi`; throws [ExportException]
+     * if it doesn't come up. Bluetooth stays connected throughout.
+     */
+    suspend fun openWifi()
+
+    /** Leave the recorder's Wi-Fi. Safe to call when it isn't open. */
+    suspend fun closeWifi()
 
     /**
      * Delete one recording from the recorder. Only [com.boko.roudio.transfer.CleanupGate] calls

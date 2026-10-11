@@ -53,9 +53,21 @@ class FakeRecorderSource(var bluetoothOn: Boolean = true) : RecorderSource {
         deleter(file)
     }
 
-    override suspend fun export(file: RecorderFile, target: File, onProgress: (Int) -> Unit) {
-        commands += "export ${file.sessionId}"
+    override suspend fun export(file: RecorderFile, target: File, viaWifi: Boolean, onProgress: (Int) -> Unit) {
+        commands += if (viaWifi) "wifi export ${file.sessionId}" else "export ${file.sessionId}"
         exporter(file, target, onProgress)
+    }
+
+    /** Throw from here to make Wi-Fi fail to come up. */
+    var wifiOpener: suspend () -> Unit = {}
+
+    override suspend fun openWifi() {
+        commands += "openWifi"
+        wifiOpener()
+    }
+
+    override suspend fun closeWifi() {
+        commands += "closeWifi"
     }
 }
 
