@@ -45,7 +45,7 @@ def worker() -> None:
     settings.check_for_deploy()
 
     async def main() -> None:
-        from roudio.pipeline.digest import redo_stand_in_results, schedule_tick
+        from roudio.pipeline.digest import on_worker_start, schedule_tick
 
         stop = asyncio.Event()
         loop = asyncio.get_running_loop()
@@ -53,7 +53,7 @@ def worker() -> None:
             loop.add_signal_handler(sig, stop.set)
         await _wait_for_migrations()
         async with get_sessionmaker()() as db:
-            await redo_stand_in_results(db)
+            await on_worker_start(db)
             await schedule_tick(db, datetime.now(UTC))
         await run_forever(
             get_sessionmaker(),

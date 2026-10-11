@@ -4,7 +4,7 @@
 import logging
 from datetime import UTC, date, datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from roudio import jobs
@@ -132,6 +132,35 @@ async def redo_stand_in_results(db: AsyncSession) -> None:
         recording.processing_state = ProcessingState.WAITING.value
         await db.commit()
         await jobs.ensure(db, PROCESS, {"recording_id": str(recording.id)})
+
+
+async def on_worker_start(db: AsyncSession) -> None:
+    """Each deploy: say where every recording stands, give failed write-ups one fresh try (a new
+    version usually carries the fix), and redo what the stand-ins wrote."""
+    counts = (
+        await db.execute(
+            select(Recording.processing_state, Recording.written_by, func.count()).group_by(
+                Recording.processing_state, Recording.written_by
+            )
+        )
+    ).all()
+    log.info(
+        "recordings by state: %s",
+        ", ".join(f"{state}/{by or '-'}={n}" for state, by, n in counts) or "none",
+    )
+    if services.get().real:
+        for recording in await db.scalars(
+            select(Recording).where(
+                Recording.transfer_state == TransferState.UPLOADED,
+                Recording.processing_state == ProcessingState.FAILED,
+            )
+        ):
+            log.info("recording %s failed before; trying it again", recording.id)
+            recording.processing_state = ProcessingState.WAITING.value
+            recording.processing_error = None
+            await db.commit()
+            await jobs.ensure(db, PROCESS, {"recording_id": str(recording.id)})
+    await redo_stand_in_results(db)
 
 
 async def tick(db: AsyncSession, job: Job) -> None:

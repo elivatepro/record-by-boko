@@ -249,3 +249,24 @@ async def test_scribe_gets_a_multipart_upload_with_the_audio_and_keyterms(tmp_pa
     assert seen["key"] == "key"
     assert b"OggS-not-really" in seen["body"]
     assert seen["body"].count(b'name="keyterms"') == 2
+
+
+async def test_a_new_worker_gives_failed_write_ups_one_more_try(
+    db: AsyncSession, s3: Any, audio_file: Path, pipeline: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from roudio.pipeline import services
+    from roudio.pipeline.digest import on_worker_start
+
+    recording = await uploaded(db, s3, audio_file)
+    recording.processing_state = "failed"
+    recording.processing_error = "ElevenLabs answered 500"
+    await db.commit()
+    await on_worker_start(db)  # stand-ins: leave it
+    await db.refresh(recording)
+    assert recording.processing_state == "failed"
+
+    monkeypatch.setattr(services.PipelineServices, "real", property(lambda _: True))
+    await on_worker_start(db)
+    await db.refresh(recording)
+    assert recording.processing_state == "waiting"
+    assert recording.processing_error is None
