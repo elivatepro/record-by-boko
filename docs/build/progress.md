@@ -158,9 +158,13 @@ Still to do (needs the owner with the phone and recorder):
 - Recovery: a 10+ minute recording, then pull the plug or turn Bluetooth off mid-transfer (13b
   should show "Stopped at N%", and it should restart from the beginning by itself); no internet
   for a while (S2, then uploads resume).
-- Wi-Fi fast transfer: the recorder opens a hotspot the phone has to join. Android may ask the
-  owner to approve each join, which would rule out automatic Wi-Fi transfers. Try it, then
-  measure Bluetooth vs Wi-Fi speed and a day's battery cost (`docs/build/measurements.md`).
+- Wi-Fi fast transfer is built but not yet tried on the phone. The SDK joins the recorder's
+  hotspot with a network request, so Android asks the owner each time; that's why it's a button
+  ("Fast transfer over Wi-Fi" on the recorder screen while recordings wait), not automatic. If
+  Wi-Fi doesn't come up within 90 s, transfers carry on over Bluetooth. To measure, with the
+  phone unlocked and Roudio open: `--es cmd export --el session <id>` (Bluetooth), then the same
+  with `--ez wifi true` (logs joining time and transfer time), and fill in
+  `docs/build/measurements.md`, plus a day's battery cost.
 - Watch `ble.log` size over a full day.
 - Firmware install (behind the gate and the owner's confirmation), when an update exists.
 
