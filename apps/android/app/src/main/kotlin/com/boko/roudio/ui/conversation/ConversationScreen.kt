@@ -1,5 +1,9 @@
 package com.boko.roudio.ui.conversation
 
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.foundation.layout.FlowRow
+import com.boko.roudio.api.models.AskLink
+import com.boko.roudio.api.models.AskView
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import com.boko.roudio.recorder.OggOpus
@@ -84,6 +88,7 @@ import com.boko.roudio.api.models.SegmentView
 import com.boko.roudio.api.models.SpeakerRename
 import com.boko.roudio.data.Sync
 import com.boko.roudio.store.TransferState
+import com.boko.roudio.ui.OrganiseIcons
 import com.boko.roudio.ui.RoudioIcons
 import com.boko.roudio.ui.theme.RoudioTheme
 import com.boko.roudio.ui.theme.roudioText
@@ -226,14 +231,14 @@ fun ConversationRoute(app: RoudioApp, id: String, atMs: Long?, onBack: () -> Uni
             detail, names, onBack, onPane = { pane = it }, onSeek = seek,
             onAsk = { question, done ->
                 scope.launch {
-                    val error = try {
+                    try {
                         val response = app.api.library.askConversation(detail.conversation.id, AskRequest(question))
-                        if (response.isSuccessful) null else askFailed
+                        val turn = response.body()
+                        if (response.isSuccessful && turn != null) done(turn, null) else done(null, askFailed)
                     } catch (e: IOException) {
-                        askOffline
+                        done(null, askOffline)
                     }
-                    refresh()
-                    done(error)
+                    refresh() // keeps the saved history in step; the answer is already on screen
                 }
             },
             onClear = {
@@ -904,22 +909,29 @@ private fun AskPane(
     onBack: () -> Unit,
     onPane: (Pane) -> Unit,
     onSeek: (Long) -> Unit,
-    onAsk: (String, (String?) -> Unit) -> Unit,
+    onAsk: (String, (AskView?, String?) -> Unit) -> Unit,
     onClear: () -> Unit,
 ) {
     val c = RoudioTheme.colors
     val start = detail.conversation.startMs
     var question by rememberSaveable { mutableStateOf("") }
-    var busy by remember { mutableStateOf(false) }
+    // The question shows the moment it's sent; the answer replaces "Thinking" when it arrives.
+    var pending by remember { mutableStateOf<String?>(null) }
+    var answered by remember { mutableStateOf(emptyList<AskView>()) }
     var error by remember { mutableStateOf<String?>(null) }
+    val turns = remember(detail.asks, answered) { (detail.asks + answered).distinctBy { it.id } }
+    val scroll = rememberScrollState()
+    LaunchedEffect(turns.size, pending) { scroll.animateScrollTo(scroll.maxValue) }
     val ask: (String) -> Unit = { q ->
-        if (q.isNotBlank() && !busy) {
-            busy = true
+        if (q.isNotBlank() && pending == null) {
+            pending = q.trim()
             error = null
-            onAsk(q.trim()) { problem ->
-                busy = false
+            question = ""
+            onAsk(q.trim()) { turn, problem ->
+                if (turn != null) answered = answered + turn
+                if (problem != null) question = pending.orEmpty() // give the words back to try again
+                pending = null
                 error = problem
-                if (problem == null) question = ""
             }
         }
     }
@@ -928,28 +940,24 @@ private fun AskPane(
         Spacer(Modifier.height(4.dp))
         Segmented(Pane.Ask, onPane)
         Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
+            Modifier.weight(1f).verticalScroll(scroll).padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(
-                Modifier.fillMaxWidth().border(1.dp, c.hairline, RoundedCornerShape(18.dp)).padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Icon(RoudioIcons.Info, contentDescription = null, tint = c.ink, modifier = Modifier.size(20.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(stringResource(R.string.ask_info_title), style = roudioText(15.sp, 20.sp, FontWeight.SemiBold), color = c.ink)
-                    Text(stringResource(R.string.ask_info_body), style = roudioText(13.sp, 18.sp), color = c.muted)
+            // The explainer is for a first question; after that the conversation speaks for itself.
+            if (turns.isEmpty() && pending == null) {
+                Row(
+                    Modifier.fillMaxWidth().border(1.dp, c.hairline, RoundedCornerShape(18.dp)).padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(RoudioIcons.Info, contentDescription = null, tint = c.ink, modifier = Modifier.size(20.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(stringResource(R.string.ask_info_title), style = roudioText(15.sp, 20.sp, FontWeight.SemiBold), color = c.ink)
+                        Text(stringResource(R.string.ask_info_body), style = roudioText(13.sp, 18.sp), color = c.muted)
+                    }
                 }
             }
-            detail.asks.forEach { turn ->
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    Text(
-                        turn.question,
-                        style = roudioText(16.sp, 22.sp),
-                        color = c.onPrimary,
-                        modifier = Modifier.background(c.primary, RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp)).padding(horizontal = 16.dp, vertical = 12.dp),
-                    )
-                }
+            turns.forEach { turn ->
+                QuestionBubble(turn.question)
                 val sources = turn.sources.mapNotNull { idx -> detail.segments.firstOrNull { it.idx == idx } }
                 if (turn.enough) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -959,7 +967,7 @@ private fun AskPane(
                             color = c.muted,
                         )
                         Text(turn.answer, style = roudioText(17.sp, 26.sp), color = c.ink)
-                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             sources.forEach { s -> TimeChip(s.startMs - start, names[s.speaker]) { onSeek(s.startMs) } }
                         }
                     }
@@ -970,11 +978,16 @@ private fun AskPane(
                     ) {
                         Text(stringResource(R.string.ask_not_enough), style = roudioText(15.sp, 20.sp, FontWeight.SemiBold), color = c.buoyText)
                         Text(turn.answer, style = roudioText(15.sp, 22.sp), color = c.ink)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             sources.forEach { s -> TimeChip(s.startMs - start, names[s.speaker], filled = false) { onSeek(s.startMs) } }
                         }
                     }
                 }
+                turn.beyond?.let { BeyondCard(it, turn.links.orEmpty()) }
+            }
+            pending?.let {
+                QuestionBubble(it)
+                Thinking()
             }
             error?.let { Text(it, style = roudioText(14.sp, 20.sp), color = c.alert) }
         }
@@ -982,7 +995,7 @@ private fun AskPane(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            listOf(R.string.ask_suggest_decide, R.string.ask_suggest_next, R.string.ask_suggest_who).forEach { suggestion ->
+            if (pending == null) listOf(R.string.ask_suggest_decide, R.string.ask_suggest_next, R.string.ask_suggest_who).forEach { suggestion ->
                 val text = stringResource(suggestion)
                 Text(
                     text,
@@ -1007,10 +1020,73 @@ private fun AskPane(
                 )
             }
             Box(
-                Modifier.size(48.dp).background(if (question.isBlank() || busy) c.raised else c.primary, CircleShape).clickable(role = Role.Button) { ask(question) },
+                Modifier.size(48.dp).background(if (question.isBlank() || pending != null) c.raised else c.primary, CircleShape).clickable(role = Role.Button) { ask(question) },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(RoudioIcons.ArrowUp, stringResource(R.string.ask_send), tint = if (question.isBlank() || busy) c.muted else c.onPrimary, modifier = Modifier.size(22.dp))
+                Icon(RoudioIcons.ArrowUp, stringResource(R.string.ask_send), tint = if (question.isBlank() || pending != null) c.muted else c.onPrimary, modifier = Modifier.size(22.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuestionBubble(text: String) {
+    val c = RoudioTheme.colors
+    Box(Modifier.fillMaxWidth().padding(start = 48.dp), contentAlignment = Alignment.CenterEnd) {
+        Text(
+            text,
+            style = roudioText(16.sp, 22.sp),
+            color = c.onPrimary,
+            modifier = Modifier.background(c.primary, RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp)).padding(horizontal = 16.dp, vertical = 12.dp),
+        )
+    }
+}
+
+/** While the answer is on its way; a web search can take a while, so it says so after a bit. */
+@Composable
+private fun Thinking() {
+    val c = RoudioTheme.colors
+    var long by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(6_000)
+        long = true
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        com.boko.roudio.ui.setup.Spinner(18.dp, 2.dp)
+        Text(
+            stringResource(if (long) R.string.ask_thinking_long else R.string.ask_thinking),
+            style = roudioText(15.sp, 20.sp),
+            color = c.muted,
+        )
+    }
+}
+
+/** What the recording can't say, from the web: set apart and never mixed with the cited answer. */
+@Composable
+private fun BeyondCard(text: String, links: List<AskLink>) {
+    val c = RoudioTheme.colors
+    val open = LocalUriHandler.current
+    Column(
+        Modifier.fillMaxWidth().background(c.raised, RoundedCornerShape(18.dp)).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(OrganiseIcons.Search, contentDescription = null, tint = c.muted, modifier = Modifier.size(16.dp))
+            Text(stringResource(R.string.ask_beyond), style = roudioText(13.sp, 18.sp, FontWeight.SemiBold), color = c.muted)
+        }
+        Text(text, style = roudioText(16.sp, 24.sp), color = c.ink)
+        links.forEach { link ->
+            Row(
+                Modifier.fillMaxWidth().clickable(role = Role.Button) { runCatching { open.openUri(link.url) } }.padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(RoudioIcons.Link, contentDescription = null, tint = c.ink, modifier = Modifier.size(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(link.title, style = roudioText(14.sp, 20.sp, FontWeight.SemiBold), color = c.ink, maxLines = 2)
+                    Text(Uri.parse(link.url).host.orEmpty().removePrefix("www."), style = roudioText(12.sp, 16.sp), color = c.muted, maxLines = 1)
+                }
+                Icon(OrganiseIcons.ArrowUpRight, contentDescription = null, tint = c.muted, modifier = Modifier.size(16.dp))
             }
         }
     }

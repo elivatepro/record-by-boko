@@ -13,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
+import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -34,6 +35,8 @@ class RoudioApi(private val session: SessionStore, baseUrl: String = BuildConfig
         .create(AuthApi::class.java)
 
     private val client = OkHttpClient.Builder()
+        // Ask may search the web first (about 20 s); OkHttp's default 10 s would cut it off.
+        .readTimeout(90, TimeUnit.SECONDS)
         .addInterceptor(AttachToken())
         .authenticator(RefreshOn401())
         .build()

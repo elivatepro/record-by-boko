@@ -369,8 +369,11 @@
     <string name="rename_speaker_title">Who is this?</string>
     <string name="rename_speaker_body">Every line from this voice in the recording changes.</string>
     <string name="speaker_name_hint">Name</string>
-    <string name="ask_info_title">Answers come only from this recording</string>
-    <string name="ask_info_body">Every answer links to the moment it’s from. If the call doesn’t say, Roudio will tell you.</string>
+    <string name="ask_info_title">Answers come from this recording first</string>
+    <string name="ask_info_body">Every answer links to the moment it’s from. If you ask about something the call doesn’t cover, Roudio looks it up and shows that separately.</string>
+    <string name="ask_thinking">Thinking…</string>
+    <string name="ask_thinking_long">Looking further than the recording… this can take a few seconds</string>
+    <string name="ask_beyond">Beyond this recording · from the web</string>
     <plurals name="ask_from_recording">
         <item quantity="one">From this recording · %1$d source</item>
         <item quantity="other">From this recording · %1$d sources</item>
