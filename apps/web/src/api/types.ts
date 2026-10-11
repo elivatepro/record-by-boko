@@ -20,3 +20,5 @@ export type Word = Schemas["WordView"];
 export type Update = Schemas["UpdateView"];
 export type Sync = Schemas["SyncView"];
 export type Me = Schemas["Me"];
+export type Costs = Schemas["CostsView"];
+export type CostLine = Schemas["CostLine"];

@@ -3257,6 +3257,12 @@ kbd {
   border-bottom: 0;
 }
 
+.setting-row__value {
+  flex-shrink: 0;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
 .setting-row__title {
   font-size: 18px;
   font-weight: 600;

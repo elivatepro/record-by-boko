@@ -5,22 +5,24 @@ import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { api } from "../api/client";
-import { keys, must, useAllRecordings, useMe, useSync, useWords } from "../api/queries";
+import { keys, must, useAllRecordings, useCosts, useMe, useSync, useWords } from "../api/queries";
 import type { Word } from "../api/types";
 import { clearSession } from "../auth/session";
 import { ErrorState, Loading } from "../components/common";
 import { Icon } from "../components/Icon";
+import { bytes, costLine, usd } from "../lib/costs";
 import { useNow } from "../lib/hooks";
 import { type Glass, setGlass, setTheme, type Theme, useLook } from "../lib/theme";
 import { localToday, whenLabel } from "../lib/time";
 
 const route = getRouteApi("/app/settings");
-type Section = "look" | "writing" | "recorder" | "account";
+type Section = "look" | "writing" | "recorder" | "costs" | "account";
 
 const SECTIONS: [Section, string][] = [
   ["look", "Look and feel"],
   ["writing", "Writing up"],
   ["recorder", "Recorder"],
+  ["costs", "Costs"],
   ["account", "Account"],
 ];
 
@@ -72,6 +74,7 @@ export function Settings() {
           {section === "look" && <LookAndFeel />}
           {section === "writing" && <WritingUp />}
           {section === "recorder" && <Recorder />}
+          {section === "costs" && <Costs />}
           {section === "account" && <Account />}
         </div>
       </div>
@@ -330,6 +333,53 @@ function Recorder() {
               : "Nothing in the last day"}
           </p>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function Costs() {
+  const costs = useCosts();
+  if (costs.isPending) return <Loading />;
+  if (costs.isError) return <ErrorState error={costs.error} onRetry={() => void costs.refetch()} />;
+  const c = costs.data;
+  return (
+    <section aria-labelledby="costs-title">
+      <h2 id="costs-title" className="section-title">
+        Costs
+      </h2>
+      <div className="setting-row">
+        <div>
+          <p className="setting-row__title">This month</p>
+          <p className="setting-row__sub">What the speech and AI services have charged since the 1st</p>
+        </div>
+        <strong className="setting-row__value">{usd(c.month_usd)}</strong>
+      </div>
+      {c.month.map((line) => {
+        const words = costLine(line);
+        return (
+          <div className="setting-row" key={`${line.service}-${line.unit}`}>
+            <div>
+              <p className="setting-row__title">{words.name}</p>
+              <p className="setting-row__sub">{words.amount} this month</p>
+            </div>
+            <span className="setting-row__value">{usd(line.usd)}</span>
+          </div>
+        );
+      })}
+      <div className="setting-row">
+        <div>
+          <p className="setting-row__title">Since you started</p>
+          <p className="setting-row__sub">{c.speech_hours.toFixed(1)} h of speech written up</p>
+        </div>
+        <strong className="setting-row__value">{usd(c.total_usd)}</strong>
+      </div>
+      <div className="setting-row">
+        <div>
+          <p className="setting-row__title">Audio kept on the server</p>
+          <p className="setting-row__sub">Storage is billed by Railway, not counted above</p>
+        </div>
+        <span className="setting-row__value">{bytes(c.stored_audio_bytes)}</span>
       </div>
     </section>
   );

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { bytes, costLine, usd } from "./costs";
 import { arcPath, daySpans, point, recordedMs } from "./dial";
 import { conversation, recording, segment } from "./fixtures";
 import { backupStatus, processingStatus, recorderStatus } from "./status";
@@ -173,5 +174,20 @@ describe("timeline", () => {
     expect(rows[0]).toMatchObject({ time: "12:40", title: "Recording · 44 min" });
     expect(rows[1]).toMatchObject({ time: "09:30", title: "Studio call", meta: "44 min · conversation" });
     expect(rows[2]).toMatchObject({ time: "00:00", title: "Quiet · until 07:00" });
+  });
+});
+
+describe("costs", () => {
+  it("words money, hours and tokens plainly", () => {
+    expect(usd(0)).toBe("$0.00");
+    expect(usd(0.004)).toBe("under $0.01");
+    expect(usd(12.5)).toBe("$12.50");
+    expect(costLine({ service: "scribe", unit: "seconds", units: 11_520, usd: 1.2 })).toEqual({
+      name: "Speech to text (Scribe)",
+      amount: "3.2 h sent",
+    });
+    expect(costLine({ service: "openai", unit: "tokens", units: 1_400_000, usd: 3 }).amount).toBe("1.4M tokens");
+    expect(bytes(2_300_000_000)).toBe("2.3 GB");
+    expect(bytes(48_000_000)).toBe("48 MB");
   });
 });

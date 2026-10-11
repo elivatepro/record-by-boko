@@ -47,7 +47,16 @@ export const keys = {
   words: ["words"] as const,
   updates: ["updates"] as const,
   search: (q: string) => ["search", q] as const,
+  costs: ["costs"] as const,
 };
+
+/** What Scribe and OpenAI have cost, this month and in total (Settings → Costs). */
+export function useCosts() {
+  return useQuery({
+    queryKey: keys.costs,
+    queryFn: () => must(api.GET("/costs"), "Couldn’t load the costs."),
+  });
+}
 
 export function useMe() {
   return useQuery({
