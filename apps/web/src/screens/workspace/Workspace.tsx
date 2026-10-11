@@ -3,7 +3,7 @@
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 
-import { useConversation } from "../../api/queries";
+import { ApiError, useConversation } from "../../api/queries";
 import type { ConversationDetail } from "../../api/types";
 import { ErrorState, Loading, StatusWord } from "../../components/common";
 import { Icon, Spinner } from "../../components/Icon";
@@ -32,7 +32,7 @@ export function Workspace() {
     return (
       <div className="page">
         <ErrorState
-          title={query.error.message.includes("isn't there") ? "That recording isn’t here" : online ? "The recording didn’t open" : "No internet"}
+          title={query.error instanceof ApiError && query.error.status === 404 ? "That recording isn’t here" : online ? "The recording didn’t open" : "No internet"}
           error={query.error}
           onRetry={() => void query.refetch()}
         />
