@@ -164,6 +164,68 @@ Still to do (needs the owner with the phone and recorder):
 - Watch `ble.log` size over a full day.
 - Firmware install (behind the gate and the owner's confirmation), when an update exists.
 
+## Milestone 3: Processing pipeline (built 11 Oct 2026; waiting on the AI keys)
+
+Done (`services/backend/src/roudio/pipeline`, phone and web screens):
+- Worker job `process_recording`: download from the bucket → FireRedVAD (pinned weights in the
+  Docker image, checked by SHA-256) → speech-only audio with a time map back to the original →
+  Scribe v2 (speaker labels, keyterms from the word list, language detection) → tidy pass as
+  flagged edits → conversations, titles, summaries, decisions, tasks and key moments, each tied
+  to source segments. Claims without a valid source are dropped server-side. Every step logs its
+  cost (`cost_entry`), never transcript text.
+- Daily digest (`build_digest`): updating while recordings are processing, finished after the
+  day ends, quiet and failed states. The hourly tick queues missing processing and backups.
+- Ask a recording: answers cite segments, checked by the server; "not enough in this recording"
+  when there isn't.
+- `roudio-reprocess` writes everything up again; `POST /recordings/{id}/process` does one
+  ("Try again now" on the phone's S8 and the web).
+- Tuning tool: `uv run roudio-vad-report <files> [--threshold …] --out <dir>` lists kept and
+  dropped stretches and cuts dropped clips to listen to. Thresholds are settings (`VAD_*`).
+- Phone: sync down (every 15 min, on resume, after uploads) into Room with an FTS index;
+  Today shows conversations and quiet on the dial; Recording screen (Notes, Transcript, Ask,
+  player, key moments), S3 still writing up / S8 failed, Digest screen (09, 09c, 09d).
+  A written-up recording with no conversation keeps its row ("No conversation") and plays in S3.
+- Production runs with `PIPELINE_FAKES=1` (fake Scribe and OpenAI) until the keys exist, so the
+  whole path can be checked end to end. One real recording went through it on 11 Oct 2026.
+
+Still to do:
+- Owner: add `ELEVENLABS_API_KEY` and `OPENAI_API_KEY` on Railway (api and worker), remove
+  `PIPELINE_FAKES`, then run `roudio-reprocess`.
+- Run the tuning tool on a real day and settle the thresholds before trusting what's dropped.
+- "Done when": a real conversation written up within about 15 minutes of upload, every summary
+  point jumping to the right moment, Ask refusing questions from outside the recording.
+
+## Milestone 4: Drive backup and clean-up (built 11 Oct 2026)
+
+Done:
+- `backup_recording` job: per-day Drive folder with the audio, transcript (text and JSON) and
+  notes, checked by MD5 and by reading back; uses the stored `drive.file` grant. A failure raises
+  an Update with how to recover; retries hourly and on "Try again now".
+- Clean-up gate on the phone (`transfer/CleanupGate.kt`): deletes from the recorder only the
+  candidates the server lists (phone, server and Drive all match) and only when the local SHA-256
+  matches too. Deleting is off by default (Settings switch). The phone copy is never deleted by
+  the gate.
+- Screens: Updates (03, 03b), Backups & clean-up (14), Recording More menu (06c: rename, share
+  notes, share audio, write up again), delete from this phone with where every copy is (06d),
+  only on the server with Download (06e).
+
+Still to do:
+- Owner: watch a week of recordings clear only after their Drive copy is checked, then decide
+  whether to turn deleting on. Check that a Drive failure blocks clean-up and says what's safe.
+
+## Milestone 5: Search, Review, edits, word list (built 11 Oct 2026)
+
+Done:
+- Search: Postgres full text on the server, SQLite FTS on the phone when offline (05, 05b, S4, S5).
+- Review: one suggestion at a time, accepted tasks and done, all caught up (10, 10b, 10c, S6).
+- Transcript line edits and speaker renames (latest edit wins); conversation rename.
+- Word list (15b) with words learned from repeated fixes to confirm; sent to Scribe as keyterms.
+  Languages (15c). Settings (15) with sign-out and the background-exemption warning.
+
+Still to do:
+- "Done when" needs real recordings: find a phrase from the last week in under two seconds,
+  offline too; corrections show up in new recordings.
+
 ## Milestone 6: Web app (built 11 Oct 2026, on the shared API)
 
 Done (`apps/web`):
@@ -183,8 +245,8 @@ Done (`apps/web`):
   snippet and find highlighting, playing segment): `pnpm --filter @roudio/web test`.
 
 API gaps found while building (the web works around each one):
-- No retry endpoints (backup, writing up, digest). The designs' "Retry" buttons are replaced by
-  "Roudio tries again by itself".
+- No retry endpoints (backup, writing up, digest). Since added for writing up and backups
+  ("Try again now"); the digest still rebuilds by itself.
 - Nothing from the phone about the recorder (battery, recordings still on it, the phone's last
   sync). The rail can't show "Plaud linked · 64% · 2 still on recorder", and Today can't show
   "Waiting on your Plaud" rows.

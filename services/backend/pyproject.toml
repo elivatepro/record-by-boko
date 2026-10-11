@@ -26,6 +26,7 @@ roudio-api = "roudio.cli:api"
 roudio-worker = "roudio.cli:worker"
 roudio-openapi = "roudio.cli:openapi"
 roudio-reprocess = "roudio.cli:reprocess"
+roudio-vad-report = "roudio.pipeline.tuning:main"
 
 [dependency-groups]
 dev = [
