@@ -355,6 +355,22 @@ async def recording_audio(
     return AudioLink(url=url, expires_at=datetime.now(UTC) + timedelta(seconds=3600))
 
 
+class ConversationRename(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+
+
+@router.patch("/conversations/{conversation_id}", operation_id="renameConversation")
+async def rename_conversation(
+    conversation_id: UUID, body: ConversationRename, _: CurrentSession, db: Db
+) -> ConversationSummary:
+    """06c "Rename recording": the owner's title replaces the generated one."""
+    c, r = await _conversation(db, conversation_id)
+    c.title = body.title.strip()
+    r.results_version += 1
+    await db.commit()
+    return conversation_view(c, r)
+
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=500)
 

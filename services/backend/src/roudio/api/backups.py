@@ -51,7 +51,7 @@ async def get_backups(_: CurrentSession, db: Db) -> BackupsView:
     )
 
 
-@router.post("/recordings/{recording_id}/backup", operation_id="retryBackup", status_code=202)
+@router.post("/recordings/{recording_id}/backup", operation_id="retryBackup", status_code=204)
 async def retry_backup(recording_id: UUID, _: CurrentSession, db: Db) -> None:
     recording = await db.get(Recording, recording_id)
     if recording is None or recording.transfer_state != "uploaded":
@@ -65,7 +65,7 @@ async def retry_backup(recording_id: UUID, _: CurrentSession, db: Db) -> None:
     await jobs.enqueue(db, BACKUP, {"recording_id": str(recording.id)})
 
 
-@router.post("/recordings/{recording_id}/process", operation_id="reprocess", status_code=202)
+@router.post("/recordings/{recording_id}/process", operation_id="reprocess", status_code=204)
 async def reprocess(recording_id: UUID, _: CurrentSession, db: Db) -> None:
     """Write a recording up again (S8 "Try again now", or after the keys change)."""
     recording = await db.get(Recording, recording_id)

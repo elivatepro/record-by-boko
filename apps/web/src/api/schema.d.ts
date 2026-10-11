@@ -188,7 +188,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Rename Conversation
+         * @description 06c "Rename recording": the owner's title replaces the generated one.
+         */
+        patch: operations["renameConversation"];
         trace?: never;
     };
     "/recordings/{recording_id}/audio": {
@@ -686,6 +690,11 @@ export interface components {
             note: string | null;
             /** Asks */
             asks: components["schemas"]["AskView"][];
+        };
+        /** ConversationRename */
+        ConversationRename: {
+            /** Title */
+            title: string;
         };
         /** ConversationSummary */
         ConversationSummary: {
@@ -1620,6 +1629,41 @@ export interface operations {
             };
         };
     };
+    renameConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getRecordingAudio: {
         parameters: {
             query?: never;
@@ -2164,13 +2208,11 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            202: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": unknown;
-                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -2195,13 +2237,11 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            202: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": unknown;
-                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

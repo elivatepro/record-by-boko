@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 06c "Share audio": the recordings folder is the only thing other apps can be handed. -->
+<paths>
+    <files-path name="recordings" path="recordings/" />
+</paths>

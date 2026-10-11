@@ -107,7 +107,7 @@ private class FakeBackups : BackupsApi {
 
     override suspend fun putSettings(settings: Settings): Response<Settings> = throw NotImplementedError()
 
-    override suspend fun retryBackup(recordingId: UUID): Response<Any> = throw NotImplementedError()
+    override suspend fun retryBackup(recordingId: UUID): Response<Unit> = throw NotImplementedError()
 
-    override suspend fun reprocess(recordingId: UUID): Response<Any> = throw NotImplementedError()
+    override suspend fun reprocess(recordingId: UUID): Response<Unit> = throw NotImplementedError()
 }

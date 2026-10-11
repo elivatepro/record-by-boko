@@ -182,3 +182,12 @@ async def test_sync_reports_changes_since_last_time(
     assert first["recordings"][0]["results_version"] == 1
     later = (await client.get("/sync", params={"since": first["server_time"]}, headers=auth)).json()
     assert later["recordings"] == [] or later["recordings"][0]["results_version"] == 1
+
+
+async def test_a_conversation_can_be_renamed(
+    client: AsyncClient, auth: dict[str, str], processed: Conversation
+) -> None:
+    renamed = await client.patch(
+        f"/conversations/{processed.id}", json={"title": "Studio call"}, headers=auth
+    )
+    assert renamed.status_code == 200 and renamed.json()["title"] == "Studio call"
