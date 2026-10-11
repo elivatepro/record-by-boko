@@ -100,7 +100,6 @@ Still to do before milestone 1 is done (owner chose to do these later, 11 Oct 20
 - Not yet seen on the phone: 12a, 12c, 12d, 12e. A true fresh install (re-link with force-clear
   as our own user) is untested on purpose; if it fails, relinking needs the Plaud app.
 - Owner: turn on Autostart and battery "No restrictions" for Roudio (11d shows both off).
-- 12d step 2 now says to unlink with the recorder next to the phone; update Paper to match.
 - 11i's "On the recorder" row waits for the file list (milestone 2).
 
 Learned:

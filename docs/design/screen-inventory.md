@@ -66,9 +66,11 @@ screen in dark during the build.
 
 - **01 Today · dial "Not written up yet":** until processing exists (milestone 3) recorded time
   can't be split into conversation and quiet, so the phone draws it in ink at 55 % with the legend
-  "Not written up yet", next to "Still on Plaud". Built in the app; still to add to Paper.
+  "Not written up yet", next to "Still on Plaud". In Paper as **01c Today · before writing up**
+  (digest card hidden until milestone 3).
 - **01 Today · timeline words before processing:** "Recording · 7 s" as the title, and
   "Waiting to upload / Uploading 40% / Waiting to write up · not backed up". Still on the recorder:
   "Waiting on your Plaud" with "Not transferred / Transferring 48% / Recording now · backup later".
 - **01b · empty past day:** "Nothing was recorded on this day."
+- **12d step 2** now says to unlink "with the recorder next to your phone" (Paper and export updated).
 
