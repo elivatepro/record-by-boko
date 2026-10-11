@@ -1,47 +1,26 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  redirect,
-  RouterProvider,
-} from "@tanstack/react-router";
+import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { hasSession } from "./auth/session";
-import { Home } from "./screens/Home";
-import { SignIn } from "./screens/SignIn";
+import { ApiError } from "./api/queries";
+import { applyLook } from "./lib/theme";
+import { router } from "./router";
 import "./styles/tokens.css";
 import "./styles/app.css";
+import "./styles/screens.css";
 
-const rootRoute = createRootRoute({ component: Outlet });
+applyLook();
 
-const homeRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/",
-  beforeLoad: () => {
-    if (!hasSession()) throw redirect({ to: "/sign-in" });
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Don't hammer the API with retries for answers that won't change (404, 409…).
+      retry: (count, error) =>
+        count < 2 && !(error instanceof ApiError && error.status >= 400 && error.status < 500),
+    },
   },
-  component: Home,
 });
-
-const signInRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/sign-in",
-  component: SignIn,
-});
-
-const router = createRouter({ routeTree: rootRoute.addChildren([homeRoute, signInRoute]) });
-
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router;
-  }
-}
-
-const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

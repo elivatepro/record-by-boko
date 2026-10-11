@@ -63,6 +63,11 @@ export function localToday(now: number = Date.now()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** The browser-local ISO day of an instant. */
+export function localDayOf(iso: string): string {
+  return localToday(Date.parse(iso));
+}
+
 /** Fraction of the browser's local day that has passed (0–1). */
 export function localDayFraction(now: number = Date.now()): number {
   const d = new Date(now);
