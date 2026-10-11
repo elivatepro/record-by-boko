@@ -63,3 +63,29 @@ Still open:
   connection or only when binding, and test transfers offline in
   milestone 1.
 - Release builds need their own Android OAuth client (release SHA-1).
+
+## Milestone 1: Linking the recorder (in progress)
+
+Done so far (11 Oct 2026):
+- Plaud SDK 1.0.15 in `apps/android/app/libs` (Apache-2.0, committed with its checksum).
+- `RecorderSource` with `PlaudRecorderSource` and a fake; `Recorder` holds the state rules
+  (recording state is "unknown" unless reported on the current connection; search gives up
+  after 30 s, linking after 60 s). Unit-tested.
+- `RecorderService` (connected-device foreground service) keeps the recorder connected, shows
+  its state in an ongoing notification, restarts after boot or an update. `KeepConnected`
+  reconnects at once when Bluetooth returns, then after 30 s, 1, 2 and every 5 min.
+- Linked to the owner's Note Pro (…1437) and read live battery, storage and recording state.
+- Debug builds only: adb commands drive the recorder
+  (`adb shell am broadcast -n com.boko.roudio/.debug.RecorderCommands --es cmd search|link|state|…`).
+- Temporary check screen instead of the setup flow; steps 5–7 (screens) still to do.
+
+Learned:
+- **The SDK logs secrets.** Its own logger writes whole HTTP exchanges (user token, the RSA
+  private key Plaud returns) to logcat and app files. Roudio replaces Timber with a silent copy
+  (`src/main/java/timber`). See `apps/android/app/libs/README.md`.
+- **Linking a recorder that was used with the Plaud app** needs the Plaud app to unbind it
+  while connected (scan shows `bindInfo=0` afterwards), plus our force-clear first handshake.
+  Details in `apps/android/app/libs/README.md`.
+- Scanning works without the location permission on Android 12+.
+- Xiaomi: adb can't tap or grant permissions unless "USB debugging (Security settings)" is on
+  and the phone has been restarted; every adb restart or install asks for confirmation.
