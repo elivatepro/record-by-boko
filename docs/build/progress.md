@@ -279,6 +279,12 @@ Done:
 - Cost dashboard: `GET /costs` and web Settings → Costs (spend this month and in total, Scribe
   hours, OpenAI tokens, audio kept on the server).
 - Phone: looping motion (search radar, spinners) holds still when Android's animations are off.
+- Phone speed: a `fast` build type (R8, not debuggable, debug key so sign-in still works, adb
+  commands kept) is what goes on the owner's phone: `./gradlew :app:assembleFast`. The debug
+  build was what made the app feel slow.
+- The recorder notification comes straight back if it's swiped away (Android 14+ allows the swipe).
+- Launcher icon and favicon from the working mark; Today rows name who spoke and count decisions
+  (phone and web).
 
 Still to do:
 - Restore test: restore a backup into staging (Railway dashboard → Postgres → Backups → Restore;
