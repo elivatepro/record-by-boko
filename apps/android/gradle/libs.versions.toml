@@ -15,6 +15,9 @@ junit = "4.13.2"
 navigation3 = "1.2.0"
 lifecycleCompose = "2.11.0"
 coroutines = "1.11.0"
+room = "2.8.5"
+ksp = "2.3.12"
+work = "2.12.0"
 # Libraries the Plaud SDK aar uses but doesn't declare (see app/libs/README.md).
 gson = "2.14.0"
 javaWebsocket = "1.6.0"
@@ -49,6 +52,10 @@ navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", ver
 navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleCompose" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 plaud-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 plaud-retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
@@ -64,3 +71,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapiGenerator" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+room = { id = "androidx.room", version.ref = "room" }

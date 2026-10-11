@@ -10,6 +10,12 @@ import com.boko.roudio.recorder.PlaudToken
 import com.boko.roudio.recorder.PlaudTokens
 import com.boko.roudio.recorder.PrefsRecorderStore
 import com.boko.roudio.recorder.Recorder
+import com.boko.roudio.store.RecordingStore
+import com.boko.roudio.store.RoomRecordingStore
+import com.boko.roudio.store.RoudioDatabase
+import com.boko.roudio.transfer.RecordingFiles
+import com.boko.roudio.transfer.Transfers
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,4 +38,11 @@ class RoudioApp : Application() {
     val plaudSource by lazy { PlaudRecorderSource(this, plaudTokens, appScope) }
 
     val recorder by lazy { Recorder(plaudSource, PrefsRecorderStore(this), appScope) }
+
+    val database by lazy { RoudioDatabase.open(this) }
+    val recordings: RecordingStore by lazy { RoomRecordingStore(database.recordings()) }
+    val recordingFiles by lazy { RecordingFiles(File(filesDir, "recordings")) }
+
+    /** Started by [com.boko.roudio.recorder.RecorderService], so it runs with the screen off. */
+    val transfers by lazy { Transfers(plaudSource, recorder, recordings, recordingFiles, appScope) }
 }

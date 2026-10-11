@@ -202,7 +202,9 @@ class PlaudRecorderSource(
 
     override suspend fun export(file: RecorderFile, target: File, onProgress: (Int) -> Unit) = fileLock.withLock {
         if (connectedSerial == null) throw ExportException("not connected")
-        val dir = File(context.cacheDir, EXPORT_DIR).apply { deleteRecursively(); mkdirs() }
+        // Under files/, not cache/: the result is moved into the recordings folder and must never
+        // count as cache Android may clear.
+        val dir = File(context.filesDir, EXPORT_DIR).apply { deleteRecursively(); mkdirs() }
         val done = CompletableDeferred<File>()
         val lastProgressAt = AtomicLong(System.currentTimeMillis())
         val callback = object : AudioExporter.ExportCallback {

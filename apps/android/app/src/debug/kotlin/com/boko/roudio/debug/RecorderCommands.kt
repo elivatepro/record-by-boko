@@ -8,6 +8,7 @@ import com.boko.roudio.RoudioApp
 import com.boko.roudio.recorder.LinkPhase
 import java.io.File
 import java.security.MessageDigest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -22,7 +23,8 @@ import org.json.JSONObject
  * disconnect, unlink, state, binding --es serial … (asks Plaud's cloud who the recorder is bound
  * to; logs only whether it's bound and how many past bindings there are, never the ids),
  * files (lists the recordings), export --el session … (copies one to the app's cache and logs
- * its size, header, duration and SHA-256; nothing is deleted from the recorder).
+ * its size, header, duration and SHA-256; nothing is deleted from the recorder), transfer (asks
+ * the transfer engine to check now), recordings (logs the saved recordings and their tracks).
  * Each one logs the resulting state under the tag "RecorderDebug".
  */
 class RecorderCommands : BroadcastReceiver() {
@@ -77,6 +79,22 @@ class RecorderCommands : BroadcastReceiver() {
                 }
                 return
             }
+            "transfer" -> app.transfers.check()
+            "recordings" -> {
+                val pending = goAsync()
+                app.appScope.launch {
+                    app.recordings.recordings.first().forEach {
+                        Log.i(
+                            TAG,
+                            "recording ${it.id} session ${it.sessionId} start ${it.startedAt} transfer ${it.transfer} " +
+                                "attempts ${it.transferAttempts} error ${it.transferError} file ${it.fileName} " +
+                                "${it.fileBytes} bytes ${it.durationMs} ms sha ${it.sha256?.take(12)}",
+                        )
+                    }
+                    pending.finish()
+                }
+                return
+            }
             "forceclear" -> app.plaudSource.forceClearOnFirstLink = intent.getBooleanExtra("on", true)
             "state" -> Unit
             else -> Log.w(TAG, "unknown command $cmd")
@@ -95,7 +113,7 @@ class RecorderCommands : BroadcastReceiver() {
         var last = -1
         app.plaudSource.export(file, target) { p -> if (p / 10 != last / 10) Log.i(TAG, "export $p%").also { last = p } }
         val seconds = (System.currentTimeMillis() - started) / 1000.0
-        val head = target.inputStream().use { it.readNBytes(64) }
+        val head = ByteArray(64).also { buffer -> target.inputStream().use { it.read(buffer) } }
         val sha = MessageDigest.getInstance("SHA-256").digest(target.readBytes()).joinToString("") { "%02x".format(it) }
         Log.i(
             TAG,

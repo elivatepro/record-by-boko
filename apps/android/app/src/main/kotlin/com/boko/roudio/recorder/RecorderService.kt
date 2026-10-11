@@ -33,7 +33,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * Holds the recorder connection while the screen is off (spec §2, "Transfer service"). A
+ * Holds the recorder connection and runs transfers while the screen is off (spec §2, "Transfer
+ * service"). A
  * connected-device foreground service: Android shows its notification for as long as it runs.
  * Runs whenever a recorder is linked; stops itself after unlinking.
  */
@@ -66,6 +67,7 @@ class RecorderService : Service() {
         }
         if (keeper == null) {
             keeper = KeepConnected(recorder, scope).also { it.start() }
+            (application as RoudioApp).transfers.start()
             watcher = scope.launch {
                 recorder.state.map(::NotificationContent).distinctUntilChanged().collect { content ->
                     val latest = recorder.state.value
@@ -83,6 +85,7 @@ class RecorderService : Service() {
 
     override fun onDestroy() {
         keeper?.stop()
+        (application as RoudioApp).transfers.stop()
         watcher?.cancel()
         scope.cancel()
         super.onDestroy()

@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.openapi.generator)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 // Per-machine settings live in local.properties (git-ignored). See README.md.
@@ -53,6 +55,11 @@ android {
         buildConfig = true
     }
 
+    // Unit tests run on the JVM; android.util.Log and friends do nothing there instead of throwing.
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -92,6 +99,11 @@ androidComponents {
     }
 }
 
+// Exported Room schemas are committed, so every migration can be checked against them.
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -117,6 +129,11 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+    implementation(libs.work.runtime.ktx)
 
     // Plaud SDK (app/libs/README.md) and the libraries it needs at runtime. Timber is replaced
     // by a silent copy in src/main/java/timber, so the SDK can't log secrets.
