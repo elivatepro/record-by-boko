@@ -217,14 +217,16 @@ function TimelineItem({ row }: { row: TimelineRow }) {
           {row.processing.tone === "alert" && row.processing.detail ? row.processing.detail : row.meta}
         </p>
       </div>
-      <span className="timeline-row__status">
-        <span className="sr-only">Processing: </span>
-        <StatusWord status={row.processing} />
-      </span>
-      <span className="timeline-row__status">
-        <span className="sr-only">Drive backup: </span>
-        <StatusWord status={row.backup} cloud />
-      </span>
+      <div className="timeline-row__statuses">
+        <span className="timeline-row__status">
+          <span className="sr-only">Processing: </span>
+          <StatusWord status={row.processing} />
+        </span>
+        <span className="timeline-row__status">
+          <span className="sr-only">Drive backup: </span>
+          <StatusWord status={row.backup} cloud />
+        </span>
+      </div>
     </li>
   );
 }

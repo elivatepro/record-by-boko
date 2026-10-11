@@ -120,7 +120,7 @@ export function Search() {
           onChange={(event) => setText(event.currentTarget.value)}
           aria-controls="search-results"
         />
-        {q && results.data && (
+        {q && results.data && filtered.length > 0 && (
           <span className="search-box__count" aria-live="polite">
             {matchCount} {matchCount === 1 ? "match" : "matches"} in {filtered.length}{" "}
             {filtered.length === 1 ? "recording" : "recordings"}

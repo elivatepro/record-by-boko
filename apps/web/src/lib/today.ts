@@ -76,9 +76,11 @@ export function timelineRows(recordings: Recording[], conversations: Conversatio
         time: wallTime(r.started_at, offset),
         title: r.duration_ms === null ? "Recording" : `Recording · ${duration(length)}`,
         meta:
-          r.processing_state === "failed"
-            ? "The audio is safe on the server. You can still play it."
-            : "Notes and transcript appear here once it's written up",
+          r.transfer_state !== "uploaded"
+            ? "Your phone is still sending it"
+            : r.processing_state === "failed"
+              ? "The audio is safe on the server."
+              : "Notes come once it’s written up",
         recordingId: r.id,
         processing,
         backup,
