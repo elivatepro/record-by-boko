@@ -147,3 +147,27 @@ def encode_opus(raw: Path, out: Path, *, bitrate: str = "32k") -> None:
     )
     if result.returncode != 0:
         raise AudioError(f"ffmpeg couldn't encode: {result.stderr.decode(errors='replace')[:500]}")
+
+
+def opus_only(source: Path, target: Path) -> None:
+    """Copy [source] keeping only its Opus stream, for players.
+
+    Plaud's files interleave a second Ogg stream (a "PLAUD.AI" metadata stream). ffmpeg skips it,
+    but Android's player feeds it to the Opus decoder and fails. The stored original is never
+    changed: its checksum is what the clean-up gate compares.
+    """
+    opus_serial: bytes | None = None
+    with source.open("rb") as src, target.open("wb") as dst:
+        while True:
+            header = src.read(27)
+            if len(header) < 27 or header[:4] != b"OggS":
+                break
+            table = src.read(header[26])
+            body = src.read(sum(table))
+            serial = header[14:18]
+            if opus_serial is None and body.startswith(b"OpusHead"):
+                opus_serial = serial
+            if serial == opus_serial:
+                dst.write(header + table + body)
+    if opus_serial is None:
+        shutil.copyfile(source, target)  # not Ogg Opus: leave it to the player

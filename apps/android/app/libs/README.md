@@ -40,6 +40,13 @@ no-op; never bring the real Timber back. The SDK's Bluetooth logs (`PenBleSDK-*`
 
 ## Exporting (learned on the owner's Note Pro, 11 Oct 2026)
 
+- **Two Ogg streams in one file.** Exports interleave the Opus audio (serial `0x3e9`) with a
+  second stream (serial `0x3ea`) whose first page is a 300-byte `PLAUD.AI` header, then a 23-byte
+  packet about every second. ffmpeg plays only the Opus stream; Android's player (Media3) feeds
+  both to `c2.android.opus.decoder`, which fails with error 14. Stored files stay as exported
+  (their checksums are what the clean-up gate compares); players get an Opus-only copy instead:
+  `OggOpus.audioOnly` on the phone, `opus_only` and a `.play.opus` object on the server.
+
 - `getFileList()` answers through `bleFileList`; each `BleFile` gives only `sessionId` (the start in
   Unix seconds) and `fileSize` publicly.
 - `exportAudio(sessionId, dir, OPUS, 1, callback)` writes Ogg Opus into `dir`: mono, 16 kHz input

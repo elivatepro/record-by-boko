@@ -56,6 +56,12 @@ class AudioStore(Protocol):
         """A short-lived link to stream the file (players on the phone and web)."""
         ...
 
+    async def exists(self, key: str) -> bool: ...
+
+    async def put_file(self, key: str, source: Path) -> None:
+        """Store a small derived file in one go (the playback copy)."""
+        ...
+
 
 class S3AudioStore:
     def __init__(
@@ -172,6 +178,24 @@ class S3AudioStore:
 
         return await self._run(call)
 
+    async def exists(self, key: str) -> bool:
+        def call() -> bool:
+            try:
+                self._s3.head_object(Bucket=self._bucket, Key=key)
+                return True
+            except ClientError as exc:
+                if exc.response.get("Error", {}).get("Code") in ("404", "NoSuchKey", "NotFound"):
+                    return False
+                raise
+
+        return await self._run(call)
+
+    async def put_file(self, key: str, source: Path) -> None:
+        def call() -> None:
+            self._s3.upload_file(str(source), self._bucket, key)
+
+        await self._run(call)
+
     @staticmethod
     async def _run[T](call: Callable[[], T]) -> T:
         try:
@@ -210,4 +234,10 @@ class UnconfiguredAudioStore:
         raise StorageError(self.message)
 
     async def presigned_url(self, key: str, *, seconds: int = 3600) -> str:
+        raise StorageError(self.message)
+
+    async def exists(self, key: str) -> bool:
+        raise StorageError(self.message)
+
+    async def put_file(self, key: str, source: Path) -> None:
         raise StorageError(self.message)

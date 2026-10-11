@@ -4,8 +4,11 @@ Times: `*_at` are absolute UTC instants; `*_ms` are offsets into the recording's
 (what the player seeks to). Every generated statement carries the transcript segments it rests on.
 """
 
+import asyncio
 import logging
+import tempfile
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -29,6 +32,7 @@ from roudio.models import (
     Word,
 )
 from roudio.pipeline import services as pipeline
+from roudio.pipeline.audio import opus_only
 from roudio.pipeline.brain import BrainError, BrainNotConfigured, Line
 from roudio.pipeline.digest import _recordings_on
 from roudio.storage import StorageError
@@ -395,8 +399,16 @@ async def recording_audio(
         raise error(
             status.HTTP_404_NOT_FOUND, "not_found", "That recording's audio isn't on the server."
         )
+    # Players get a copy with only the Opus stream (see `opus_only`); made once, on first play.
+    play_key = recording.storage_key.removesuffix(".opus") + ".play.opus"
     try:
-        url = await services.audio.presigned_url(recording.storage_key, seconds=3600)
+        if not await services.audio.exists(play_key):
+            with tempfile.TemporaryDirectory(prefix="roudio-play-") as tmp:
+                original, playable = Path(tmp) / "original.opus", Path(tmp) / "play.opus"
+                await services.audio.download(recording.storage_key, original)
+                await asyncio.to_thread(opus_only, original, playable)
+                await services.audio.put_file(play_key, playable)
+        url = await services.audio.presigned_url(play_key, seconds=3600)
     except StorageError as exc:
         raise error(
             status.HTTP_503_SERVICE_UNAVAILABLE,

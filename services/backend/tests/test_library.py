@@ -69,6 +69,7 @@ async def test_audio_is_a_short_lived_link(
 ) -> None:
     body = (await client.get(f"/recordings/{processed.recording_id}/audio", headers=auth)).json()
     assert body["url"].startswith("https://")
+    assert ".play.opus" in body["url"]  # the Opus-only copy players get
 
 
 async def test_ask_answers_from_the_recording_with_checked_sources(
@@ -198,3 +199,23 @@ async def test_a_conversation_can_be_renamed(
         f"/conversations/{processed.id}", json={"title": "Studio call"}, headers=auth
     )
     assert renamed.status_code == 200 and renamed.json()["title"] == "Studio call"
+
+
+def test_the_playback_copy_drops_plauds_metadata_stream(tmp_path: Path) -> None:
+    from roudio.pipeline.audio import opus_only
+
+    def page(serial: int, body: bytes) -> bytes:
+        header = b"OggS" + bytes(10) + serial.to_bytes(4, "little") + bytes(8) + bytes([1])
+        return header + bytes([len(body)]) + body
+
+    head, tags, audio = (
+        page(0x3E9, b"OpusHead" + bytes(11)),
+        page(0x3E9, b"OpusTags"),
+        page(0x3E9, b"\xb8\x01"),
+    )
+    plaud, meta = page(0x3EA, b"PLAUD.AI"), page(0x3EA, bytes(23))
+    source = tmp_path / "rec.opus"
+    source.write_bytes(head + plaud + tags + audio + meta)
+    target = tmp_path / "play.opus"
+    opus_only(source, target)
+    assert target.read_bytes() == head + tags + audio
