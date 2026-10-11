@@ -65,6 +65,22 @@ object RoudioIcons {
         thickLines = listOf("M4 4l16 16"),
     )
 
+    // Tab bar (Paper "Nav — clear glass pill")
+    val TabToday = line("M4 6.5h2.5M10 6.5h10M4 12h2.5M10 12h10M4 17.5h2.5M10 17.5h6.5", width = 2f)
+    val TabSearch = icon("TabSearch", lines = listOf("M17 10.75a6.25 6.25 0 1 1-12.5 0 6.25 6.25 0 0 1 12.5 0z", "M15.5 15.5 20 20"))
+    val TabReview = icon(
+        "TabReview",
+        lines = listOf(
+            "M4 13.5 6.1 6.4A2 2 0 0 1 8 5h8a2 2 0 0 1 1.9 1.4L20 13.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z",
+            "M4 13.5h4.5l1.2 2h4.6l1.2-2H20",
+            "m9.5 9.6 1.9 1.9 3.4-3.4",
+        ),
+    )
+    val TabSettings = icon(
+        "TabSettings",
+        lines = listOf("M4 7.5h8.5M16.5 7.5H20M4 16.5h3M11 16.5h9", "M16.5 7.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0z", "M11 16.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"),
+    )
+
     // 01 Today recorder chip
     val RecorderChip = icon(
         "RecorderChip",

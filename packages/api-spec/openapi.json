@@ -677,6 +677,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
+              "format": "int64",
               "title": "Segment Id"
             }
           }
@@ -734,6 +736,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
+              "format": "int64",
               "title": "Speaker Id"
             }
           }
@@ -855,6 +859,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
+              "format": "int64",
               "title": "Review Id"
             }
           }
@@ -986,6 +992,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
+              "format": "int64",
               "title": "Word Id"
             }
           }
@@ -1041,6 +1049,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
+              "format": "int64",
               "title": "Word Id"
             }
           }

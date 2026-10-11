@@ -186,6 +186,9 @@ class MemoryRecordingStore : RecordingStore {
 
     override suspend fun byId(id: Long) = rows.value.firstOrNull { it.id == id }
 
+    override suspend fun bySession(serial: String, sessionId: Long) =
+        rows.value.firstOrNull { it.serial == serial && it.sessionId == sessionId }
+
     override suspend fun update(recording: Recording) {
         rows.value = rows.value.map { if (it.id == recording.id) recording else it }
     }

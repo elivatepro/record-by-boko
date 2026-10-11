@@ -42,3 +42,4 @@ captures/
 
 # Model weights, downloaded by the Docker build (services/backend/Dockerfile) or by hand
 services/backend/models/
+.claude/

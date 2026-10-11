@@ -15,7 +15,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from roudio.api.deps import AppServices, CurrentSession, Db, error
-from roudio.api.schema import INT64
+from roudio.api.schema import INT64, Id64
 from roudio.models import (
     AskTurn,
     Conversation,
@@ -443,7 +443,7 @@ class SegmentEdit(BaseModel):
 
 @router.patch("/segments/{segment_id}", operation_id="editSegment")
 async def edit_segment(
-    segment_id: int, body: SegmentEdit, _: CurrentSession, db: Db
+    segment_id: Id64, body: SegmentEdit, _: CurrentSession, db: Db
 ) -> SegmentView:
     segment = await db.get(TranscriptSegment, segment_id)
     if segment is None:
@@ -491,7 +491,7 @@ class SpeakerRename(BaseModel):
 
 @router.patch("/speakers/{speaker_id}", operation_id="renameSpeaker")
 async def rename_speaker(
-    speaker_id: int, body: SpeakerRename, _: CurrentSession, db: Db
+    speaker_id: Id64, body: SpeakerRename, _: CurrentSession, db: Db
 ) -> SpeakerView:
     speaker = await db.get(Speaker, speaker_id)
     if speaker is None:

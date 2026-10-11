@@ -35,7 +35,11 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
         val app = applicationContext as RoudioApp
         if (!app.session.signedIn.value) return Result.success() // nothing can go up signed out
         return when (app.uploader.uploadAll()) {
-            Uploader.Outcome.Done -> Result.success()
+            Uploader.Outcome.Done -> {
+                // Processing starts on the server now; pick up its states.
+                app.sync.run()
+                Result.success()
+            }
             Uploader.Outcome.Retry -> Result.retry()
         }
     }

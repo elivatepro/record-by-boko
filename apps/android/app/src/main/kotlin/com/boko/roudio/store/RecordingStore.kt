@@ -14,6 +14,8 @@ interface RecordingStore {
     suspend fun byId(id: Long): Recording?
 
     suspend fun update(recording: Recording)
+
+    suspend fun bySession(serial: String, sessionId: Long): Recording?
 }
 
 class RoomRecordingStore(private val dao: RecordingDao) : RecordingStore {
@@ -26,4 +28,6 @@ class RoomRecordingStore(private val dao: RecordingDao) : RecordingStore {
     override suspend fun byId(id: Long) = dao.byId(id)
 
     override suspend fun update(recording: Recording) = dao.update(recording)
+
+    override suspend fun bySession(serial: String, sessionId: Long) = dao.bySession(serial, sessionId)
 }

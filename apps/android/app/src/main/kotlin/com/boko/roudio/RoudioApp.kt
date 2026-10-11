@@ -10,6 +10,9 @@ import com.boko.roudio.recorder.PlaudToken
 import com.boko.roudio.recorder.PlaudTokens
 import com.boko.roudio.recorder.PrefsRecorderStore
 import com.boko.roudio.recorder.Recorder
+import com.boko.roudio.data.PrefsSyncCursor
+import com.boko.roudio.data.Sync
+import com.boko.roudio.data.SyncWork
 import com.boko.roudio.store.RecordingStore
 import com.boko.roudio.system.NetworkMonitor
 import com.boko.roudio.store.RoomRecordingStore
@@ -53,11 +56,14 @@ class RoudioApp : Application() {
 
     val network by lazy { NetworkMonitor(this) }
 
+    val sync by lazy { Sync(api.organise, api.library, recordings, database.library(), PrefsSyncCursor(this)) }
+
     val uploader by lazy { Uploader(api.recordings, recordings, recordingFiles) }
 
     override fun onCreate() {
         super.onCreate()
         // Anything left waiting from before (no network, app stopped) goes up when it can.
         Uploads.enqueue(this)
+        SyncWork.schedule(this)
     }
 }

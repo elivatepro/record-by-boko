@@ -43,9 +43,15 @@ data class Recording(
     /** Why the last upload try stopped, in plain words; null once it worked. */
     val uploadError: String? = null,
 
+    /** The other three tracks are the server's; the phone mirrors them on every sync. */
     val processing: ProcessingState = ProcessingState.Waiting,
+    val processingError: String? = null,
     val backup: BackupState = BackupState.Waiting,
+    val backupError: String? = null,
     val cleanup: CleanupState = CleanupState.Blocked,
+    /** Bumped by the server when the write-up changes; conversations are fetched again then. */
+    @ColumnInfo(defaultValue = "0") val resultsVersion: Int = 0,
+    val language: String? = null,
 
     val firstSeenAt: Instant,
     val updatedAt: Instant,
@@ -54,9 +60,46 @@ data class Recording(
 /** on recorder → transferring → on phone (checksum saved) → uploading → uploaded. */
 enum class TransferState { OnRecorder, Transferring, OnPhone, Uploading, Uploaded }
 
-enum class ProcessingState { Waiting, FindingSpeech, Transcribing, Tidying, Understanding, Done }
+enum class ProcessingState {
+    Waiting, FindingSpeech, Transcribing, Tidying, Understanding, Done, Failed;
 
-enum class BackupState { Waiting, Uploading, Checking, BackedUp }
+    companion object {
+        fun fromServer(value: String): ProcessingState = when (value) {
+            "finding_speech" -> FindingSpeech
+            "transcribing" -> Transcribing
+            "tidying" -> Tidying
+            "understanding" -> Understanding
+            "done" -> Done
+            "failed" -> Failed
+            else -> Waiting
+        }
+    }
+}
+
+enum class BackupState {
+    Waiting, Uploading, Checking, BackedUp, Failed;
+
+    companion object {
+        fun fromServer(value: String): BackupState = when (value) {
+            "uploading" -> Uploading
+            "checking" -> Checking
+            "backed_up" -> BackedUp
+            "failed" -> Failed
+            else -> Waiting
+        }
+    }
+}
 
 /** The phone copy is never deleted automatically; this is only about the recorder (spec §8). */
-enum class CleanupState { Blocked, CanCleanUp, Deleting, Cleared }
+enum class CleanupState {
+    Blocked, CanCleanUp, Deleting, Cleared;
+
+    companion object {
+        fun fromServer(value: String): CleanupState = when (value) {
+            "can_clean_up" -> CanCleanUp
+            "deleting" -> Deleting
+            "cleared" -> Cleared
+            else -> Blocked
+        }
+    }
+}

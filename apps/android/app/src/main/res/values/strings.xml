@@ -253,6 +253,9 @@
 
     <!-- 01 Today (shell until milestone 2) and the recorder chip -->
     <string name="today">Today</string>
+    <string name="tab_search">Search</string>
+    <string name="tab_review">Review</string>
+    <string name="tab_settings">Settings</string>
     <string name="chip_linked">Plaud linked</string>
     <string name="chip_linked_battery">Plaud linked · %1$d%%</string>
     <string name="chip_not_connected_seen">Plaud not connected · seen %1$s</string>

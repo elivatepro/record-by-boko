@@ -16,7 +16,7 @@ from roudio.api.library import (
     conversation_view,
     recording_view,
 )
-from roudio.api.schema import INT64
+from roudio.api.schema import INT64, Id64
 from roudio.models import (
     Conversation,
     DayDigest,
@@ -87,7 +87,7 @@ class ReviewChange(BaseModel):
 
 @router.patch("/review/{review_id}", operation_id="updateReview")
 async def update_review(
-    review_id: int, body: ReviewChange, _: CurrentSession, db: Db
+    review_id: Id64, body: ReviewChange, _: CurrentSession, db: Db
 ) -> ReviewView:
     row = (
         await db.execute(
@@ -158,7 +158,7 @@ async def add_word(body: WordRequest, _: CurrentSession, db: Db) -> WordView:
 
 
 @router.patch("/words/{word_id}", operation_id="updateWord")
-async def update_word(word_id: int, body: WordChange, _: CurrentSession, db: Db) -> WordView:
+async def update_word(word_id: Id64, body: WordChange, _: CurrentSession, db: Db) -> WordView:
     word = await db.get(Word, word_id)
     if word is None:
         raise error(status.HTTP_404_NOT_FOUND, "not_found", "That word isn't on the list.")
@@ -168,7 +168,7 @@ async def update_word(word_id: int, body: WordChange, _: CurrentSession, db: Db)
 
 
 @router.delete("/words/{word_id}", operation_id="deleteWord", status_code=204)
-async def delete_word(word_id: int, _: CurrentSession, db: Db) -> None:
+async def delete_word(word_id: Id64, _: CurrentSession, db: Db) -> None:
     word = await db.get(Word, word_id)
     if word is not None:
         await db.delete(word)

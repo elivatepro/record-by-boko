@@ -27,6 +27,7 @@ import com.boko.roudio.auth.GoogleAuth
 import com.boko.roudio.auth.GoogleSignInCancelled
 import com.boko.roudio.data.ApiException
 import com.boko.roudio.data.errorDetail
+import com.boko.roudio.data.SyncWork
 import com.boko.roudio.recorder.RecorderService
 import com.boko.roudio.system.PhoneSettings
 import com.boko.roudio.ui.setup.FindRecorderRoute
@@ -42,7 +43,18 @@ import com.boko.roudio.ui.signin.SignInScreen
 import com.boko.roudio.ui.recorder.RecorderScreen
 import com.boko.roudio.ui.recorder.rememberNow
 import com.boko.roudio.ui.theme.RoudioTheme
+import com.boko.roudio.ui.backups.BackupsRoute
+import com.boko.roudio.ui.conversation.ConversationRoute
+import com.boko.roudio.ui.digest.DigestRoute
+import com.boko.roudio.ui.nav.Tab
+import com.boko.roudio.ui.nav.TabScaffold
+import com.boko.roudio.ui.review.ReviewRoute
+import com.boko.roudio.ui.search.SearchRoute
+import com.boko.roudio.ui.settings.LanguagesRoute
+import com.boko.roudio.ui.settings.SettingsRoute
+import com.boko.roudio.ui.settings.WordListRoute
 import com.boko.roudio.ui.today.TodayModel
+import com.boko.roudio.ui.updates.UpdatesRoute
 import com.boko.roudio.ui.today.TodayScreen
 import java.io.IOException
 import java.time.ZoneId
@@ -59,8 +71,20 @@ import kotlinx.serialization.Serializable
 @Serializable data object FindRecorder : NavKey // 11f, 11g (12a, 12b, 12c over them)
 @Serializable data object Linking : NavKey // 11h (12b, 12d, 12e over it)
 @Serializable data object Linked : NavKey // 11i
-@Serializable data object Home : NavKey // 01 Today
-@Serializable data object RecorderDetails : NavKey // 13a, 13b
+/** The screens of the linked app (as opposed to setup). */
+sealed interface MainKey : NavKey
+
+@Serializable data object Home : MainKey // 01 Today
+@Serializable data object SearchTab : MainKey // 05
+@Serializable data object ReviewTab : MainKey // 10
+@Serializable data object SettingsTab : MainKey // 15
+@Serializable data object RecorderDetails : MainKey // 13a, 13b
+@Serializable data class ConversationKey(val id: String, val atMs: Long? = null) : MainKey // 06, 07, 08
+@Serializable data class DigestKey(val day: String) : MainKey // 09
+@Serializable data object UpdatesKey : MainKey // 03
+@Serializable data object BackupsKey : MainKey // 14
+@Serializable data object WordListKey : MainKey // 15b
+@Serializable data object LanguagesKey : MainKey // 15c
 
 class MainActivity : ComponentActivity() {
     private val app get() = application as RoudioApp
@@ -72,6 +96,11 @@ class MainActivity : ComponentActivity() {
 
     private val googleAuth: GoogleAuth by lazy {
         GoogleAuth(this, BuildConfig.GOOGLE_SERVER_CLIENT_ID, consentLauncher)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (app.session.signedIn.value) SyncWork.now(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,8 +127,8 @@ class MainActivity : ComponentActivity() {
             val section = backStack.lastOrNull()
             val inRightSection = when {
                 !signedIn -> section == Welcome || section == SignIn
-                linked -> section in setOf(Home, RecorderDetails, Linking, Linked)
-                else -> section !in setOf(Welcome, SignIn, Home, RecorderDetails, Linked)
+                linked -> section is MainKey || section == Linking || section == Linked
+                else -> section !is MainKey && section != Welcome && section != SignIn && section != Linked
             }
             if (!inRightSection && debugScreen() == null) backStack.resetTo(start)
         }
@@ -155,7 +184,56 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 entry<Linked> { LinkedRoute(app.recorder, onDone = { backStack.resetTo(Home) }) }
-                entry<Home> { Today(onRecorder = { backStack.add(RecorderDetails) }) }
+                val badges = app.sync.badges
+                val openConversation: (String, Long?) -> Unit = { id, at -> backStack.add(ConversationKey(id, at)) }
+                val selectTab: (Tab) -> Unit = { tab ->
+                    backStack.resetTo(Home)
+                    when (tab) {
+                        Tab.Today -> Unit
+                        Tab.Search -> backStack.add(SearchTab)
+                        Tab.Review -> backStack.add(ReviewTab)
+                        Tab.Settings -> backStack.add(SettingsTab)
+                    }
+                }
+                entry<Home> {
+                    val waiting by badges.collectAsState()
+                    TabScaffold(Tab.Today, waiting.waitingReview > 0, selectTab) {
+                        Today(
+                            onRecorder = { backStack.add(RecorderDetails) },
+                            onConversation = openConversation,
+                            onDigest = { day -> backStack.add(DigestKey(day)) },
+                            onUpdates = { backStack.add(UpdatesKey) },
+                            unreadUpdates = waiting.unreadUpdates,
+                        )
+                    }
+                }
+                entry<SearchTab> {
+                    val waiting by badges.collectAsState()
+                    TabScaffold(Tab.Search, waiting.waitingReview > 0, selectTab) { SearchRoute(app, openConversation) }
+                }
+                entry<ReviewTab> {
+                    val waiting by badges.collectAsState()
+                    TabScaffold(Tab.Review, waiting.waitingReview > 0, selectTab) { ReviewRoute(app, openConversation) }
+                }
+                entry<SettingsTab> {
+                    val waiting by badges.collectAsState()
+                    TabScaffold(Tab.Settings, waiting.waitingReview > 0, selectTab) {
+                        SettingsRoute(
+                            app,
+                            onRecorder = { backStack.add(RecorderDetails) },
+                            onBackups = { backStack.add(BackupsKey) },
+                            onWordList = { backStack.add(WordListKey) },
+                            onLanguages = { backStack.add(LanguagesKey) },
+                            onSignOut = ::signOut,
+                        )
+                    }
+                }
+                entry<ConversationKey> { key -> ConversationRoute(app, key.id, key.atMs, onBack = pop) }
+                entry<DigestKey> { key -> DigestRoute(app, key.day, openConversation, onBack = pop) }
+                entry<UpdatesKey> { UpdatesRoute(app, openConversation, onBackups = { backStack.add(BackupsKey) }, onBack = pop) }
+                entry<BackupsKey> { BackupsRoute(app, onBack = pop) }
+                entry<WordListKey> { WordListRoute(app, onBack = pop) }
+                entry<LanguagesKey> { LanguagesRoute(app, onBack = pop) }
                 entry<RecorderDetails> {
                     val scope = rememberCoroutineScope()
                     val state by app.recorder.state.collectAsState()
@@ -242,7 +320,13 @@ class MainActivity : ComponentActivity() {
 
     /** 01 Today with live data. A past day isn't a new screen: Back returns to today. */
     @Composable
-    private fun Today(onRecorder: () -> Unit) {
+    private fun Today(
+        onRecorder: () -> Unit,
+        onConversation: (String, Long?) -> Unit,
+        onDigest: (String) -> Unit,
+        onUpdates: () -> Unit,
+        unreadUpdates: Int,
+    ) {
         val recorder by app.recorder.state.collectAsState()
         val recordings by app.recordings.recordings.collectAsState(initial = emptyList())
         val progress by app.transfers.progress.collectAsState()
@@ -264,6 +348,15 @@ class MainActivity : ComponentActivity() {
             onPreviousDay = { daysBack++ },
             onBackToToday = { daysBack = 0 },
         )
+    }
+
+    /** Settings › Sign out: ends the session here and on the server; the recorder stays linked. */
+    private fun signOut() {
+        app.appScope.launch {
+            runCatching { app.api.auth.signOut() }
+            app.session.clear()
+            app.plaudTokens.clear()
+        }
     }
 
     private suspend fun signIn() {
