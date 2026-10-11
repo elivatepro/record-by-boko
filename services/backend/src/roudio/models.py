@@ -371,6 +371,9 @@ class AskTurn(Base):
     # False means "not enough in this recording".
     enough: Mapped[bool] = mapped_column(Boolean)
     sources: Mapped[list[int]] = mapped_column(ARRAY(Integer), server_default="{}")
+    # From the web or general knowledge, kept apart from the cited answer (owner's choice, 11 Oct).
+    beyond: Mapped[str | None] = mapped_column(Text)
+    links: Mapped[list[dict[str, str]]] = mapped_column(JSONB, server_default=text("'[]'::jsonb"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

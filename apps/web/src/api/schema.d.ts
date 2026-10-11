@@ -591,6 +591,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AskLink */
+        AskLink: {
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+        };
         /** AskRequest */
         AskRequest: {
             /** Question */
@@ -611,6 +618,16 @@ export interface components {
             enough: boolean;
             /** Sources */
             sources: number[];
+            /**
+             * Beyond
+             * @description From the web, not the recording: shown apart, never cited
+             */
+            beyond?: string | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["AskLink"][];
             /**
              * Created At
              * Format: date-time

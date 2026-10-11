@@ -128,12 +128,21 @@ class ItemView(BaseModel):
     review_state: str | None = None
 
 
+class AskLink(BaseModel):
+    title: str
+    url: str
+
+
 class AskView(BaseModel):
     id: int = Field(json_schema_extra=INT64)
     question: str
     answer: str
     enough: bool
     sources: list[int]
+    beyond: str | None = Field(
+        default=None, description="From the web, not the recording: shown apart, never cited"
+    )
+    links: list[AskLink] = []
     created_at: datetime
 
 
@@ -356,17 +365,7 @@ async def get_conversation(conversation_id: UUID, _: CurrentSession, db: Db) -> 
         segments=[segment_view(s, names) for s in segments],
         language=r.language,
         note=note.text if note else None,
-        asks=[
-            AskView(
-                id=a.id,
-                question=a.question,
-                answer=a.answer,
-                enough=a.enough,
-                sources=a.sources,
-                created_at=a.created_at,
-            )
-            for a in asks
-        ],
+        asks=[ask_view(a) for a in asks],
     )
 
 
@@ -477,15 +476,23 @@ async def ask(conversation_id: UUID, body: AskRequest, _: CurrentSession, db: Db
         answer=answer,
         enough=enough,
         sources=sources,
+        beyond=result.value.beyond,
+        links=[{"title": link.title, "url": link.url} for link in result.value.links],
     )
     db.add(turn)
     await db.commit()
+    return ask_view(turn)
+
+
+def ask_view(turn: AskTurn) -> AskView:
     return AskView(
         id=turn.id,
         question=turn.question,
         answer=turn.answer,
         enough=turn.enough,
         sources=turn.sources,
+        beyond=turn.beyond,
+        links=[AskLink(**link) for link in turn.links or []],
         created_at=turn.created_at,
     )
 

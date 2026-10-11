@@ -270,3 +270,33 @@ async def test_a_new_worker_gives_failed_write_ups_one_more_try(
     await db.refresh(recording)
     assert recording.processing_state == "waiting"
     assert recording.processing_error is None
+
+
+async def test_ask_can_search_the_web_and_keeps_that_apart() -> None:
+    import json as _json
+
+    import httpx
+
+    from roudio.pipeline.brain import Line, OpenAIBrain
+
+    sent: dict[str, Any] = {}
+
+    async def answer(request: httpx.Request) -> httpx.Response:
+        sent.update(_json.loads(await request.aread()))
+        out = {
+            "answer": "It doesn't name the prank [3].",
+            "enough": False,
+            "sources": [3],
+            "beyond": "Likely the Goat Boy call ([stern.com](https://stern.com/a?utm_source=openai)).",
+            "links": [{"title": "Goat Boy", "url": "https://stern.com/a?utm_source=openai"}],
+        }
+        body = {"output": [{"content": [{"type": "output_text", "text": _json.dumps(out)}]}]}
+        return httpx.Response(200, json=body)
+
+    brain = OpenAIBrain(
+        "k", "gpt-6.1-sol", client=httpx.AsyncClient(transport=httpx.MockTransport(answer))
+    )
+    result = await brain.ask([Line(3, "speaker_1", 4000, "goat feed")], "Which prank call is this?")
+    assert sent["tools"] == [{"type": "web_search"}]
+    assert result.value.beyond == "Likely the Goat Boy call."
+    assert result.value.links[0].url == "https://stern.com/a"

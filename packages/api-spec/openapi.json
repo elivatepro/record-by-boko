@@ -1685,6 +1685,24 @@
   },
   "components": {
     "schemas": {
+      "AskLink": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "url"
+        ],
+        "title": "AskLink"
+      },
       "AskRequest": {
         "properties": {
           "question": {
@@ -1725,6 +1743,26 @@
             },
             "type": "array",
             "title": "Sources"
+          },
+          "beyond": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Beyond",
+            "description": "From the web, not the recording: shown apart, never cited"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/AskLink"
+            },
+            "type": "array",
+            "title": "Links",
+            "default": []
           },
           "created_at": {
             "type": "string",

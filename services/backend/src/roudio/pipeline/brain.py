@@ -75,10 +75,19 @@ class Digest:
 
 
 @dataclass(frozen=True)
+class Link:
+    title: str
+    url: str
+
+
+@dataclass(frozen=True)
 class Answer:
     text: str
     enough: bool
     sources: list[int]
+    # What the recording can't say, from the web or general knowledge: kept apart, never cited.
+    beyond: str | None = None
+    links: list[Link] = field(default_factory=list)
 
 
 @dataclass
@@ -141,10 +150,14 @@ DIGEST = """You write the owner's daily digest from their conversations. Give a 
 overview of the day written to them as "you" (plain, warm, no hype), and pick up to five of the
 numbered items as the day's key moments, in time order. Use only what's given."""
 
-ASK = """Answer the owner's question using only this one recording's transcript. Cite the segment
-indexes your answer rests on. If the transcript doesn't contain the answer, say so plainly, set
-enough to false, and cite the segments that come closest (if any). Never use outside knowledge.
-Answer in one to three short sentences, written to the owner as "you"."""
+ASK = """Answer the owner's question about one recording.
+First answer from the transcript alone, citing the segment indexes it rests on. If the transcript
+doesn't answer it, say so plainly, set enough to false, and cite the segments that come closest.
+Never put outside knowledge in that answer.
+If the question needs more than the recording (identifying what it is, explaining a name, place or
+term, looking something up), search the web and put that in "beyond": one to three short
+sentences, with the pages you used in "links" (not inline). Otherwise beyond is null and links is
+empty. Write to the owner as "you"; keep the speakers' own words for names."""
 
 
 def _schema(name: str, properties: dict[str, Any]) -> dict[str, Any]:
@@ -231,7 +244,22 @@ UNDERSTAND_SCHEMA = _schema(
 DIGEST_SCHEMA = _schema("digest", {"overview": {"type": "string"}, "moments": _INTS})
 
 ASK_SCHEMA = _schema(
-    "answer", {"answer": {"type": "string"}, "enough": {"type": "boolean"}, "sources": _INTS}
+    "answer",
+    {
+        "answer": {"type": "string"},
+        "enough": {"type": "boolean"},
+        "sources": _INTS,
+        "beyond": {"type": ["string", "null"]},
+        "links": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {"title": {"type": "string"}, "url": {"type": "string"}},
+                "required": ["title", "url"],
+            },
+        },
+    },
 )
 
 
@@ -248,18 +276,24 @@ class OpenAIBrain:
         self._client = client or httpx.AsyncClient(timeout=httpx.Timeout(600.0, connect=30.0))
 
     async def _call(
-        self, instructions: str, text: str, schema: dict[str, Any]
+        self,
+        instructions: str,
+        text: str,
+        schema: dict[str, Any],
+        *,
+        tools: list[dict[str, Any]] | None = None,
     ) -> tuple[dict[str, Any], Usage]:
+        request: dict[str, Any] = {
+            "model": self._model,
+            "instructions": instructions,
+            "input": text,
+            "text": {"format": schema},
+        }
+        if tools:
+            request["tools"] = tools
         try:
             response = await self._client.post(
-                self.URL,
-                headers={"Authorization": f"Bearer {self._key}"},
-                json={
-                    "model": self._model,
-                    "instructions": instructions,
-                    "input": text,
-                    "text": {"format": schema},
-                },
+                self.URL, headers={"Authorization": f"Bearer {self._key}"}, json=request
             )
         except httpx.HTTPError as exc:
             raise BrainError(f"Couldn't reach OpenAI: {exc}") from exc
@@ -313,8 +347,25 @@ class OpenAIBrain:
 
     async def ask(self, lines: list[Line], question: str) -> BrainResult[Answer]:
         text = f"Transcript:\n{_transcript(lines)}\n\nQuestion: {question}"
-        data, usage = await self._call(ASK, text, ASK_SCHEMA)
-        return BrainResult(Answer(data["answer"], data["enough"], data["sources"]), usage)
+        data, usage = await self._call(ASK, text, ASK_SCHEMA, tools=[{"type": "web_search"}])
+        links = [Link(str(x["title"]), _clean_url(str(x["url"]))) for x in data.get("links") or []]
+        beyond = _strip_inline_links(data.get("beyond") or "") or None
+        return BrainResult(
+            Answer(data["answer"], data["enough"], data["sources"], beyond, links), usage
+        )
+
+
+_INLINE_LINK = re.compile(r"\s*\(\[[^\]]*\]\([^)]*\)\)|\[([^\]]*)\]\([^)]*\)")
+
+
+def _strip_inline_links(text: str) -> str:
+    """The links are listed separately; drop markdown links the model put in the text anyway."""
+    return _INLINE_LINK.sub(lambda m: m.group(1) or "", text).strip()
+
+
+def _clean_url(url: str) -> str:
+    """Drop the tracking parameter OpenAI's search adds."""
+    return re.sub(r"[?&]utm_source=openai$", "", url)
 
 
 class UnconfiguredBrain:
