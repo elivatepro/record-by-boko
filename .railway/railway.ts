@@ -1,11 +1,11 @@
 // Roudio's Railway infrastructure (decision 7). Preview with `railway config plan`,
 // apply with `railway config apply`. Secrets are never written here: they live in Railway
 // as shared variables and are only referenced (ctx.shared.*).
-import { bucket, defineRailway, github, postgres, project, service } from "railway/iac";
+import { bucket, defineRailway, github, postgres, project, ref, service } from "railway/iac";
 
 export default defineRailway((ctx) => {
   const db = postgres("Postgres");
-  // Original audio (spec §2). Used from milestone 2.
+  // Original audio (spec §2), uploaded by the phone from milestone 2.
   const audio = bucket("audio", { region: "ams" });
 
   // One image, two services (decision 16). Both track master until Roudio goes live.
@@ -28,6 +28,12 @@ export default defineRailway((ctx) => {
     GOOGLE_CLIENT_SECRET: ctx.shared.GOOGLE_CLIENT_SECRET,
     PLAUD_CLIENT_ID: ctx.shared.PLAUD_CLIENT_ID,
     PLAUD_CLIENT_SECRET: ctx.shared.PLAUD_CLIENT_SECRET,
+    // The bucket's own S3 credentials, by reference (Railway fills them in).
+    AUDIO_BUCKET: ref(audio, "BUCKET"),
+    AUDIO_ENDPOINT: ref(audio, "ENDPOINT"),
+    AUDIO_REGION: ref(audio, "REGION"),
+    AUDIO_ACCESS_KEY_ID: ref(audio, "ACCESS_KEY_ID"),
+    AUDIO_SECRET_ACCESS_KEY: ref(audio, "SECRET_ACCESS_KEY"),
   };
 
   // api and web use Railway's default restart policy (on failure).
