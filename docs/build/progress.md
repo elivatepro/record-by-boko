@@ -113,3 +113,41 @@ Learned:
 - Scanning works without the location permission on Android 12+.
 - Xiaomi: adb can't tap or grant permissions unless "USB debugging (Security settings)" is on
   and the phone has been restarted; every adb restart or install asks for confirmation.
+
+## Milestone 2: Transfer, local store, upload queue (in progress)
+
+Done so far (11 Oct 2026):
+- `RecorderSource.listFiles()` / `export()`: Ogg Opus exports (see `apps/android/app/libs/README.md`,
+  "Exporting"). A transfer that goes quiet for 60 s, a disconnect or cancelling stops it; the partial
+  file is thrown away (decision 14). `OpusRepair` fixes the SDK's corrupt OpusTags count if it
+  appears, before any checksum. `RecorderSource` has no delete at all.
+- Room database (`store/`, schemas in `app/schemas`): a row per recording with UTC start + the
+  phone's offset, the four track states, file, size, duration, SHA-256, and upload progress.
+- `Transfers` (runs in `RecorderService`): lists the recorder on every connection, when a
+  recording starts or stops, and every 10 min; exports new files oldest first; never the file
+  being recorded, and nothing until the recorder has said whether it's recording.
+- Backend: `recording` table, `PUT /recordings/{serial}/{session_id}` (start or resume),
+  `PUT /recordings/{id}/parts/{n}` (8 MiB parts into an S3 multipart upload), `POST …/complete`
+  (reads the file back; "uploaded" only if the SHA-256 matches). Bucket credentials reach api and
+  worker as Railway references (`AUDIO_*`); staging was set through the API.
+- `Uploader` + WorkManager queue: resumes from the server's next part, retries with back-off.
+- Checked on the phone: two short test recordings came across and uploaded to production by
+  themselves, checksums matching at every step.
+
+Learned:
+- Exporting the same recording twice gives byte-identical files.
+- The SDK seems to cache a download: a second export of the same file skipped straight to
+  `TRANSCODING`. Where it keeps that cache (and how big it gets) is still to check.
+- Xiaomi doesn't restart Roudio after an update while Autostart is off; the service waits until the
+  app is opened.
+- `generateApiClient` only saw the spec's URI, so a changed spec didn't regenerate the Kotlin
+  client locally (CI was fine). The file is now a declared input.
+
+Still to do:
+- Recorder screen transfer rows (13a/13b) and Today for real (dial, timeline with processing /
+  backup words, S2 no-internet banner, past day). The notification could show transfer progress.
+- Recovery on the phone: pull the plug / lose Bluetooth mid-transfer, no internet for a while.
+  Needs a longer recording (10+ min).
+- Wi-Fi fast transfer, measurements (`docs/build/measurements.md`), firmware update gate.
+- The SDK's download cache: location and size.
+
