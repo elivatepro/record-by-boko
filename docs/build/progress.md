@@ -262,3 +262,20 @@ API gaps found while building (the web works around each one):
 
 Still to do: move the refresh token to an httpOnly cookie (needs the backend), and check the
 screens against real recordings once processed data exists in production.
+
+## Milestone 7: Hardening (started 11 Oct 2026)
+
+Done:
+- Database backups: Railway volume backups on the production Postgres volume, daily (kept 6
+  days) and weekly (kept 27 days), plus a first manual backup on 11 Oct 2026. Staging has none.
+- Cost dashboard: `GET /costs` and web Settings → Costs (spend this month and in total, Scribe
+  hours, OpenAI tokens, audio kept on the server).
+- Phone: looping motion (search radar, spinners) holds still when Android's animations are off.
+
+Still to do:
+- Restore test: restore a backup into staging (Railway dashboard → Postgres → Backups → Restore;
+  it replaces staging's data), then check the api starts and migrations are at head.
+- Dark mode, 200% font, 48 dp targets, TalkBack order, 3-button navigation and keyboard insets
+  on every phone screen.
+- Soak tests (72 h recording, phone restart mid-transfer, a day in airplane mode, Railway restart
+  mid-job), then three days of real use.
