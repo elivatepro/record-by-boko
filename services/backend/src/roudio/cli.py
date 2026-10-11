@@ -51,6 +51,7 @@ def worker() -> None:
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, stop.set)
+        await _wait_for_migrations()
         async with get_sessionmaker()() as db:
             await schedule_tick(db, datetime.now(UTC))
         await run_forever(
@@ -62,6 +63,34 @@ def worker() -> None:
         )
 
     asyncio.run(main())
+
+
+async def _wait_for_migrations(timeout_s: float = 600) -> None:
+    """The api's pre-deploy step migrates the database; the worker starts alongside it, so wait
+    until the database is at the newest migration before touching new tables."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    from sqlalchemy import text
+
+    from roudio.db import get_engine
+
+    head = ScriptDirectory.from_config(Config("alembic.ini")).get_current_head()
+    log = logging.getLogger("roudio.worker")
+    waited = 0.0
+    while waited < timeout_s:
+        try:
+            async with get_engine().connect() as conn:
+                current = (
+                    await conn.execute(text("SELECT version_num FROM alembic_version"))
+                ).scalar()
+            if current == head:
+                return
+            log.info("waiting for migrations: database at %s, code at %s", current, head)
+        except Exception as exc:  # the database may still be starting
+            log.info("waiting for the database: %s", exc)
+        await asyncio.sleep(5)
+        waited += 5
+    log.warning("database still isn't at %s; starting anyway", head)
 
 
 def openapi() -> None:

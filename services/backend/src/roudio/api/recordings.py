@@ -22,6 +22,7 @@ from pydantic.config import JsonDict
 from sqlalchemy import select
 
 from roudio.api.deps import AppServices, AppSettings, CurrentSession, Db, error
+from roudio.backup.job import enqueue_backup
 from roudio.models import Recording, TransferState
 from roudio.pipeline.process import enqueue_processing
 from roudio.storage import Part, StorageError
@@ -208,6 +209,7 @@ async def complete_upload(
         recording.uploaded_at = datetime.now(UTC)
         await db.commit()
         await enqueue_processing(db, recording)
+        await enqueue_backup(db, recording)
     except StorageError as exc:
         await db.rollback()
         raise _storage_unavailable(exc) from exc

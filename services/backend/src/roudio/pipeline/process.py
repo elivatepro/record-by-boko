@@ -289,6 +289,10 @@ async def _run(
     await db.commit()
     for day in {local_day(recording, 0), local_day(recording, recording.duration_ms or 0)}:
         await enqueue_digest(db, day)
+    # The transcript and notes go to Drive too (and again whenever they change).
+    from roudio.backup.job import enqueue_backup
+
+    await enqueue_backup(db, recording)
 
 
 def _groups(segments: list[tuple[int, int]]) -> list[list[tuple[int, int]]]:

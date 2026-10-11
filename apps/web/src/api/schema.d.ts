@@ -436,6 +436,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Backups */
+        get: operations["getBackups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recording_id}/backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Backup */
+        post: operations["retryBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Settings View */
+        get: operations["getSettings"];
+        /** Put Settings */
+        put: operations["putSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cleanup/{serial}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cleanup
+         * @description Recordings from this recorder whose server copy matches the phone's and whose Drive copy is
+         *     verified. Empty while deleting is switched off.
+         */
+        get: operations["getCleanup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordings/{recording_id}/cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report Cleanup */
+        post: operations["reportCleanup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -478,6 +568,68 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+        };
+        /** BackupsView */
+        BackupsView: {
+            /** Drive Connected */
+            drive_connected: boolean;
+            /**
+             * Deleting Enabled
+             * @description Off until the owner has watched the gate for a while
+             */
+            deleting_enabled: boolean;
+            /** Recordings */
+            recordings: components["schemas"]["RecordingSummary"][];
+            /** Backed Up */
+            backed_up: number;
+            /** Waiting */
+            waiting: number;
+            /** Failed */
+            failed: number;
+            /** Can Clean Up */
+            can_clean_up: number;
+            /** Cleared */
+            cleared: number;
+        };
+        /** CleanupCandidate */
+        CleanupCandidate: {
+            /**
+             * Recording Id
+             * Format: uuid
+             */
+            recording_id: string;
+            /**
+             * Session Id
+             * Format: int64
+             */
+            session_id: number;
+            /**
+             * Sha256
+             * @description The phone deletes only if its own copy still has this checksum
+             */
+            sha256: string;
+            /**
+             * Size Bytes
+             * Format: int64
+             */
+            size_bytes: number;
+        };
+        /** CleanupList */
+        CleanupList: {
+            /** Deleting Enabled */
+            deleting_enabled: boolean;
+            /** Candidates */
+            candidates: components["schemas"]["CleanupCandidate"][];
+        };
+        /** CleanupReport */
+        CleanupReport: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "deleting" | "cleared" | "failed";
+            /** Error */
+            error?: string | null;
         };
         /** ConversationDetail */
         ConversationDetail: {
@@ -939,6 +1091,11 @@ export interface components {
              * @constant
              */
             token_type: "bearer";
+        };
+        /** Settings */
+        Settings: {
+            /** Deleting Enabled */
+            deleting_enabled: boolean;
         };
         /** SignInResult */
         SignInResult: {
@@ -1900,6 +2057,174 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RecordingConversations"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getBackups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupsView"];
+                };
+            };
+        };
+    };
+    retryBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recording_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settings"];
+                };
+            };
+        };
+    };
+    putSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Settings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getCleanup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serial: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CleanupList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reportCleanup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recording_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CleanupReport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

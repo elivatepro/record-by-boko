@@ -1,6 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from roudio import jobs
@@ -102,3 +102,15 @@ def test_backoff_doubles_and_caps() -> None:
     assert jobs.backoff(1) == timedelta(seconds=30)
     assert jobs.backoff(2) == timedelta(minutes=1)
     assert jobs.backoff(20) == timedelta(hours=1)
+
+
+async def test_a_handler_that_rolls_back_and_returns_still_completes(db: AsyncSession) -> None:
+    """Handlers that roll back (expiring every object, the job included) must not break the loop."""
+
+    async def rolls_back(session: AsyncSession, job: Job) -> None:
+        await session.rollback()
+
+    await jobs.enqueue(db, "rollback")
+    assert await run_once(get_sessionmaker(), {"rollback": rolls_back}, "worker-a")
+    job = await db.scalar(select(Job).where(Job.kind == "rollback"))
+    assert job is not None and job.status == JobStatus.SUCCEEDED

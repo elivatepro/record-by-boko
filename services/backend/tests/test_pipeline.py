@@ -1,106 +1,29 @@
 import shutil
-import subprocess
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
 
 import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from roudio.config import get_settings
 from roudio.models import (
     Conversation,
     CostEntry,
     DayDigest,
     GeneratedItem,
     Job,
-    Recording,
     ReviewItem,
     SpeechSegment,
     TranscriptSegment,
     Word,
 )
-from roudio.pipeline import services
 from roudio.pipeline.brain import BrainResult, FakeBrain, Item, Line, UnconfiguredBrain, Understood
 from roudio.pipeline.digest import build_digest
 from roudio.pipeline.process import PROCESS, process_recording
-from roudio.pipeline.speech import EnergyDetector, SpeechSettings
-from roudio.pipeline.transcribe import FakeTranscriber
-from roudio.storage import S3AudioStore
-from tests.conftest import TEST_BUCKET
+from tests.conftest import job_for, uploaded
 
 pytestmark = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="needs ffmpeg")
-
-
-@pytest.fixture(scope="module")
-def audio_file(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Synthetic only: 2 s silence, 3 s tone, 4 s silence, 3 s tone, 2 s silence."""
-    out = tmp_path_factory.mktemp("audio") / "day.ogg"
-    parts = (
-        "anullsrc=r=16000:cl=mono:d=2[a];sine=f=440:r=16000:d=3[b];anullsrc=r=16000:cl=mono:d=4[c];"
-        "sine=f=660:r=16000:d=3[d];anullsrc=r=16000:cl=mono:d=2[e];[a][b][c][d][e]concat=n=5:v=0:a=1"
-    )
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-v",
-            "error",
-            "-y",
-            "-filter_complex",
-            parts,
-            "-c:a",
-            "libopus",
-            "-b:a",
-            "24k",
-            str(out),
-        ],
-        check=True,
-    )
-    return out
-
-
-@pytest.fixture
-def pipeline(s3: Any) -> Any:
-    svc = services.PipelineServices(
-        audio=S3AudioStore(
-            TEST_BUCKET, endpoint=None, access_key_id="t", secret_access_key="t", region="us-east-1"
-        ),
-        detector=EnergyDetector(SpeechSettings()),
-        transcriber=FakeTranscriber(),
-        brain=FakeBrain(),
-        settings=get_settings(),
-    )
-    services.override(svc)
-    yield svc
-    services.override(None)
-
-
-async def uploaded(
-    db: AsyncSession, s3: Any, audio: Path, started: datetime | None = None
-) -> Recording:
-    key = f"recordings/TEST/{uuid4().hex}.opus"
-    s3.put_object(Bucket=TEST_BUCKET, Key=key, Body=audio.read_bytes())
-    recording = Recording(
-        recorder_serial="8810000004F2A",
-        session_id=int((started or datetime(2026, 10, 11, 9, 0, tzinfo=UTC)).timestamp()),
-        started_at=started or datetime(2026, 10, 11, 9, 0, tzinfo=UTC),
-        zone_offset_seconds=3600,
-        size_bytes=audio.stat().st_size,
-        sha256="0" * 64,
-        storage_key=key,
-        transfer_state="uploaded",
-    )
-    db.add(recording)
-    await db.commit()
-    return recording
-
-
-def job_for(recording: Recording) -> Job:
-    return Job(
-        id=1, kind=PROCESS, payload={"recording_id": str(recording.id)}, attempts=1, max_attempts=8
-    )
 
 
 async def test_a_recording_is_found_transcribed_and_written_up(

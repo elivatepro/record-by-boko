@@ -11,8 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from roudio.models import Conversation, ReviewItem, TranscriptSegment, Word
 from roudio.pipeline.brain import Answer, BrainResult, FakeBrain, Line
 from roudio.pipeline.process import process_recording
-from tests.conftest import sign_in
-from tests.test_pipeline import audio_file, job_for, pipeline, uploaded  # noqa: F401 (fixtures)
+from tests.conftest import job_for, sign_in, uploaded
 
 pytestmark = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="needs ffmpeg")
 
@@ -24,7 +23,7 @@ async def auth(client: AsyncClient) -> dict[str, str]:
 
 
 @pytest.fixture
-async def processed(db: AsyncSession, s3: Any, audio_file: Path, pipeline: Any) -> Conversation:  # noqa: F811
+async def processed(db: AsyncSession, s3: Any, audio_file: Path, pipeline: Any) -> Conversation:
     recording = await uploaded(db, s3, audio_file)
     await process_recording(db, job_for(recording))
     conversation: Conversation | None = await db.scalar(select(Conversation))
@@ -99,7 +98,7 @@ async def test_an_answer_citing_nothing_real_becomes_not_enough(
     client: AsyncClient,
     auth: dict[str, str],
     processed: Conversation,
-    pipeline: Any,  # noqa: F811
+    pipeline: Any,
 ) -> None:
     class Overconfident(FakeBrain):
         async def ask(self, lines: list[Line], question: str) -> BrainResult[Answer]:

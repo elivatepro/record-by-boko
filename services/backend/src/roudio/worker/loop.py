@@ -62,6 +62,8 @@ async def run_once(
             log.exception("job %s (%s) failed on attempt %s", job.id, job.kind, job.attempts)
             await jobs.fail(db, job, f"{type(exc).__name__}: {exc}")
         else:
+            # A handler may have rolled back (which expires `job`); reload before touching it.
+            await db.refresh(job)
             await jobs.complete(db, job)
         return True
 

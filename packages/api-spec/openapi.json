@@ -1267,6 +1267,247 @@
           }
         }
       }
+    },
+    "/backups": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Get Backups",
+        "operationId": "getBackups",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupsView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/recordings/{recording_id}/backup": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Retry Backup",
+        "operationId": "retryBackup",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recording_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recording Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Get Settings View",
+        "operationId": "getSettings",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Put Settings",
+        "operationId": "putSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Settings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/cleanup/{serial}": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Get Cleanup",
+        "description": "Recordings from this recorder whose server copy matches the phone's and whose Drive copy is\nverified. Empty while deleting is switched off.",
+        "operationId": "getCleanup",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "serial",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Serial"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CleanupList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recordings/{recording_id}/cleanup": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Report Cleanup",
+        "operationId": "reportCleanup",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recording_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recording Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CleanupReport"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1348,6 +1589,141 @@
           "expires_at"
         ],
         "title": "AudioLink"
+      },
+      "BackupsView": {
+        "properties": {
+          "drive_connected": {
+            "type": "boolean",
+            "title": "Drive Connected"
+          },
+          "deleting_enabled": {
+            "type": "boolean",
+            "title": "Deleting Enabled",
+            "description": "Off until the owner has watched the gate for a while"
+          },
+          "recordings": {
+            "items": {
+              "$ref": "#/components/schemas/RecordingSummary"
+            },
+            "type": "array",
+            "title": "Recordings"
+          },
+          "backed_up": {
+            "type": "integer",
+            "title": "Backed Up"
+          },
+          "waiting": {
+            "type": "integer",
+            "title": "Waiting"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          },
+          "can_clean_up": {
+            "type": "integer",
+            "title": "Can Clean Up"
+          },
+          "cleared": {
+            "type": "integer",
+            "title": "Cleared"
+          }
+        },
+        "type": "object",
+        "required": [
+          "drive_connected",
+          "deleting_enabled",
+          "recordings",
+          "backed_up",
+          "waiting",
+          "failed",
+          "can_clean_up",
+          "cleared"
+        ],
+        "title": "BackupsView"
+      },
+      "CleanupCandidate": {
+        "properties": {
+          "recording_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recording Id"
+          },
+          "session_id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Session Id"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256",
+            "description": "The phone deletes only if its own copy still has this checksum"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Size Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recording_id",
+          "session_id",
+          "sha256",
+          "size_bytes"
+        ],
+        "title": "CleanupCandidate"
+      },
+      "CleanupList": {
+        "properties": {
+          "deleting_enabled": {
+            "type": "boolean",
+            "title": "Deleting Enabled"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/CleanupCandidate"
+            },
+            "type": "array",
+            "title": "Candidates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleting_enabled",
+          "candidates"
+        ],
+        "title": "CleanupList"
+      },
+      "CleanupReport": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "deleting",
+              "cleared",
+              "failed"
+            ],
+            "title": "State"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state"
+        ],
+        "title": "CleanupReport"
       },
       "ConversationDetail": {
         "properties": {
@@ -2360,6 +2736,19 @@
           "refresh_expires_at"
         ],
         "title": "SessionTokens"
+      },
+      "Settings": {
+        "properties": {
+          "deleting_enabled": {
+            "type": "boolean",
+            "title": "Deleting Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleting_enabled"
+        ],
+        "title": "Settings"
       },
       "SignInResult": {
         "properties": {
