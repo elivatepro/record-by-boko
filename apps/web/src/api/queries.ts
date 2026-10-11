@@ -177,3 +177,19 @@ export function reviewChange(id: number, body: { state?: ReviewState; text?: str
     "Couldn’t save that change.",
   );
 }
+
+/** Write a recording up again (S8 "Try again now"). */
+export function reprocess(recordingId: string) {
+  return must(
+    api.POST("/recordings/{recording_id}/process", { params: { path: { recording_id: recordingId } } }),
+    "Couldn’t start writing it up again.",
+  );
+}
+
+/** Back a recording up to Drive again (Updates and Backups "Retry"). */
+export function retryBackup(recordingId: string) {
+  return must(
+    api.POST("/recordings/{recording_id}/backup", { params: { path: { recording_id: recordingId } } }),
+    "Couldn’t start the backup again.",
+  );
+}

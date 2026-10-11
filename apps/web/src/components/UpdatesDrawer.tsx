@@ -5,7 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "../api/client";
-import { keys, must, useUpdates } from "../api/queries";
+import { keys, must, reprocess, retryBackup, useUpdates } from "../api/queries";
 import type { Update } from "../api/types";
 import { useNow } from "../lib/hooks";
 import { dayLabel, localDayOf, localTime, localToday, wallDay } from "../lib/time";
@@ -137,6 +137,7 @@ function UpdateRow({ update, today, onDone }: { update: Update; today: string; o
   const navigate = useNavigate();
   const icon = iconFor(update);
   const [opening, setOpening] = useState(false);
+  const [retrying, setRetrying] = useState<"idle" | "busy" | "done">("idle");
   const [failed, setFailed] = useState<string | null>(null);
   const day = localDayOf(update.created_at);
   const when = day === today ? localTime(update.created_at) : dayLabel(day, today);
@@ -184,8 +185,24 @@ function UpdateRow({ update, today, onDone }: { update: Update; today: string; o
           </time>
         </div>
         <p>{update.body}</p>
-        {update.action === "retry" && (
-          <p className="update__note">Roudio tries again by itself. Nothing is lost while it waits.</p>
+        {(update.action === "retry" || update.action === "retry_backup") && update.recording_id && (
+          <div className="update__actions">
+            <button
+              type="button"
+              className="button button--soft button--small"
+              disabled={retrying !== "idle"}
+              onClick={() => {
+                setRetrying("busy");
+                const call = update.action === "retry_backup" ? retryBackup : reprocess;
+                call(update.recording_id!).then(
+                  () => setRetrying("done"),
+                  () => setRetrying("idle"),
+                );
+              }}
+            >
+              {retrying === "done" ? "Trying again…" : "Try again now"}
+            </button>
+          </div>
         )}
         {(update.conversation_id || update.recording_id) && (
           <div className="update__actions">

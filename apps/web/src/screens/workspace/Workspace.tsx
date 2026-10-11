@@ -3,7 +3,7 @@
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 
-import { ApiError, useConversation } from "../../api/queries";
+import { ApiError, reprocess, useConversation } from "../../api/queries";
 import type { ConversationDetail } from "../../api/types";
 import { ErrorState, Loading, StatusWord } from "../../components/common";
 import { Icon, Spinner } from "../../components/Icon";
@@ -387,11 +387,33 @@ function StillWritingUp({ from }: { from: number }) {
 /** S3 / S8: nothing to read yet, or writing up failed. The audio still plays either way. */
 function NotWrittenUp({ detail }: { detail: ConversationDetail }) {
   const r = detail.recording;
+  const [retry, setRetry] = useState<"idle" | "busy" | "done" | string>("idle");
   if (r.processing_state === "failed") {
     return (
       <div className="notice notice--failed">
         <h2>No notes yet</h2>
         <p>{r.processing_error ?? "Writing up stopped partway."} Roudio tries again by itself.</p>
+        <p>
+          <button
+            type="button"
+            className="button button--soft button--small"
+            disabled={retry === "busy" || retry === "done"}
+            onClick={() => {
+              setRetry("busy");
+              reprocess(r.id).then(
+                () => setRetry("done"),
+                (error: Error) => setRetry(error.message),
+              );
+            }}
+          >
+            {retry === "done" ? "Writing it up again…" : "Try again now"}
+          </button>
+        </p>
+        {retry !== "idle" && retry !== "busy" && retry !== "done" && (
+          <p className="inline-error" role="alert">
+            {retry}
+          </p>
+        )}
         <p className="safe-line">
           <Icon name="shield" size={18} />
           The audio is safe on the server{r.backup_state === "backed_up" ? " and Drive" : ""}. You can still play it.
