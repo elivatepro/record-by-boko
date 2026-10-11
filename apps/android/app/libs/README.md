@@ -37,3 +37,16 @@ no-op; never bring the real Timber back. The SDK's Bluetooth logs (`PenBleSDK-*`
 - Reconnects use the normal handshake. The SDK's 10 s timeout includes opening the Bluetooth
   connection (1.5–7 s seen), so slow connections can time out; KeepConnected retries.
 - `bleStorage` reports bytes; `bleRecordStateRefreshed` gives session 0 when idle.
+
+## Exporting (learned on the owner's Note Pro, 11 Oct 2026)
+
+- `getFileList()` answers through `bleFileList`; each `BleFile` gives only `sessionId` (the start in
+  Unix seconds) and `fileSize` publicly.
+- `exportAudio(sessionId, dir, OPUS, 1, callback)` writes Ogg Opus into `dir`: mono, 16 kHz input
+  rate, about 33 kbps, so the recorder's own stream wrapped rather than re-encoded. Progress 0–100
+  is the download; then a short `TRANSCODING` stage; then `onComplete(file)`. A 7 s test file took
+  3.4 s over Bluetooth, most of it setting up.
+- Plaud's template notes that the SDK's Opus exporter writes a corrupt OpusTags comment count;
+  1.0.15 wrote a valid one in our test. `OpusRepair` checks every export anyway.
+- The template deletes each file from the recorder after export. Roudio never does: deleting is
+  the clean-up gate's job (spec §8, milestone 4).

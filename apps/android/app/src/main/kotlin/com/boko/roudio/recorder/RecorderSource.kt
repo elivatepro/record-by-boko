@@ -1,5 +1,7 @@
 package com.boko.roudio.recorder
 
+import java.io.File
+import java.io.IOException
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 
@@ -34,7 +36,32 @@ interface RecorderSource {
 
     /** Ask a connected recorder for battery, storage and recording state again. */
     fun refresh()
+
+    /** The recordings on the connected recorder. Throws [RecorderBusyException] if it can't say. */
+    suspend fun listFiles(): List<RecorderFile>
+
+    /**
+     * Copy one recording to [target] as Ogg Opus (decision 12), reporting 0–100 as it comes off the
+     * recorder. Never deletes anything from the recorder. Throws [ExportException] when the
+     * transfer stops; cancelling the coroutine stops it too. A partial [target] is removed.
+     */
+    suspend fun export(file: RecorderFile, target: File, onProgress: (Int) -> Unit)
 }
+
+/** A recording on the recorder. Plaud's session id is its start time in Unix seconds. */
+data class RecorderFile(val sessionId: Long, val sizeBytes: Long) {
+    val startedAt: Instant? get() = sessionStart(sessionId)
+
+    companion object {
+        /** Session ids outside 2020–2100 aren't times; treat the start as unknown. */
+        fun sessionStart(sessionId: Long): Instant? =
+            sessionId.takeIf { it in 1_577_836_800L..4_102_444_800L }?.let(Instant::ofEpochSecond)
+    }
+}
+
+class RecorderBusyException(message: String) : IOException(message)
+
+class ExportException(message: String) : IOException(message)
 
 sealed interface RecorderEvent {
     data class BluetoothChanged(val on: Boolean) : RecorderEvent

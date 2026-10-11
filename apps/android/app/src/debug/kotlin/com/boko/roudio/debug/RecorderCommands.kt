@@ -6,6 +6,8 @@ import android.content.Intent
 import android.util.Log
 import com.boko.roudio.RoudioApp
 import com.boko.roudio.recorder.LinkPhase
+import java.io.File
+import java.security.MessageDigest
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -18,7 +20,9 @@ import org.json.JSONObject
  *
  * Commands: search, link [--es serial …] (default: nearest found), refresh, reconnect,
  * disconnect, unlink, state, binding --es serial … (asks Plaud's cloud who the recorder is bound
- * to; logs only whether it's bound and how many past bindings there are, never the ids).
+ * to; logs only whether it's bound and how many past bindings there are, never the ids),
+ * files (lists the recordings), export --el session … (copies one to the app's cache and logs
+ * its size, header, duration and SHA-256; nothing is deleted from the recorder).
  * Each one logs the resulting state under the tag "RecorderDebug".
  */
 class RecorderCommands : BroadcastReceiver() {
@@ -54,11 +58,50 @@ class RecorderCommands : BroadcastReceiver() {
                 }
                 return
             }
+            "files" -> {
+                val pending = goAsync()
+                app.appScope.launch {
+                    runCatching { app.plaudSource.listFiles() }
+                        .onSuccess { files -> files.forEach { Log.i(TAG, "file $it start=${it.startedAt}") } }
+                        .onFailure { Log.w(TAG, "file list failed", it) }
+                    pending.finish()
+                }
+                return
+            }
+            "export" -> {
+                val session = intent.getLongExtra("session", -1)
+                val pending = goAsync()
+                app.appScope.launch {
+                    runCatching { exportOne(app, session) }.onFailure { Log.w(TAG, "export failed", it) }
+                    pending.finish()
+                }
+                return
+            }
             "forceclear" -> app.plaudSource.forceClearOnFirstLink = intent.getBooleanExtra("on", true)
             "state" -> Unit
             else -> Log.w(TAG, "unknown command $cmd")
         }
         Log.i(TAG, "state ${recorder.state.value}")
+    }
+
+    private suspend fun exportOne(app: RoudioApp, session: Long) {
+        val file = app.plaudSource.listFiles().firstOrNull { it.sessionId == session }
+        if (file == null) {
+            Log.w(TAG, "no recording with session $session")
+            return
+        }
+        val target = File(app.cacheDir, "debug-export/$session.opus")
+        val started = System.currentTimeMillis()
+        var last = -1
+        app.plaudSource.export(file, target) { p -> if (p / 10 != last / 10) Log.i(TAG, "export $p%").also { last = p } }
+        val seconds = (System.currentTimeMillis() - started) / 1000.0
+        val head = target.inputStream().use { it.readNBytes(64) }
+        val sha = MessageDigest.getInstance("SHA-256").digest(target.readBytes()).joinToString("") { "%02x".format(it) }
+        Log.i(
+            TAG,
+            "exported ${target.length()} bytes (recorder said ${file.sizeBytes}) in ${seconds}s; " +
+                "starts ${String(head.copyOf(4), Charsets.US_ASCII)}; tags at ${String(head).indexOf("OpusHead")}; sha256 $sha",
+        )
     }
 
     private fun logBinding(app: RoudioApp, serial: String) {

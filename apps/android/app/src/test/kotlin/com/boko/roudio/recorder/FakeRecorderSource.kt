@@ -1,5 +1,6 @@
 package com.boko.roudio.recorder
 
+import java.io.File
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 
@@ -29,6 +30,25 @@ class FakeRecorderSource(var bluetoothOn: Boolean = true) : RecorderSource {
     override suspend fun unlink(serial: String) { commands += "unlink $serial" }
 
     override fun refresh() { commands += "refresh" }
+
+    /** What [listFiles] returns. */
+    var files = listOf<RecorderFile>()
+
+    /** Called by [export]; write the file, or throw to fail the transfer. */
+    var exporter: suspend (RecorderFile, File, (Int) -> Unit) -> Unit = { _, target, onProgress ->
+        target.writeText("opus")
+        onProgress(100)
+    }
+
+    override suspend fun listFiles(): List<RecorderFile> {
+        commands += "listFiles"
+        return files
+    }
+
+    override suspend fun export(file: RecorderFile, target: File, onProgress: (Int) -> Unit) {
+        commands += "export ${file.sessionId}"
+        exporter(file, target, onProgress)
+    }
 }
 
 class MemoryRecorderStore(var saved: RecorderState = RecorderState()) : RecorderStore {

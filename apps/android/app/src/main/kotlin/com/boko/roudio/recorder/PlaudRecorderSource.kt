@@ -10,13 +10,17 @@ import android.util.Base64
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.tinnotech.penblesdk.entity.BleDevice
+import com.tinnotech.penblesdk.entity.BleFile
 import java.io.File
 import java.io.IOException
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -33,6 +37,9 @@ import org.json.JSONObject
 import sdk.NiceBuildSdk
 import sdk.PlaudDeviceAgent
 import sdk.PlaudDeviceAgentListener
+import sdk.audio.AudioExportFormat
+import sdk.audio.AudioExporter
+import sdk.audio.ExportStage
 
 /**
  * [RecorderSource] on the Plaud SDK (app/libs/README.md). Follows Plaud's template app
@@ -78,6 +85,11 @@ class PlaudRecorderSource(
     /** Use the force-clear handshake for first links (see [handshake]). Debug builds can switch it. */
     @Volatile var forceClearOnFirstLink = true
     @Volatile private var depairDone: CompletableDeferred<Unit>? = null
+
+    /** One file-list request or export at a time; the SDK has a single callback for each. */
+    private val fileLock = Mutex()
+    @Volatile private var fileList: CompletableDeferred<List<RecorderFile>>? = null
+    @Volatile private var exportDone: CompletableDeferred<File>? = null
 
     init {
         // The SDK's log files. Builds before the silent Timber (src/main/java/timber) wrote
@@ -176,6 +188,82 @@ class PlaudRecorderSource(
         scanned.clear()
     }
 
+    override suspend fun listFiles(): List<RecorderFile> = fileLock.withLock {
+        if (connectedSerial == null) throw RecorderBusyException("not connected")
+        val answer = CompletableDeferred<List<RecorderFile>>().also { fileList = it }
+        sdk("getFileList") { PlaudDeviceAgent.getFileList() }
+        try {
+            withTimeoutOrNull(FILE_LIST_WAIT_MS) { answer.await() }
+                ?: throw RecorderBusyException("the recorder didn't send its file list")
+        } finally {
+            fileList = null
+        }
+    }
+
+    override suspend fun export(file: RecorderFile, target: File, onProgress: (Int) -> Unit) = fileLock.withLock {
+        if (connectedSerial == null) throw ExportException("not connected")
+        val dir = File(context.cacheDir, EXPORT_DIR).apply { deleteRecursively(); mkdirs() }
+        val done = CompletableDeferred<File>()
+        val lastProgressAt = AtomicLong(System.currentTimeMillis())
+        val callback = object : AudioExporter.ExportCallback {
+            override fun onProgress(progress: Int, message: String) {
+                lastProgressAt.set(System.currentTimeMillis())
+                onProgress(progress.coerceIn(0, 100))
+            }
+
+            override fun onStageChanged(stage: ExportStage) {
+                lastProgressAt.set(System.currentTimeMillis())
+                Log.i(TAG, "export ${file.sessionId}: $stage")
+            }
+
+            override fun onComplete(outputFile: File) {
+                done.complete(outputFile)
+            }
+
+            override fun onError(error: String) {
+                done.completeExceptionally(ExportException(error))
+            }
+        }
+        exportDone = done
+        try {
+            val started = sdk("exportAudio") {
+                PlaudDeviceAgent.exportAudio(file.sessionId, dir, AudioExportFormat.OPUS, 1, callback)
+            }
+            if (!started) throw ExportException("the SDK refused to start the export")
+            // The SDK has no timeout of its own; a transfer that goes quiet has stalled (decision 14).
+            val output = coroutineScope {
+                val watchdog = launch {
+                    while (true) {
+                        delay(STALL_CHECK_MS)
+                        if (System.currentTimeMillis() - lastProgressAt.get() > STALL_MS) {
+                            done.completeExceptionally(ExportException("the transfer stalled"))
+                        }
+                    }
+                }
+                try {
+                    done.await()
+                } finally {
+                    watchdog.cancel()
+                }
+            }
+            OpusRepair.repairIfNeeded(output)
+            target.parentFile?.mkdirs()
+            target.delete()
+            if (!output.renameTo(target)) {
+                output.copyTo(target, overwrite = true)
+                output.delete()
+            }
+        } catch (e: Throwable) {
+            // Stop the recorder sending; the half-written file is thrown away (decision 14).
+            withContext(NonCancellable) { sdk("stopSyncFile") { PlaudDeviceAgent.stopSyncFile() } }
+            target.delete()
+            throw e
+        } finally {
+            exportDone = null
+            dir.deleteRecursively()
+        }
+    }
+
     override fun refresh() {
         scope.launch {
             sdk("getChargingState") { PlaudDeviceAgent.getChargingState() }
@@ -271,6 +359,8 @@ class PlaudRecorderSource(
         }
         if (connectedSerial != null) {
             connectedSerial = null
+            exportDone?.completeExceptionally(ExportException("the recorder disconnected"))
+            fileList?.completeExceptionally(RecorderBusyException("the recorder disconnected"))
             emit(RecorderEvent.Disconnected)
         }
     }
@@ -299,15 +389,18 @@ class PlaudRecorderSource(
         if (!_events.tryEmit(event)) Log.w(TAG, "event dropped: $event")
     }
 
-    /** SDK calls run on the main thread, as in Plaud's template, and never throw out of here. */
-    private suspend fun sdk(name: String, call: () -> Unit) {
-        withContext(Dispatchers.Main) {
-            try {
-                call()
-            } catch (e: Exception) {
-                // Usually a missing Nearby devices permission.
-                Log.w(TAG, "$name failed", e)
-            }
+    /**
+     * SDK calls run on the main thread, as in Plaud's template, and never throw out of here.
+     * Returns false if the call threw.
+     */
+    private suspend fun sdk(name: String, call: () -> Unit): Boolean = withContext(Dispatchers.Main) {
+        try {
+            call()
+            true
+        } catch (e: Exception) {
+            // Usually a missing Nearby devices permission.
+            Log.w(TAG, "$name failed", e)
+            false
         }
     }
 
@@ -360,6 +453,11 @@ class PlaudRecorderSource(
             }
         }
 
+        override fun bleFileList(files: List<BleFile>) {
+            Log.i(TAG, "file list: ${files.size} files")
+            fileList?.complete(files.map { RecorderFile(it.sessionId, it.fileSize) })
+        }
+
         override fun bleDepair(status: Int) {
             Log.i(TAG, "depair status $status")
             depairDone?.complete(Unit)
@@ -402,6 +500,10 @@ class PlaudRecorderSource(
         const val RECONNECT_SCAN_MS = 15_000L
         const val HTTP_FORBIDDEN = 403
         const val SDK_LOG_DIR = "plaud_sdk_logs"
+        const val EXPORT_DIR = "recorder-export"
+        const val FILE_LIST_WAIT_MS = 15_000L
+        const val STALL_CHECK_MS = 5_000L
+        const val STALL_MS = 60_000L
 
         /** Note Pro (881) and NotePin S (882), as in Plaud's template. */
         fun isSupported(serial: String) = serial.startsWith("881") || serial.startsWith("882")
@@ -424,8 +526,6 @@ class PlaudRecorderSource(
             JSONObject(json).optString("sub").takeIf { it.isNotBlank() }
         }.getOrNull()
 
-        /** Plaud session ids are the recording's start in Unix seconds. Anything else is unknown. */
-        fun sessionStart(sessionId: Long): Instant? =
-            sessionId.takeIf { it in 1_577_836_800L..4_102_444_800L }?.let(Instant::ofEpochSecond)
+        fun sessionStart(sessionId: Long): Instant? = RecorderFile.sessionStart(sessionId)
     }
 }
