@@ -211,6 +211,11 @@ up. One user, so conflicts are resolved per field: the latest edit wins.
   - The backend checks that each cited segment exists and belongs to that
     recording. Claims without a valid citation are removed.
   - If nothing valid remains, the answer is "not enough in this recording".
+  - Beyond the recording (owner's change, 11 Oct 2026): when a question needs
+    more than the transcript (identifying what it is, explaining a name or
+    term), the model may search the web. That part comes back separately
+    (`beyond` and `links`), is shown apart as "Beyond this recording", and is
+    never mixed into the cited answer.
 
 ## 8. Backup and clean-up rules
 

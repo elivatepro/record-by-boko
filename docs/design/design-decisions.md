@@ -100,7 +100,9 @@ Reduced-transparency fallback: the same shapes in opaque Fog / `#111F33`.
 - Recordings still on the Plaud are described as "still on the recorder";
   we don't promise they're safe until they've transferred.
 - Ask states its scope first, cites every answer with tappable times, and
-  shows a visibly different "Not enough in this recording" reply.
+  shows a visibly different "Not enough in this recording" reply. Since 11 Oct
+  2026 it can also look things up: a separate "Beyond this recording · from the
+  web" card with its links. The question appears at once with "Thinking…".
 
 ## Navigation
 

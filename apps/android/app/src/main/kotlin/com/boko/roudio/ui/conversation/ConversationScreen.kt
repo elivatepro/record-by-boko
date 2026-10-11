@@ -1,5 +1,6 @@
 package com.boko.roudio.ui.conversation
 
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.foundation.layout.FlowRow
 import com.boko.roudio.api.models.AskLink
@@ -922,8 +923,10 @@ private fun AskPane(
     val turns = remember(detail.asks, answered) { (detail.asks + answered).distinctBy { it.id } }
     val scroll = rememberScrollState()
     LaunchedEffect(turns.size, pending) { scroll.animateScrollTo(scroll.maxValue) }
+    val keyboard = LocalSoftwareKeyboardController.current
     val ask: (String) -> Unit = { q ->
         if (q.isNotBlank() && pending == null) {
+            keyboard?.hide() // so the answer has the screen
             pending = q.trim()
             error = null
             question = ""

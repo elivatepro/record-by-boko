@@ -140,7 +140,8 @@ nothing is ever deleted from the recorder.
 
 **Done when:** a real conversation becomes a transcript with speaker labels
 and a summary within about 15 minutes of upload, every summary point jumps
-to the right moment, and Ask refuses to answer from outside the recording.
+to the right moment, and Ask never mixes outside knowledge into its cited answer
+(web lookups are shown apart, since 11 Oct 2026).
 
 ## Milestone 4: Drive backup and clean-up
 
