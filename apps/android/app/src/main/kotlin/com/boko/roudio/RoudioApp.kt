@@ -11,6 +11,7 @@ import com.boko.roudio.recorder.PlaudTokens
 import com.boko.roudio.recorder.PrefsRecorderStore
 import com.boko.roudio.recorder.Recorder
 import com.boko.roudio.store.RecordingStore
+import com.boko.roudio.system.NetworkMonitor
 import com.boko.roudio.store.RoomRecordingStore
 import com.boko.roudio.store.RoudioDatabase
 import com.boko.roudio.transfer.RecordingFiles
@@ -49,6 +50,8 @@ class RoudioApp : Application() {
     val transfers by lazy {
         Transfers(plaudSource, recorder, recordings, recordingFiles, appScope, onPhone = { Uploads.enqueue(this) })
     }
+
+    val network by lazy { NetworkMonitor(this) }
 
     val uploader by lazy { Uploader(api.recordings, recordings, recordingFiles) }
 

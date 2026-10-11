@@ -58,7 +58,13 @@ class Transfers(
     /** The export running now and how far it is (0–100); null when none is. Not saved. */
     val progress: StateFlow<Progress?> = _progress.asStateFlow()
 
-    data class Progress(val recordingId: Long, val percent: Int)
+    private val _stopped = MutableStateFlow<Progress?>(null)
+
+    /** The last export that stopped partway (13b "Stopped at 48%"), until the next one starts. */
+    val stopped: StateFlow<Progress?> = _stopped.asStateFlow()
+
+    /** [startedAt] lets the recorder screen say roughly how long is left. */
+    data class Progress(val recordingId: Long, val percent: Int, val startedAt: Instant)
 
     fun start() {
         if (job != null) return
@@ -151,11 +157,13 @@ class Transfers(
     private suspend fun export(recording: Recording, file: RecorderFile): Boolean {
         val current = recording.copy(transfer = TransferState.Transferring, updatedAt = now())
         store.update(current)
-        _progress.value = Progress(recording.id, 0)
+        val started = now()
+        _progress.value = Progress(recording.id, 0, started)
+        _stopped.value = null
         val partial = files.partial(recording)
         val target = files.final(recording)
         return try {
-            source.export(file, partial) { percent -> _progress.value = Progress(recording.id, percent) }
+            source.export(file, partial) { percent -> _progress.value = Progress(recording.id, percent, started) }
             val (sha, bytes, duration) = withContext(io) {
                 val facts = Triple(sha256(partial), partial.length(), OggOpus.durationMs(partial))
                 check(partial.renameTo(target)) { "couldn't move the file into place" }
@@ -180,6 +188,7 @@ class Transfers(
             throw e
         } catch (e: Exception) {
             Log.w(TAG, "export of session ${recording.sessionId} failed", e)
+            _stopped.value = _progress.value
             giveBack(recording, partial, error = e.message ?: e.javaClass.simpleName, failed = true)
             false
         } finally {

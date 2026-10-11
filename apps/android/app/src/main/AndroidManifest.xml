@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Today's "No internet" banner (S2). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- The recorder, over Bluetooth. Scanning never derives location (11c asks for no location). -->
     <uses-permission

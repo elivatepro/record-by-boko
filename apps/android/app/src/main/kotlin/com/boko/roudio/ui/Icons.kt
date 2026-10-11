@@ -57,6 +57,13 @@ object RoudioIcons {
     )
     val ShieldCheck = icon("ShieldCheck", lines = listOf("M12 3.5 5 6.5v5c0 4.4 3 7.9 7 9 4-1.1 7-4.6 7-9v-5z", "m9.3 12 1.9 1.9 3.6-3.6"))
     val Chevron = line("m9.5 6 6 6-6 6")
+    val ChevronLeft = line("m14.5 6-6 6 6 6")
+    val ArrowRight = line("M5 12h14M13 6l6 6-6 6", width = 1.9f)
+    val WifiOff = icon(
+        "WifiOff",
+        lines = listOf("M3.5 9.5a12 12 0 0 1 17 0M6.5 12.8a7.7 7.7 0 0 1 11 0M9.5 16a3.4 3.4 0 0 1 5 0"),
+        thickLines = listOf("M4 4l16 16"),
+    )
 
     // 01 Today recorder chip
     val RecorderChip = icon(

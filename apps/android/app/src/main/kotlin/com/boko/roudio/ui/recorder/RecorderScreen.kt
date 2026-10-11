@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -54,6 +55,10 @@ import com.boko.roudio.recorder.RecordingReading
 import com.boko.roudio.recorder.Seen
 import com.boko.roudio.recorder.StorageReading
 import com.boko.roudio.recorder.serialEnding
+import com.boko.roudio.store.Recording
+import com.boko.roudio.store.TransferState
+import com.boko.roudio.transfer.Transfers
+import com.boko.roudio.ui.today.durationText
 import com.boko.roudio.ui.RoudioIcons
 import com.boko.roudio.ui.setup.SafeNote
 import com.boko.roudio.ui.setup.SmallButton
@@ -61,6 +66,8 @@ import com.boko.roudio.ui.theme.RoudioTheme
 import com.boko.roudio.ui.theme.roudioText
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlinx.coroutines.delay
 
 /**
@@ -71,6 +78,9 @@ import kotlinx.coroutines.delay
 fun RecorderScreen(
     state: RecorderState,
     now: Instant,
+    recordings: List<Recording>,
+    progress: Transfers.Progress?,
+    stopped: Transfers.Progress?,
     onReconnect: () -> Unit,
     onTurnOnBluetooth: () -> Unit,
     onUnlink: () -> Unit,
@@ -105,18 +115,23 @@ fun RecorderScreen(
             Spacer(Modifier.width(48.dp))
         }
         RecorderCard(state, now)
-        if (!state.isConnected) {
+        val reconnect: @Composable () -> Unit = {
+            SmallButton(
+                stringResource(if (state.bluetoothOn) R.string.try_to_reconnect else R.string.turn_on_bluetooth),
+                if (state.bluetoothOn) onReconnect else onTurnOnBluetooth,
+                filled = true,
+                modifier = Modifier.fillMaxWidth(),
+                height = 44.dp,
+            )
+        }
+        // A stopped transfer carries its own "what's safe" note and the reconnect button (13b).
+        val stoppedRecording = stopped?.takeIf { !state.isConnected }
+            ?.let { s -> recordings.firstOrNull { it.id == s.recordingId && it.transfer == TransferState.OnRecorder } }
+        TransfersSection(state, now, recordings, progress, stopped?.takeIf { stoppedRecording != null }, stoppedRecording, reconnect)
+        if (!state.isConnected && stoppedRecording == null) {
             SafeNote(
                 stringResource(if (state.bluetoothOn) R.string.recorder_away_safe else R.string.recorder_bluetooth_safe),
-            ) {
-                SmallButton(
-                    stringResource(if (state.bluetoothOn) R.string.try_to_reconnect else R.string.turn_on_bluetooth),
-                    if (state.bluetoothOn) onReconnect else onTurnOnBluetooth,
-                    filled = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    height = 44.dp,
-                )
-            }
+            ) { reconnect() }
         }
         Text(
             stringResource(R.string.unlink_recorder),
@@ -261,6 +276,177 @@ private fun RowScope.Tile(label: String, value: String, detail: String, dot: Col
     }
 }
 
+/** 13a/13b "Transfers": what's coming across, what's waiting, and what reached the phone today. */
+@Composable
+private fun TransfersSection(
+    state: RecorderState,
+    now: Instant,
+    recordings: List<Recording>,
+    progress: Transfers.Progress?,
+    stopped: Transfers.Progress?,
+    stoppedRecording: Recording?,
+    reconnect: @Composable () -> Unit,
+) {
+    val c = RoudioTheme.colors
+    val stillOnRecorder = recordings.count { it.transfer == TransferState.OnRecorder || it.transfer == TransferState.Transferring }
+    val today = now.atZone(ZoneId.systemDefault()).toLocalDate()
+    val doneToday = recordings.filter {
+        it.transfer >= TransferState.OnPhone && it.startedAt.atZone(ZoneId.systemDefault()).toLocalDate() == today
+    }
+    Column {
+        Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.Bottom) {
+            Text(
+                stringResource(R.string.transfers_title),
+                style = roudioText(20.sp, 26.sp, FontWeight.SemiBold),
+                color = c.ink,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            Text(
+                when {
+                    !state.isConnected -> stringResource(R.string.transfers_waiting)
+                    stillOnRecorder > 0 -> pluralStringResource(R.plurals.transfers_still_on_recorder, stillOnRecorder, stillOnRecorder)
+                    else -> stringResource(R.string.transfers_all_across)
+                },
+                style = roudioText(13.sp, 18.sp),
+                color = c.muted,
+            )
+        }
+        val rows = mutableListOf<@Composable () -> Unit>()
+        recordings.firstOrNull { it.id == progress?.recordingId }?.let { recording ->
+            rows += { TransferringRow(recording, progress!!, now) }
+        }
+        if (stopped != null && stoppedRecording != null) {
+            rows += { StoppedRow(recording = stoppedRecording, percent = stopped.percent, bluetoothOn = state.bluetoothOn, reconnect = reconnect) }
+        }
+        val recording = state.recording?.value
+        when {
+            state.recordingNow is RecordingNow.Recording -> rows += {
+                val since = (state.recordingNow as RecordingNow.Recording).since
+                SimpleRow(
+                    stringResource(R.string.transfer_recording_now, since?.let(::hhmm).orEmpty()).trimStart(' ', '·'),
+                    stringResource(R.string.transfer_recording_now_body),
+                    bar = c.buoy,
+                )
+            }
+            !state.isConnected && recording?.isRecording == true -> rows += {
+                SimpleRow(
+                    stringResource(R.string.transfer_maybe_recording, recording.startedAt?.let(::hhmm).orEmpty()).trimStart(' ', '·'),
+                    stringResource(R.string.transfer_maybe_recording_body),
+                    bar = c.buoy,
+                )
+            }
+        }
+        if (doneToday.isNotEmpty()) {
+            rows += {
+                SimpleRow(
+                    pluralStringResource(R.plurals.transfer_done_today, doneToday.size, doneToday.size),
+                    stringResource(
+                        if (doneToday.all { it.transfer == TransferState.Uploaded }) R.string.transfer_done_uploaded else R.string.transfer_done_uploading,
+                    ),
+                    bar = c.ink,
+                    bold = false,
+                )
+            }
+        }
+        rows.forEachIndexed { i, row ->
+            row()
+            if (i < rows.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(c.hairline))
+        }
+    }
+}
+
+@Composable
+private fun TransferringRow(recording: Recording, progress: Transfers.Progress, now: Instant) {
+    val elapsed = Duration.between(progress.startedAt, now).seconds
+    // Only once there's enough to go on; early percentages include the set-up time.
+    val minutesLeft = if (progress.percent >= 5 && elapsed > 0) {
+        ((elapsed * (100 - progress.percent) / progress.percent) / 60 + 1).toInt()
+    } else {
+        null
+    }
+    Column(Modifier.padding(vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Bar(RoudioTheme.colors.buoy)
+            RowLines(
+                transferTitle(recording),
+                minutesLeft?.let { stringResource(R.string.transfer_bluetooth_left, it) } ?: stringResource(R.string.transfer_bluetooth),
+                Modifier.weight(1f),
+            )
+            Percent(progress.percent)
+        }
+        ProgressBar(progress.percent, RoudioTheme.colors.ink)
+    }
+}
+
+@Composable
+private fun StoppedRow(recording: Recording, percent: Int, bluetoothOn: Boolean, reconnect: @Composable () -> Unit) {
+    Column(Modifier.padding(vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Bar(RoudioTheme.colors.buoy)
+            RowLines(
+                transferTitle(recording),
+                stringResource(if (bluetoothOn) R.string.transfer_stopped_range else R.string.transfer_stopped_bluetooth, percent),
+                Modifier.weight(1f),
+            )
+            Percent(percent)
+        }
+        ProgressBar(percent, RoudioTheme.colors.muted.copy(alpha = 0.6f))
+        SafeNote(stringResource(R.string.transfer_stopped_safe), Modifier.padding(start = 16.dp)) { reconnect() }
+    }
+}
+
+@Composable
+private fun SimpleRow(title: String, body: String, bar: Color, bold: Boolean = true) {
+    Row(
+        Modifier.padding(vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Bar(bar)
+        RowLines(title, body, Modifier.weight(1f), bold)
+    }
+}
+
+@Composable
+private fun Bar(colour: Color) = Box(Modifier.width(4.dp).height(36.dp).background(colour, RoundedCornerShape(2.dp)))
+
+@Composable
+private fun RowLines(title: String, body: String, modifier: Modifier, bold: Boolean = true) {
+    val c = RoudioTheme.colors
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(title, style = roudioText(15.sp, 20.sp, if (bold) FontWeight.SemiBold else FontWeight.Medium), color = c.ink)
+        Text(body, style = roudioText(13.sp, 18.sp), color = c.muted)
+    }
+}
+
+@Composable
+private fun Percent(percent: Int) = Text(
+    stringResource(R.string.transfer_percent, percent),
+    style = roudioText(14.sp, 18.sp, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"),
+    color = RoudioTheme.colors.ink,
+)
+
+@Composable
+private fun ProgressBar(percent: Int, fill: Color) {
+    val c = RoudioTheme.colors
+    Box(Modifier.padding(start = 16.dp).fillMaxWidth().height(6.dp).background(c.hairline, RoundedCornerShape(3.dp))) {
+        Box(Modifier.fillMaxWidth(percent / 100f).height(6.dp).background(fill, RoundedCornerShape(3.dp)))
+    }
+}
+
+/** "13:05 · 1h 05m": the recording's local start and its length (estimated until measured). */
+@Composable
+private fun transferTitle(recording: Recording): String {
+    val start = recording.startedAt.atOffset(ZoneOffset.ofTotalSeconds(recording.zoneOffsetSeconds)).toLocalTime()
+    val length = recording.durationMs?.let(Duration::ofMillis) ?: Duration.ofSeconds(recording.sizeOnRecorder * 8 / 33_000)
+    return stringResource(R.string.transfer_title, "%02d:%02d".format(start.hour, start.minute), durationText(length))
+}
+
+private fun hhmm(at: Instant): String {
+    val time = at.atZone(ZoneId.systemDefault()).toLocalTime()
+    return "%02d:%02d".format(time.hour, time.minute)
+}
+
 /** "Just now" means within the last minute. */
 fun isRecent(at: Instant?, now: Instant): Boolean = at != null && Duration.between(at, now) < Duration.ofMinutes(1)
 
@@ -289,18 +475,18 @@ private val previewConnected = RecorderState(
 @Preview(widthDp = 412, heightDp = 915)
 @Composable
 private fun RecorderConnectedPreview() {
-    RoudioTheme(darkTheme = false) { RecorderScreen(previewConnected, previewNow, {}, {}, {}, {}) }
+    RoudioTheme(darkTheme = false) { RecorderScreen(previewConnected, previewNow, emptyList(), null, null, {}, {}, {}, {}) }
 }
 
 @Preview(widthDp = 412, heightDp = 915)
 @Composable
 private fun RecorderConnectedDarkPreview() {
-    RoudioTheme(darkTheme = true) { RecorderScreen(previewConnected, previewNow, {}, {}, {}, {}) }
+    RoudioTheme(darkTheme = true) { RecorderScreen(previewConnected, previewNow, emptyList(), null, null, {}, {}, {}, {}) }
 }
 
 @Preview(widthDp = 412, heightDp = 915)
 @Composable
 private fun RecorderAwayPreview() {
     val away = previewConnected.copy(connectedSince = null, lastSeen = previewNow.minusSeconds(3060))
-    RoudioTheme(darkTheme = false) { RecorderScreen(away, previewNow, {}, {}, {}, {}) }
+    RoudioTheme(darkTheme = false) { RecorderScreen(away, previewNow, emptyList(), null, null, {}, {}, {}, {}) }
 }

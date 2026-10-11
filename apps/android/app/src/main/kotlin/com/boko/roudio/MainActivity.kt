@@ -3,6 +3,7 @@ package com.boko.roudio
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,9 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -39,6 +42,7 @@ import com.boko.roudio.ui.signin.SignInScreen
 import com.boko.roudio.ui.recorder.RecorderScreen
 import com.boko.roudio.ui.recorder.rememberNow
 import com.boko.roudio.ui.theme.RoudioTheme
+import com.boko.roudio.ui.today.TodayModel
 import com.boko.roudio.ui.today.TodayScreen
 import java.io.IOException
 import java.time.ZoneId
@@ -151,18 +155,20 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 entry<Linked> { LinkedRoute(app.recorder, onDone = { backStack.resetTo(Home) }) }
-                entry<Home> {
-                    val state by app.recorder.state.collectAsState()
-                    val today = rememberNow().atZone(ZoneId.systemDefault()).toLocalDate()
-                    TodayScreen(state, today, onRecorder = { backStack.add(RecorderDetails) })
-                }
+                entry<Home> { Today(onRecorder = { backStack.add(RecorderDetails) }) }
                 entry<RecorderDetails> {
                     val scope = rememberCoroutineScope()
                     val state by app.recorder.state.collectAsState()
                     val turnOnBluetooth = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+                    val recordings by app.recordings.recordings.collectAsState(initial = emptyList())
+                    val progress by app.transfers.progress.collectAsState()
+                    val stopped by app.transfers.stopped.collectAsState()
                     RecorderScreen(
                         state = state,
                         now = rememberNow(),
+                        recordings = recordings,
+                        progress = progress,
+                        stopped = stopped,
                         onReconnect = app.recorder::reconnect,
                         onTurnOnBluetooth = { turnOnBluetooth.launch(PhoneSettings.enableBluetooth(this@MainActivity)) },
                         onUnlink = { scope.launch { app.recorder.unlink() } },
@@ -232,6 +238,32 @@ class MainActivity : ComponentActivity() {
                 busy = false
             }
         })
+    }
+
+    /** 01 Today with live data. A past day isn't a new screen: Back returns to today. */
+    @Composable
+    private fun Today(onRecorder: () -> Unit) {
+        val recorder by app.recorder.state.collectAsState()
+        val recordings by app.recordings.recordings.collectAsState(initial = emptyList())
+        val progress by app.transfers.progress.collectAsState()
+        val online by app.network.online.collectAsState()
+        val now = rememberNow()
+        var daysBack by rememberSaveable { mutableIntStateOf(0) }
+        BackHandler(enabled = daysBack > 0) { daysBack = 0 }
+        val offset = ZoneId.systemDefault().rules.getOffset(now)
+        val day = now.atOffset(offset).toLocalDate().minusDays(daysBack.toLong())
+        val model = remember(recordings, recorder, progress, day, now) {
+            TodayModel.build(recordings, recorder, progress, day, now, offset)
+        }
+        TodayScreen(
+            model = model,
+            recorder = recorder,
+            online = online,
+            now = now,
+            onRecorder = onRecorder,
+            onPreviousDay = { daysBack++ },
+            onBackToToday = { daysBack = 0 },
+        )
     }
 
     private suspend fun signIn() {

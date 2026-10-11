@@ -216,6 +216,30 @@
     <string name="recorder_away_safe">Your recorder keeps recording on its own. Everything waits safely on it until Roudio reconnects.</string>
     <string name="recorder_bluetooth_safe">Your recorder keeps recording on its own. Turn Bluetooth on and Roudio picks up where it left off.</string>
     <string name="try_to_reconnect">Try to reconnect</string>
+    <string name="transfers_title">Transfers</string>
+    <plurals name="transfers_still_on_recorder">
+        <item quantity="one">%1$d still on the recorder</item>
+        <item quantity="other">%1$d still on the recorder</item>
+    </plurals>
+    <string name="transfers_all_across">All on this phone</string>
+    <string name="transfers_waiting">Waiting for the recorder</string>
+    <string name="transfer_title">%1$s · %2$s</string>
+    <string name="transfer_bluetooth">Transferring over Bluetooth</string>
+    <string name="transfer_bluetooth_left">Transferring over Bluetooth · about %1$d min left</string>
+    <string name="transfer_percent">%1$d%%</string>
+    <string name="transfer_stopped_range">Stopped at %1$d%% when the recorder went out of range</string>
+    <string name="transfer_stopped_bluetooth">Stopped at %1$d%% when Bluetooth was turned off</string>
+    <string name="transfer_stopped_safe">The recording is still whole on the recorder. When it’s back, this file starts again from the beginning.</string>
+    <string name="transfer_recording_now">%1$s · recording now</string>
+    <string name="transfer_recording_now_body">Transfers once the recorder closes this file</string>
+    <string name="transfer_maybe_recording">%1$s · may still be recording</string>
+    <string name="transfer_maybe_recording_body">We’ll know when the recorder is back in range</string>
+    <plurals name="transfer_done_today">
+        <item quantity="one">%1$d transferred today</item>
+        <item quantity="other">%1$d transferred today</item>
+    </plurals>
+    <string name="transfer_done_uploaded">On this phone and uploaded</string>
+    <string name="transfer_done_uploading">On this phone · uploading</string>
     <string name="unlink_recorder">Unlink this recorder</string>
     <string name="unlink_confirm_title">Unlink this recorder?</string>
     <string name="unlink_confirm_body">Roudio stops bringing recordings across. Nothing is deleted from the recorder. Linking it again later may need the Plaud app to free it first.</string>
@@ -229,4 +253,32 @@
     <string name="chip_not_connected">Plaud not connected</string>
     <string name="chip_bluetooth_off">Bluetooth off · Plaud not connected</string>
     <string name="today_empty">Your day fills in here as recordings come across from the recorder.</string>
+    <string name="past_day_empty">Nothing was recorded on this day.</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="past_day">Earlier</string>
+    <string name="previous_day">Previous day</string>
+    <string name="back_to_today">Back to today</string>
+    <string name="chip_linked_battery_on_device">Plaud linked · %1$d%% · %2$d on device</string>
+    <string name="recorded_today">recorded today</string>
+    <string name="recorded">recorded</string>
+    <string name="now_time">Now %1$s</string>
+    <string name="hours_minutes">%1$dh %2$02dm</string>
+    <string name="minutes_only">%1$d min</string>
+    <string name="seconds_only">%1$d s</string>
+    <string name="legend_not_written_up">Not written up yet</string>
+    <string name="legend_still_on_plaud">Still on Plaud</string>
+    <string name="row_waiting_on_plaud">Waiting on your Plaud</string>
+    <string name="row_recording_length">Recording · %1$s</string>
+    <string name="row_recording_now">Recording now · backup later</string>
+    <string name="row_maybe_recording">Out of reach · may still be recording</string>
+    <string name="row_not_transferred">Not transferred · backup later</string>
+    <string name="row_transferring">Transferring %1$d%% · backup later</string>
+    <string name="row_waiting_to_upload">Waiting to upload · not backed up</string>
+    <string name="row_uploading">Uploading %1$d%% · not backed up</string>
+    <string name="row_waiting_to_write_up">Waiting to write up · not backed up</string>
+    <plurals name="offline_waiting">
+        <item quantity="one">No internet · %1$d waiting to upload</item>
+        <item quantity="other">No internet · %1$d waiting to upload</item>
+    </plurals>
+    <string name="offline_safe">Safe on this phone. Uploading resumes when you’re back online.</string>
 </resources>
