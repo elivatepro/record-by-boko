@@ -1,5 +1,9 @@
 package com.boko.roudio.ui.settings
 
+import androidx.compose.material3.RadioButton
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
+import com.boko.roudio.ui.theme.ThemeChoice
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -78,8 +82,11 @@ fun SettingsRoute(
         fetch { app.api.organise.listWords() }?.let { words = WordListModel.partition(it) }
         backups = fetch { app.api.backups.getBackups() }
     }
+    val theme by app.theme.choice.collectAsState()
     SettingsScreen(
         recorder = recorder,
+        theme = theme,
+        onTheme = app.theme::set,
         words = words,
         backups = backups,
         warning = warning,
@@ -103,12 +110,14 @@ fun SettingsRoute(
 
 /**
  * Settings: a warning when a background exemption was switched off, then writing up, the
- * recorder and backups, and the account. Only real settings are shown: the theme follows the
- * phone, and the services are fixed on the server.
+ * recorder and backups, and the account. Only real settings are shown: the services are fixed on
+ * the server.
  */
 @Composable
 fun SettingsScreen(
     recorder: RecorderState,
+    theme: ThemeChoice,
+    onTheme: (ThemeChoice) -> Unit,
     words: WordLists?,
     backups: BackupsView?,
     warning: BackgroundWarning?,
@@ -121,6 +130,7 @@ fun SettingsScreen(
 ) {
     val c = RoudioTheme.colors
     var confirmSignOut by remember { mutableStateOf(false) }
+    var choosingTheme by remember { mutableStateOf(false) }
     Column(
         Modifier
             .fillMaxSize()
@@ -135,7 +145,7 @@ fun SettingsScreen(
             if (warning != null) BackgroundWarningCard(warning, onFix)
 
             Group(stringResource(R.string.settings_look)) {
-                NavRow(stringResource(R.string.settings_theme), stringResource(R.string.settings_theme_body), null, last = true)
+                NavRow(stringResource(R.string.settings_theme), stringResource(themeLabel(theme)), { choosingTheme = true }, last = true)
             }
             Group(stringResource(R.string.settings_writing_up)) {
                 NavRow(stringResource(R.string.settings_languages), stringResource(R.string.settings_languages_body), onLanguages)
@@ -165,6 +175,33 @@ fun SettingsScreen(
                 NavRow(stringResource(R.string.settings_sign_out), null, onClick = { confirmSignOut = true }, last = true, titleColor = c.alert)
             }
         }
+    }
+    if (choosingTheme) {
+        AlertDialog(
+            onDismissRequest = { choosingTheme = false },
+            title = { Text(stringResource(R.string.settings_theme)) },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    ThemeChoice.entries.forEach { option ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(52.dp)
+                                .selectable(selected = option == theme, role = Role.RadioButton) {
+                                    onTheme(option)
+                                    choosingTheme = false
+                                },
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = option == theme, onClick = null)
+                            Text(stringResource(themeLabel(option)), style = roudioText(16.sp, 22.sp), color = c.ink)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { choosingTheme = false }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
     if (confirmSignOut) {
         AlertDialog(
@@ -280,7 +317,7 @@ private val previewRecorder = RecorderState(linked = LinkedRecorder("8810000004F
 @Composable
 private fun SettingsPreview() {
     RoudioTheme(darkTheme = false) {
-        SettingsScreen(previewRecorder, null, null, BackgroundWarning.Battery, {}, {}, {}, {}, {}, {})
+        SettingsScreen(previewRecorder, ThemeChoice.System, {}, null, null, BackgroundWarning.Battery, {}, {}, {}, {}, {}, {})
     }
 }
 
@@ -288,6 +325,12 @@ private fun SettingsPreview() {
 @Composable
 private fun SettingsDarkPreview() {
     RoudioTheme(darkTheme = true) {
-        SettingsScreen(previewRecorder, null, null, null, {}, {}, {}, {}, {}, {})
+        SettingsScreen(previewRecorder, ThemeChoice.System, {}, null, null, null, {}, {}, {}, {}, {}, {})
     }
+}
+
+private fun themeLabel(choice: ThemeChoice): Int = when (choice) {
+    ThemeChoice.System -> R.string.settings_theme_body
+    ThemeChoice.Light -> R.string.settings_theme_light
+    ThemeChoice.Dark -> R.string.settings_theme_dark
 }

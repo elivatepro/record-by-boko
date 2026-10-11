@@ -1,10 +1,13 @@
 package com.boko.roudio
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -44,6 +47,7 @@ import com.boko.roudio.ui.signin.SignInScreen
 import com.boko.roudio.ui.recorder.RecorderScreen
 import com.boko.roudio.ui.recorder.rememberNow
 import com.boko.roudio.ui.theme.RoudioTheme
+import com.boko.roudio.ui.theme.ThemeChoice
 import com.boko.roudio.ui.backups.BackupsRoute
 import com.boko.roudio.ui.conversation.ConversationRoute
 import com.boko.roudio.ui.conversation.PendingRoute
@@ -109,7 +113,20 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { RoudioTheme { Roudio() } }
+        setContent {
+            val choice by app.theme.choice.collectAsState()
+            val dark = when (choice) {
+                ThemeChoice.System -> isSystemInDarkTheme()
+                ThemeChoice.Light -> false
+                ThemeChoice.Dark -> true
+            }
+            // The status and navigation bar icons follow the app's theme, not the phone's.
+            LaunchedEffect(dark) {
+                val bars = if (dark) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
+            }
+            RoudioTheme(darkTheme = dark) { Roudio() }
+        }
     }
 
     @Composable

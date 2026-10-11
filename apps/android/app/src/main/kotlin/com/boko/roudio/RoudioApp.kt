@@ -1,5 +1,6 @@
 package com.boko.roudio
 
+import com.boko.roudio.ui.theme.ThemePreference
 import android.app.Application
 import com.boko.roudio.data.ApiException
 import com.boko.roudio.data.RoudioApi
@@ -32,6 +33,7 @@ class RoudioApp : Application() {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     val session by lazy { SessionStore(this) }
+    val theme by lazy { ThemePreference(this) }
     val api by lazy { RoudioApi(session) }
 
     val plaudTokens by lazy {

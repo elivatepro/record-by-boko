@@ -52,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -636,7 +637,9 @@ private fun speedText(speed: Float) = if (speed % 1f == 0f) speed.toInt().toStri
 private fun CardButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
     val c = RoudioTheme.colors
     Box(
-        Modifier.size(44.dp).background(Color.White.copy(alpha = 0.12f), CircleShape).clickable(role = Role.Button, onClick = onClick),
+        // 44 dp to the eye, 48 dp to the finger.
+        Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick).padding(2.dp)
+            .background(Color.White.copy(alpha = 0.12f), CircleShape),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, contentDescription = label, tint = c.onHeroCard, modifier = Modifier.size(20.dp)) }
 }

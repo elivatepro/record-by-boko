@@ -347,7 +347,7 @@ private fun UpdateItem(
                                     row.conversationId?.let(onOpen)
                                 }
                                 UpdateAction.SeeCleanup -> Row(
-                                    Modifier.height(44.dp).clickable(role = Role.Button, onClick = onBackups),
+                                    Modifier.height(48.dp).clickable(role = Role.Button, onClick = onBackups),
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {

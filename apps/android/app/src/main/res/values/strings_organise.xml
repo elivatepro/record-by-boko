@@ -83,6 +83,8 @@
     <string name="settings_look">Look and feel</string>
     <string name="settings_theme">Light and dark</string>
     <string name="settings_theme_body">Follows your phone’s setting</string>
+    <string name="settings_theme_light">Always light</string>
+    <string name="settings_theme_dark">Always dark</string>
     <string name="settings_writing_up">Writing up</string>
     <string name="settings_languages">Languages you speak</string>
     <string name="settings_languages_body">Worked out for each recording</string>
