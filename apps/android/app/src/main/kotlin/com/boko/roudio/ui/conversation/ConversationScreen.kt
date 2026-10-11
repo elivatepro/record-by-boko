@@ -713,7 +713,8 @@ private fun TranscriptPane(
                 }
             }
             itemsIndexed(detail.segments, key = { _, s -> s.id }) { index, segment ->
-                val isPlaying = segment.idx == current?.idx
+                // Only while the audio runs: paused at 0:00, the first line isn't "Playing".
+                val isPlaying = controls.playing && segment.idx == current?.idx
                 val speaker = names[segment.speaker] ?: segment.speaker
                 Turn(
                     speaker = speaker,
@@ -849,8 +850,9 @@ private fun DockedPlayer(controls: PlayerControls) {
                 Icon(
                     if (controls.playing) RoudioIcons.Pause else RoudioIcons.Play,
                     contentDescription = stringResource(if (controls.playing) R.string.pause else R.string.play),
-                    tint = c.buoy,
-                    modifier = Modifier.size(22.dp),
+                    // Full contrast on the button in both themes (yellow on near-white was hard to see).
+                    tint = c.onPrimary,
+                    modifier = Modifier.size(26.dp),
                 )
             }
             IconButton(onClick = controls.onForward30) { Icon(RoudioIcons.Forward30, stringResource(R.string.forward_30), tint = c.ink, modifier = Modifier.size(24.dp)) }
