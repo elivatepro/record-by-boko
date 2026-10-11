@@ -142,11 +142,24 @@ Learned:
 - `generateApiClient` only saw the spec's URI, so a changed spec didn't regenerate the Kotlin
   client locally (CI was fine). The file is now a declared input.
 
-Still to do:
-- Recorder screen transfer rows (13a/13b) and Today for real (dial, timeline with processing /
-  backup words, S2 no-internet banner, past day). The notification could show transfer progress.
-- Recovery on the phone: pull the plug / lose Bluetooth mid-transfer, no internet for a while.
-  Needs a longer recording (10+ min).
-- Wi-Fi fast transfer, measurements (`docs/build/measurements.md`), firmware update gate.
-- The SDK's download cache: location and size.
+Also done (11 Oct 2026):
+- Today built on real data (`TodayModel`, unit-tested): 24-hour dial, "Not written up yet" /
+  "Still on Plaud" legend (Paper 01c), chip with "N on device", S2 no-internet banner, timeline
+  rows with separate transfer/processing and backup words, past days with "Back to today".
+- Recorder screen: Transfers section (live progress and time left, stopped-at-N% with what's
+  safe, recording now, transferred today).
+- Firmware gate, read-only: Plaud's latest version is checked after each connection (the
+  template's `version/latest` call; the SDK's own check needs an endpoint the developer platform
+  lacks). The 13a row says Waiting until everything on the recorder is uploaded and it's idle,
+  then Ready. There is no install code yet: updating erases the recorder.
+- The SDK keeps no download cache on disk; it writes a Bluetooth log (`files/ble_logs/ble.log`).
 
+Still to do (needs the owner with the phone and recorder):
+- Recovery: a 10+ minute recording, then pull the plug or turn Bluetooth off mid-transfer (13b
+  should show "Stopped at N%", and it should restart from the beginning by itself); no internet
+  for a while (S2, then uploads resume).
+- Wi-Fi fast transfer: the recorder opens a hotspot the phone has to join. Android may ask the
+  owner to approve each join, which would rule out automatic Wi-Fi transfers. Try it, then
+  measure Bluetooth vs Wi-Fi speed and a day's battery cost (`docs/build/measurements.md`).
+- Watch `ble.log` size over a full day.
+- Firmware install (behind the gate and the owner's confirmation), when an update exists.
