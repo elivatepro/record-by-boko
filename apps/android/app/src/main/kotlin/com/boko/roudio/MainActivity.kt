@@ -3,6 +3,7 @@ package com.boko.roudio
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -24,15 +25,23 @@ import com.boko.roudio.auth.GoogleSignInCancelled
 import com.boko.roudio.data.ApiException
 import com.boko.roudio.data.errorDetail
 import com.boko.roudio.recorder.RecorderService
+import com.boko.roudio.system.PhoneSettings
+import com.boko.roudio.ui.setup.FindRecorderRoute
 import com.boko.roudio.ui.setup.KeepRunningRoute
+import com.boko.roudio.ui.setup.LinkedRoute
+import com.boko.roudio.ui.setup.LinkingRoute
+import com.boko.roudio.ui.setup.PermissionRefusedRoute
 import com.boko.roudio.ui.setup.PermissionsRoute
 import com.boko.roudio.ui.setup.UnlinkPlaudScreen
 import com.boko.roudio.ui.setup.WelcomeScreen
-import com.boko.roudio.ui.signin.RecorderCheckScreen
 import com.boko.roudio.ui.signin.SignInError
 import com.boko.roudio.ui.signin.SignInScreen
+import com.boko.roudio.ui.recorder.RecorderScreen
+import com.boko.roudio.ui.recorder.rememberNow
 import com.boko.roudio.ui.theme.RoudioTheme
+import com.boko.roudio.ui.today.TodayScreen
 import java.io.IOException
+import java.time.ZoneId
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -42,9 +51,12 @@ import kotlinx.serialization.Serializable
 @Serializable data object Permissions : NavKey // 11c
 @Serializable data object KeepRunning : NavKey // 11d
 @Serializable data object UnlinkPlaud : NavKey // 11e
-// Temporary: the recorder check screen stands in for 11f–11i (step 6) and Today (step 7).
-@Serializable data object FindRecorder : NavKey
-@Serializable data object Home : NavKey
+@Serializable data object PermissionRefused : NavKey // 12c
+@Serializable data object FindRecorder : NavKey // 11f, 11g (12a, 12b, 12c over them)
+@Serializable data object Linking : NavKey // 11h (12b, 12d, 12e over it)
+@Serializable data object Linked : NavKey // 11i
+@Serializable data object Home : NavKey // 01 Today
+@Serializable data object RecorderDetails : NavKey // 13a, 13b
 
 class MainActivity : ComponentActivity() {
     private val app get() = application as RoudioApp
@@ -77,12 +89,13 @@ class MainActivity : ComponentActivity() {
         val backStack = rememberNavBackStack(start)
 
         // Signing in or out, or linking a recorder, starts a new section; Back doesn't undo it.
+        // Linking finishes on 11h/11i, which belong to both sides.
         LaunchedEffect(signedIn, linked) {
             val section = backStack.lastOrNull()
             val inRightSection = when {
                 !signedIn -> section == Welcome || section == SignIn
-                linked -> section == Home
-                else -> section != Welcome && section != SignIn && section != Home
+                linked -> section in setOf(Home, RecorderDetails, Linking, Linked)
+                else -> section !in setOf(Welcome, SignIn, Home, RecorderDetails, Linked)
             }
             if (!inRightSection && debugScreen() == null) backStack.resetTo(start)
         }
@@ -91,6 +104,7 @@ class MainActivity : ComponentActivity() {
             if (linked) RecorderService.startIfLinked(this@MainActivity)
         }
 
+        val pop: () -> Unit = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) else finish() }
         NavDisplay(
             backStack = backStack,
             onBack = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) else finish() },
@@ -100,6 +114,7 @@ class MainActivity : ComponentActivity() {
                 entry<Permissions> {
                     PermissionsRoute(
                         onContinue = { backStack.add(KeepRunning) },
+                        onNearbyRefused = { backStack.add(PermissionRefused) },
                         // First screen after a restart mid-setup: nothing to go back to.
                         onBack = if (backStack.size > 1) ({ backStack.removeAt(backStack.lastIndex) }) else null,
                     )
@@ -117,8 +132,43 @@ class MainActivity : ComponentActivity() {
                         onBack = { backStack.removeAt(backStack.lastIndex) },
                     )
                 }
-                entry<FindRecorder> { RecorderCheck() }
-                entry<Home> { RecorderCheck() }
+                entry<PermissionRefused> {
+                    PermissionRefusedRoute(onGranted = pop, onBack = pop)
+                }
+                entry<FindRecorder> {
+                    FindRecorderRoute(
+                        recorder = app.recorder,
+                        onLinking = { backStack.add(Linking) },
+                        onUnlinkHelp = { backStack.popTo(UnlinkPlaud) },
+                        onBack = pop,
+                    )
+                }
+                entry<Linking> {
+                    LinkingRoute(
+                        recorder = app.recorder,
+                        onLinked = { backStack.resetTo(Linked) },
+                        onBack = pop,
+                    )
+                }
+                entry<Linked> { LinkedRoute(app.recorder, onDone = { backStack.resetTo(Home) }) }
+                entry<Home> {
+                    val state by app.recorder.state.collectAsState()
+                    val today = rememberNow().atZone(ZoneId.systemDefault()).toLocalDate()
+                    TodayScreen(state, today, onRecorder = { backStack.add(RecorderDetails) })
+                }
+                entry<RecorderDetails> {
+                    val scope = rememberCoroutineScope()
+                    val state by app.recorder.state.collectAsState()
+                    val turnOnBluetooth = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+                    RecorderScreen(
+                        state = state,
+                        now = rememberNow(),
+                        onReconnect = app.recorder::reconnect,
+                        onTurnOnBluetooth = { turnOnBluetooth.launch(PhoneSettings.enableBluetooth(this@MainActivity)) },
+                        onUnlink = { scope.launch { app.recorder.unlink() } },
+                        onBack = pop,
+                    )
+                }
             },
         )
     }
@@ -135,6 +185,9 @@ class MainActivity : ComponentActivity() {
             "permissions" -> Permissions
             "keeprunning" -> KeepRunning
             "unlink" -> UnlinkPlaud
+            "refused" -> PermissionRefused
+            "find" -> FindRecorder
+            "recorder" -> RecorderDetails
             else -> null
         }
     }
@@ -142,6 +195,16 @@ class MainActivity : ComponentActivity() {
     private fun NavBackStack<NavKey>.resetTo(key: NavKey) {
         clear()
         add(key)
+    }
+
+    /** Back to [key] if it's on the stack (12a "It might still be linked"); else open it. */
+    private fun NavBackStack<NavKey>.popTo(key: NavKey) {
+        val at = lastIndexOf(key)
+        if (at < 0) {
+            add(key)
+        } else {
+            while (lastIndex > at) removeAt(lastIndex)
+        }
     }
 
     @Composable
@@ -183,30 +246,5 @@ class MainActivity : ComponentActivity() {
         val tokens = response.body()
         if (!response.isSuccessful || tokens == null) throw ApiException(response.errorDetail(), response.code())
         app.session.store(tokens.accessToken, tokens.accessExpiresAt.toInstant(), tokens.refreshToken)
-    }
-
-    private fun signOut() {
-        app.appScope.launch {
-            runCatching { app.api.auth.signOut() }
-            app.session.clear()
-            app.plaudTokens.clear()
-        }
-    }
-
-    @Composable
-    private fun RecorderCheck() {
-        val scope = rememberCoroutineScope()
-        val recorder = app.recorder
-        val state by recorder.state.collectAsState()
-        RecorderCheckScreen(
-            state = state,
-            onSearch = recorder::search,
-            onLink = recorder::link,
-            onRefresh = recorder::refresh,
-            onReconnect = recorder::reconnect,
-            onDisconnect = { recorder.clearLink() },
-            onUnlink = { scope.launch { recorder.unlink() } },
-            onSignOut = ::signOut,
-        )
     }
 }

@@ -18,7 +18,9 @@ class FakeRecorderSource(var bluetoothOn: Boolean = true) : RecorderSource {
 
     override fun stopSearch() { commands += "stopSearch" }
 
-    override fun link(serial: String) { commands += "link $serial" }
+    override fun link(serial: String, alreadyOurs: Boolean) {
+        commands += if (alreadyOurs) "relink $serial" else "link $serial"
+    }
 
     override fun connect(serial: String) { commands += "connect $serial" }
 

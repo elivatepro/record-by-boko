@@ -1,5 +1,10 @@
 package com.boko.roudio.ui.setup
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,9 +34,11 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -54,10 +61,11 @@ import com.boko.roudio.ui.theme.roudioText
 
 /** Shared layout and pieces of the setup flow (11a–11i) and its error screens (12a–12e). */
 
-/** Scrolling content on top, actions pinned to the bottom, as on every setup artboard. */
+/** Scrolling content on top, actions pinned to the bottom, as on every setup artboard. Error screens use a 24 dp [gap]. */
 @Composable
 fun SetupScaffold(
     bottom: @Composable ColumnScope.() -> Unit,
+    gap: Dp = 28.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = RoudioTheme.colors
@@ -70,7 +78,7 @@ fun SetupScaffold(
     ) {
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(28.dp),
+            verticalArrangement = Arrangement.spacedBy(gap),
             content = content,
         )
         Spacer(Modifier.height(12.dp))
@@ -341,5 +349,109 @@ fun NumberedStep(number: Int, text: String) {
             Text("$number", style = roudioText(13.sp, 16.sp, FontWeight.SemiBold), color = c.onPrimary)
         }
         Text(text, style = roudioText(15.sp, 22.sp), color = c.ink, modifier = Modifier.padding(top = 3.dp))
+    }
+}
+
+// Error screens (12a–12e)
+
+/** Just the round Back button: error screens have no step bar. */
+@Composable
+fun BackHeader(onBack: () -> Unit) {
+    val c = RoudioTheme.colors
+    IconButton(
+        onClick = onBack,
+        modifier = Modifier.size(48.dp),
+        colors = IconButtonDefaults.iconButtonColors(containerColor = c.raised, contentColor = c.ink),
+    ) {
+        Icon(RoudioIcons.Back, contentDescription = stringResource(R.string.back), Modifier.size(22.dp))
+    }
+}
+
+/** 64 dp rounded tile with the error's icon; [alert] = the red version (12e). */
+@Composable
+fun ErrorIcon(icon: ImageVector, alert: Boolean = false) {
+    val c = RoudioTheme.colors
+    Box(
+        Modifier.size(64.dp).background(if (alert) c.alertTint else c.raised, RoundedCornerShape(20.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = if (alert) c.alert else c.ink, modifier = Modifier.size(30.dp))
+    }
+}
+
+@Composable
+fun ErrorTitle(title: String, body: String) {
+    val c = RoudioTheme.colors
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            title,
+            style = roudioText(28.sp, 34.sp, FontWeight.SemiBold).copy(letterSpacing = (-0.02).em),
+            color = c.ink,
+            modifier = Modifier.semantics { heading() },
+        )
+        Text(body, style = roudioText(16.sp, 24.sp), color = c.muted)
+    }
+}
+
+/** Fog callout with a shield: what's still safe (12b, 12e, 13b). */
+@Composable
+fun SafeNote(text: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit = {}) {
+    val c = RoudioTheme.colors
+    Column(
+        modifier
+            .fillMaxWidth()
+            .background(c.raised, RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(RoudioIcons.ShieldCheck, contentDescription = null, tint = c.ink, modifier = Modifier.size(20.dp))
+            Text(text, style = roudioText(14.sp, 20.sp), color = c.ink)
+        }
+        content()
+    }
+}
+
+/** Empty tick box with a title and reason: a thing to check (12a). */
+@Composable
+fun CheckItem(title: String, body: String, last: Boolean) {
+    val c = RoudioTheme.colors
+    ListRow(last = last, verticalPadding = 14.dp) {
+        Box(
+            Modifier.padding(top = 1.dp).size(22.dp).border(2.dp, c.ink, RoundedCornerShape(6.dp)),
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = roudioText(15.sp, 22.sp, FontWeight.SemiBold), color = c.ink)
+            Text(body, style = roudioText(14.sp, 20.sp), color = c.muted)
+        }
+    }
+}
+
+/** Ring with a turning quarter arc: something in progress (11f status, 11h step). */
+@Composable
+fun Spinner(size: Dp, stroke: Dp) {
+    val c = RoudioTheme.colors
+    val turn by rememberInfiniteTransition(label = "spinner").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            tween(1000, easing = LinearEasing),
+        ),
+        label = "turn",
+    )
+    Canvas(Modifier.size(size)) {
+        val w = stroke.toPx()
+        val inset = w / 2
+        val arcSize = Size(this.size.width - w, this.size.height - w)
+        drawCircle(c.hairline, radius = (this.size.width - w) / 2, style = Stroke(w))
+        drawArc(
+            c.primary,
+            startAngle = turn - 90f,
+            sweepAngle = 90f,
+            useCenter = false,
+            topLeft = Offset(inset, inset),
+            size = arcSize,
+            style = Stroke(w, cap = StrokeCap.Round),
+        )
     }
 }

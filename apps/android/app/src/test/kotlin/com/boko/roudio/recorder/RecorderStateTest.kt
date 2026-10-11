@@ -88,15 +88,36 @@ class RecorderStateTest {
     @Test
     fun `a drop while linking is a failed link`() {
         val state = RecorderState().linking(notePro).reduce(RecorderEvent.Disconnected, t0)
-        assertEquals(LinkPhase.Failed(LinkFailure.Dropped), state.link)
+        assertEquals(LinkPhase.Failed(LinkFailure.Dropped, notePro), state.link)
         assertNull(state.linked)
+    }
+
+    @Test
+    fun `Bluetooth off while linking is a failed link`() {
+        val state = RecorderState().linking(notePro).reduce(RecorderEvent.BluetoothChanged(false), t0)
+        assertEquals(LinkPhase.Failed(LinkFailure.Dropped, notePro), state.link)
+    }
+
+    @Test
+    fun `the Bluetooth step on 11h ticks once the connection is up`() {
+        val state = RecorderState().linking(notePro).reduce(RecorderEvent.BluetoothLinked, t0)
+        assertEquals(LinkPhase.Linking(notePro, bluetoothUp = true), state.link)
+    }
+
+    @Test
+    fun `a bound recorder is linked elsewhere unless it's the one Roudio has`() {
+        val bound = notePro.copy(linkedElsewhere = true)
+        val other = bound.copy(serial = "88200000091C0")
+        val ours = RecorderState(linked = LinkedRecorder(notePro.serial, RecorderModel.NotePro)).searching()
+            .reduce(RecorderEvent.Found(listOf(bound, other)), t0)
+        assertEquals(listOf(notePro, other), (ours.link as LinkPhase.Searching).found)
     }
 
     @Test
     fun `a refused handshake while linking means linked to another app`() {
         val state = RecorderState().linking(notePro)
             .reduce(RecorderEvent.LinkFailed(notePro.serial, LinkFailure.LinkedElsewhere), t0)
-        assertEquals(LinkPhase.Failed(LinkFailure.LinkedElsewhere), state.link)
+        assertEquals(LinkPhase.Failed(LinkFailure.LinkedElsewhere, notePro), state.link)
     }
 
     @Test

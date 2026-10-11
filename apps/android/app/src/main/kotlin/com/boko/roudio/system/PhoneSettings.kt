@@ -3,6 +3,7 @@ package com.boko.roudio.system
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AppOpsManager
+import android.bluetooth.BluetoothAdapter
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -48,6 +49,21 @@ object PhoneSettings {
     /** Roudio's page in Android settings, where refused permissions can be switched on. */
     fun appDetails(context: Context): Intent =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+
+    /** Android's "turn on Bluetooth?" dialog (12b). Needs Nearby devices; else Bluetooth settings. */
+    fun enableBluetooth(context: Context): Intent =
+        if (granted(context, nearbyDevices)) {
+            Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+        } else {
+            Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+        }
+
+    /** The Plaud app (12d), or its Play Store page when it isn't installed. */
+    fun plaudApp(context: Context): Intent =
+        context.packageManager.getLaunchIntentForPackage(PLAUD_PACKAGE)
+            ?: Intent(Intent.ACTION_VIEW, "market://details?id=$PLAUD_PACKAGE".toUri())
+
+    private const val PLAUD_PACKAGE = "ai.plaud.android.plaud"
 
     // Battery
 

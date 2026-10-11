@@ -22,9 +22,11 @@ sealed interface LinkPhase {
     /** The search ran for [SEARCH_TIME] with no recorder in it (12a). */
     data object NothingFound : LinkPhase
 
-    data class Linking(val recorder: FoundRecorder) : LinkPhase
+    /** [bluetoothUp]: the first step on 11h is done and the handshake is running. */
+    data class Linking(val recorder: FoundRecorder, val bluetoothUp: Boolean = false) : LinkPhase
 
-    data class Failed(val reason: LinkFailure) : LinkPhase
+    /** [recorder] is the one we tried, so "Try again" on 12d/12e can link it again. */
+    data class Failed(val reason: LinkFailure, val recorder: FoundRecorder? = null) : LinkPhase
 }
 
 /** What the UI says about "is it recording now". Brief: unknown unless there's a fresh event. */
@@ -75,6 +77,10 @@ data class RecorderState(
 
     fun linking(recorder: FoundRecorder): RecorderState = copy(link = LinkPhase.Linking(recorder))
 
+    /** The owner tapped a recorder 11g shows as linked elsewhere: straight to 12d. */
+    fun linkedElsewhere(recorder: FoundRecorder): RecorderState =
+        copy(link = LinkPhase.Failed(LinkFailure.LinkedElsewhere, recorder))
+
     fun linkIdle(): RecorderState = copy(link = LinkPhase.Idle)
 
     /** After unlinking, only the phone's Bluetooth state is still worth keeping. */
@@ -88,17 +94,30 @@ data class RecorderState(
                 // Nothing can be connected or searching without Bluetooth.
                 disconnected(now).copy(
                     bluetoothOn = false,
-                    link = if (link is LinkPhase.Failed) link else LinkPhase.Idle,
+                    link = when (val phase = link) {
+                        is LinkPhase.Failed -> phase
+                        is LinkPhase.Linking -> LinkPhase.Failed(LinkFailure.Dropped, phase.recorder)
+                        else -> LinkPhase.Idle
+                    },
                 )
             }
 
         is RecorderEvent.Found -> {
             val phase = link
             if (phase is LinkPhase.Searching) {
-                copy(link = LinkPhase.Searching(event.recorders.sortedByDescending { it.signal }))
+                val ours = linked?.serial
+                val found = event.recorders
+                    .map { if (it.serial == ours) it.copy(linkedElsewhere = false) else it }
+                    .sortedByDescending { it.signal }
+                copy(link = LinkPhase.Searching(found))
             } else {
                 this
             }
+        }
+
+        RecorderEvent.BluetoothLinked -> {
+            val phase = link
+            if (phase is LinkPhase.Linking) copy(link = phase.copy(bluetoothUp = true)) else this
         }
 
         is RecorderEvent.Connected -> {
@@ -115,13 +134,16 @@ data class RecorderState(
             )
         }
 
-        is RecorderEvent.LinkFailed ->
-            if (link is LinkPhase.Linking) copy(link = LinkPhase.Failed(event.reason)) else this
+        is RecorderEvent.LinkFailed -> {
+            val phase = link
+            if (phase is LinkPhase.Linking) copy(link = LinkPhase.Failed(event.reason, phase.recorder)) else this
+        }
 
         RecorderEvent.Disconnected -> {
             val dropped = disconnected(now)
-            if (link is LinkPhase.Linking) {
-                dropped.copy(link = LinkPhase.Failed(LinkFailure.Dropped))
+            val phase = link
+            if (phase is LinkPhase.Linking) {
+                dropped.copy(link = LinkPhase.Failed(LinkFailure.Dropped, phase.recorder))
             } else {
                 dropped
             }

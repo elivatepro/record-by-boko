@@ -64,6 +64,9 @@ class PlaudRecorderSource(
     /** True when the handshake is a first link (from the setup flow), not a reconnect. */
     @Volatile private var firstLink = false
 
+    /** A link from the setup flow to the recorder that's already ours: no force-clear needed. */
+    @Volatile private var relink = false
+
     /** The last connect stage the SDK reported; tells a refusal apart from a drop. */
     @Volatile private var lastStage: String? = null
 
@@ -104,6 +107,8 @@ class PlaudRecorderSource(
         context.getSystemService(BluetoothManager::class.java)?.adapter?.isEnabled == true
 
     override fun startSearch() {
+        // A reconnect scan still running would grab the recorder as soon as it shows up.
+        reconnectSerial = null
         scanned.clear()
         scope.launch {
             // Scanning works without Plaud's servers; only linking needs them.
@@ -117,9 +122,10 @@ class PlaudRecorderSource(
         scope.launch { sdk("stopScan") { PlaudDeviceAgent.stopScan() } }
     }
 
-    override fun link(serial: String) {
+    override fun link(serial: String, alreadyOurs: Boolean) {
         reconnectSerial = null
         firstLink = true
+        relink = alreadyOurs
         scope.launch { handshake(serial) }
     }
 
@@ -218,7 +224,7 @@ class PlaudRecorderSource(
         lastStage = null
         handshakeSerial = serial
         val userId = tokenInUse?.let { handshakeUserId(it.accessToken) }
-        if (firstLink && userId != null && forceClearOnFirstLink) {
+        if (firstLink && !relink && userId != null && forceClearOnFirstLink) {
             // A recorder keeps the public key of the last app it was linked to and encrypts its
             // first reply with it, so a recorder freed from the Plaud app answers with a key we
             // can't read (the SDK fails with an RSA error, then times out). The force-clear
@@ -317,7 +323,8 @@ class PlaudRecorderSource(
                             "protocol=${device.portVersion}",
                     )
                 }
-                FoundRecorder(serial, RecorderModel.fromSerial(serial), device.rssi)
+                // bindInfo 1: bound to an app (Roudio included), 0: free (libs/README.md).
+                FoundRecorder(serial, RecorderModel.fromSerial(serial), device.rssi, linkedElsewhere = device.bindInfo == 1)
             }
             emit(RecorderEvent.Found(found))
             val wanted = reconnectSerial
@@ -334,6 +341,7 @@ class PlaudRecorderSource(
             Log.i(TAG, "connect state $state")
             // 1 = Bluetooth link up (not linked yet), 0 = disconnected, 2 = connect failed.
             if (state == 0 || state == 2) onConnectionLost(state)
+            if (state == 1 && firstLink && handshakeSerial != null) emit(RecorderEvent.BluetoothLinked)
         }
 
         override fun bleConnectStage(sn: String?, stage: String, detail: String?) {

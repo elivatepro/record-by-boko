@@ -39,6 +39,32 @@ object RoudioIcons {
     // 11e Unlink (warning callout)
     val Warning = icon("Warning", lines = listOf("M12 3.5 2.8 19.5h18.4z"), thickLines = listOf("M12 9.5v4.5M12 16.8v.1"))
 
+    // 11f–11g, 12a–12e, 13a
+    val Recorder = icon("Recorder", lines = listOf("M9.5 3h5A2.5 2.5 0 0 1 17 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-5A2.5 2.5 0 0 1 7 18.5v-13A2.5 2.5 0 0 1 9.5 3z", "M10.5 7.5h3"))
+    val RecorderMissing = icon(
+        "RecorderMissing",
+        lines = listOf("M9.5 3h5A2.5 2.5 0 0 1 17 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-5A2.5 2.5 0 0 1 7 18.5v-13A2.5 2.5 0 0 1 9.5 3z", "M10 10.5l4 4M14 10.5l-4 4"),
+    )
+    val BluetoothOff = icon("BluetoothOff", lines = listOf("m7 7.5 10 9-5 4.5V3l5 4.5-10 9"), thickLines = listOf("M4 4l16 16"))
+    val Lock = icon(
+        "Lock",
+        lines = listOf("M7.5 10.5h9a2.5 2.5 0 0 1 2.5 2.5v5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 18v-5a2.5 2.5 0 0 1 2.5-2.5z", "M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"),
+        fills = listOf("M12 14.1a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 1 0 0-2.8z"),
+    )
+    val Link = icon(
+        "Link",
+        lines = listOf("M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1", "M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"),
+    )
+    val ShieldCheck = icon("ShieldCheck", lines = listOf("M12 3.5 5 6.5v5c0 4.4 3 7.9 7 9 4-1.1 7-4.6 7-9v-5z", "m9.3 12 1.9 1.9 3.6-3.6"))
+    val Chevron = line("m9.5 6 6 6-6 6")
+
+    // 01 Today recorder chip
+    val RecorderChip = icon(
+        "RecorderChip",
+        lines = listOf("M9.5 3h5a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z", "M10 16.5h4"),
+        fills = listOf("M12 6.6a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 1 0 0-2.8z"),
+    )
+
     val Google = ImageVector.Builder("Google", 24.dp, 24.dp, 24f, 24f).apply {
         fill("M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z", 0xFF4285F4)
         fill("M12 22c2.7 0 5-.9 6.6-2.5l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z", 0xFF34A853)

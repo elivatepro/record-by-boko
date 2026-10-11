@@ -5,6 +5,7 @@
     <string name="step_of">Step %1$d of %2$d</string>
 
     <string name="continue_label">Continue</string>
+    <string name="ok">OK</string>
     <string name="allow">Allow</string>
     <string name="allowed">Allowed</string>
 
@@ -86,4 +87,146 @@
     <string name="unlink_step_3">Come back here. You can keep the Plaud app installed.</string>
     <string name="unlink_done">It’s unlinked. Find my recorder</string>
     <string name="unlink_never">It was never linked</string>
+
+    <!-- 11f Setup · Finding recorder -->
+    <string name="finding_title">Looking for your recorder</string>
+    <string name="finding_body">Make sure it’s switched on and close to this phone.</string>
+    <string name="finding_status">Searching · %1$d s</string>
+    <string name="finding_footnote">If nothing turns up in 30 seconds, we’ll show you what to check.</string>
+    <string name="stop_looking">Stop looking</string>
+
+    <!-- 11g Setup · Recorder found -->
+    <string name="found_title">Is this your recorder?</string>
+    <string name="found_body">Check the last four characters against the serial number on the back.</string>
+    <string name="found_nearby">Ends in %1$s · nearby</string>
+    <string name="found_linked_elsewhere">Ends in %1$s · linked to another app</string>
+    <string name="connect">Connect</string>
+    <string name="keep_looking">Not mine. Keep looking</string>
+
+    <!-- 11h Setup · Linking -->
+    <string name="linking_title">Linking your %1$s</string>
+    <string name="linking_body">Keep it close to the phone. This usually takes under a minute.</string>
+    <string name="linking_bluetooth">Connected over Bluetooth</string>
+    <string name="linking_bluetooth_pending">Connecting over Bluetooth</string>
+    <string name="linking_roudio">Linking it to Roudio</string>
+    <string name="linking_roudio_body">Checking with Plaud that this recorder is yours</string>
+    <string name="linking_readings">Reading battery and storage</string>
+    <string name="linking_footnote">Nothing on the recorder is deleted while linking.</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- 11i Setup · Linked -->
+    <string name="linked_title">Your %1$s is linked</string>
+    <string name="linked_body">Roudio will start bringing recordings across now.</string>
+    <string name="linked_footnote">The first transfer can take a while. You can use your phone as normal.</string>
+    <string name="go_to_today">Go to Today</string>
+
+    <!-- Recorder readings (11i, 13a, 13b, the Today chip) -->
+    <string name="reading_battery">Battery</string>
+    <string name="reading_free_space">Free space</string>
+    <string name="reading_recording_now">Recording now</string>
+    <string name="reading_not_read">Not read yet</string>
+    <string name="battery_charging">%1$d%% · charging</string>
+    <string name="battery_not_charging">%1$d%% · not charging</string>
+    <string name="battery_level">%1$d%%</string>
+    <string name="free_of_total">%1$s of %2$s GB</string>
+    <string name="recording_yes_since">Yes, since %1$s</string>
+    <string name="recording_yes">Yes</string>
+    <string name="recording_no">No</string>
+    <string name="recording_unknown">Unknown</string>
+
+    <!-- 12a Error · Recorder not found -->
+    <string name="not_found_title">We couldn’t find your recorder</string>
+    <string name="not_found_body">We looked for 30 seconds. Check these, then try again.</string>
+    <string name="not_found_on_title">It’s switched on and has charge</string>
+    <string name="not_found_on_body">If the battery is flat, charge it for 10 minutes first.</string>
+    <string name="not_found_near_title">It’s within arm’s reach of the phone</string>
+    <string name="not_found_near_body">Walls and bags weaken Bluetooth.</string>
+    <string name="not_found_other_title">It isn’t connected to another phone</string>
+    <string name="not_found_other_body">It talks to one phone at a time. Close the Plaud app on other devices.</string>
+    <string name="look_again">Look again</string>
+    <string name="maybe_plaud">It might still be linked to the Plaud app</string>
+
+    <!-- 12b Error · Bluetooth off -->
+    <string name="bluetooth_off_title">Bluetooth is off</string>
+    <string name="bluetooth_off_body">Roudio uses Bluetooth to reach your recorder. Nothing is lost: new recordings wait safely on the recorder until you turn it back on.</string>
+    <string name="bluetooth_off_safe">Your recorder keeps recording on its own. Roudio picks up where it left off.</string>
+    <string name="turn_on_bluetooth">Turn on Bluetooth</string>
+    <string name="not_now">Not now</string>
+
+    <!-- 12c Error · Permission refused -->
+    <string name="refused_title">Roudio can’t look for your recorder</string>
+    <string name="refused_body">The Nearby devices permission is off. Android won’t ask again, so you’ll need to switch it on yourself.</string>
+    <string name="refused_path_label">In Android settings</string>
+    <string name="refused_path">Apps › Roudio › Permissions › Nearby devices › Allow</string>
+    <string name="open_app_settings">Open app settings</string>
+    <string name="why_needed">Why Roudio needs this</string>
+
+    <!-- 12d Error · Linked to another app -->
+    <string name="elsewhere_title">This recorder is linked to another app</string>
+    <string name="elsewhere_body">Your %1$s works with one app at a time. It’s still linked, most likely to the Plaud app.</string>
+    <string name="elsewhere_step_1">Let the Plaud app finish syncing anything you want to keep.</string>
+    <string name="elsewhere_step_2">In the Plaud app, with the recorder next to your phone, unlink or remove your %1$s.</string>
+    <string name="elsewhere_step_3">Come back and try again.</string>
+    <string name="elsewhere_try_again">I’ve unlinked it. Try again</string>
+    <string name="open_plaud_app">Open the Plaud app</string>
+
+    <!-- 12e Error · Linking failed -->
+    <string name="link_failed_title">Linking didn’t finish</string>
+    <string name="link_failed_body_dropped">The connection dropped before Plaud could confirm this recorder is yours.</string>
+    <string name="link_failed_body_internet">This phone couldn’t reach Plaud to confirm this recorder is yours.</string>
+    <string name="link_failed_body_other">Something went wrong before Plaud could confirm this recorder is yours.</string>
+    <string name="link_failed_safe">Nothing on your recorder changed. All your recordings are still on it.</string>
+    <string name="link_failed_usually">Usually it’s one of these</string>
+    <string name="link_failed_cause_internet">• The phone lost internet. Linking has to check with Plaud online.</string>
+    <string name="link_failed_cause_range">• The recorder moved out of range or went to sleep.</string>
+    <string name="try_again">Try again</string>
+    <string name="show_details">Show details</string>
+    <string name="hide_details">Hide details</string>
+    <string name="link_failed_detail_dropped">The Bluetooth connection closed or timed out during the handshake.</string>
+    <string name="link_failed_detail_internet">Plaud’s servers didn’t answer, so the recorder couldn’t be checked.</string>
+    <string name="link_failed_detail_other">The Plaud software reported an error it didn’t explain.</string>
+    <!-- 13a Recorder & transfers / 13b Recorder disconnected -->
+    <string name="recorder_title">Recorder</string>
+    <string name="recorder_name">%1$s · %2$s</string>
+    <string name="recorder_connected_now">Connected · Bluetooth · seen just now</string>
+    <string name="recorder_connected_seen">Connected · Bluetooth · seen %1$s</string>
+    <string name="recorder_not_connected_seen">Not connected · last seen %1$s</string>
+    <string name="recorder_not_connected">Not connected</string>
+    <string name="recorder_bluetooth_off_seen">Bluetooth is off · last seen %1$s</string>
+    <string name="recorder_bluetooth_off">Bluetooth is off</string>
+    <string name="tile_battery">Battery</string>
+    <string name="tile_free_space">Free space</string>
+    <string name="tile_recording">Recording</string>
+    <string name="tile_percent">%1$d%%</string>
+    <string name="tile_charging">charging</string>
+    <string name="tile_not_charging">not charging</string>
+    <string name="tile_gb">%1$s GB</string>
+    <string name="tile_of_gb">of %1$s GB</string>
+    <string name="tile_at">at %1$s</string>
+    <string name="tile_none">–</string>
+    <string name="tile_not_read">not read yet</string>
+    <string name="tile_recording_now">Now</string>
+    <string name="tile_since">since %1$s</string>
+    <string name="tile_recording_off">Off</string>
+    <string name="tile_not_recording">not recording</string>
+    <string name="tile_unknown">Unknown</string>
+    <string name="tile_checking">checking</string>
+    <string name="tile_out_of_range">out of range</string>
+    <string name="tile_bluetooth_off">Bluetooth off</string>
+    <string name="recorder_away_safe">Your recorder keeps recording on its own. Everything waits safely on it until Roudio reconnects.</string>
+    <string name="recorder_bluetooth_safe">Your recorder keeps recording on its own. Turn Bluetooth on and Roudio picks up where it left off.</string>
+    <string name="try_to_reconnect">Try to reconnect</string>
+    <string name="unlink_recorder">Unlink this recorder</string>
+    <string name="unlink_confirm_title">Unlink this recorder?</string>
+    <string name="unlink_confirm_body">Roudio stops bringing recordings across. Nothing is deleted from the recorder. Linking it again later may need the Plaud app to free it first.</string>
+    <string name="unlink">Unlink</string>
+
+    <!-- 01 Today (shell until milestone 2) and the recorder chip -->
+    <string name="today">Today</string>
+    <string name="chip_linked">Plaud linked</string>
+    <string name="chip_linked_battery">Plaud linked · %1$d%%</string>
+    <string name="chip_not_connected_seen">Plaud not connected · seen %1$s</string>
+    <string name="chip_not_connected">Plaud not connected</string>
+    <string name="chip_bluetooth_off">Bluetooth off · Plaud not connected</string>
+    <string name="today_empty">Your day fills in here as recordings come across from the recorder.</string>
 </resources>

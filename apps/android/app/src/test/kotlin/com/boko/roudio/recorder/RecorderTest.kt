@@ -47,7 +47,7 @@ class RecorderTest {
         val recorder = recorder()
         recorder.link(notePro)
         advanceTimeBy(Recorder.LINK_TIME.toMillis() + 1)
-        assertEquals(LinkPhase.Failed(LinkFailure.Dropped), recorder.state.value.link)
+        assertEquals(LinkPhase.Failed(LinkFailure.Dropped, notePro), recorder.state.value.link)
         assertEquals("disconnect", source.commands.last())
     }
 
@@ -84,5 +84,33 @@ class RecorderTest {
         recorder.unlink()
         assertEquals(null, store.saved.linked)
         assertEquals("unlink ${notePro.serial}", source.commands.last())
+    }
+
+    @Test
+    fun `linking the recorder that's already ours uses the ordinary handshake`() = runTest {
+        store.saved = RecorderState(linked = LinkedRecorder(notePro.serial, RecorderModel.NotePro))
+        recorder().link(notePro)
+        assertEquals("relink ${notePro.serial}", source.commands.last())
+    }
+
+    @Test
+    fun `searching drops a connected recorder first, since it won't show in a scan`() = runTest {
+        store.saved = RecorderState(linked = LinkedRecorder(notePro.serial, RecorderModel.NotePro))
+        val recorder = recorder()
+        source.emit(RecorderEvent.Connected(notePro.serial))
+        runCurrent()
+        recorder.search()
+        assertEquals(listOf("refresh", "disconnect", "startSearch"), source.commands)
+    }
+
+    @Test
+    fun `cancelling a link disconnects and goes back to idle`() = runTest {
+        val recorder = recorder()
+        recorder.link(notePro)
+        recorder.cancelLink()
+        assertEquals(LinkPhase.Idle, recorder.state.value.link)
+        assertEquals("disconnect", source.commands.last())
+        advanceTimeBy(Recorder.LINK_TIME.toMillis() + 1)
+        assertEquals(LinkPhase.Idle, recorder.state.value.link)
     }
 }

@@ -18,11 +18,11 @@ import com.boko.roudio.system.PhoneSettings.Autostart
 
 /**
  * 11c with Android behind it. Rows re-check when the screen comes back (the owner may have
- * changed something in Android settings). A permission Android won't ask for again opens
- * Roudio's settings page instead. (12c replaces that for Nearby devices in step 6.)
+ * changed something in Android settings). Nearby devices refused for good goes to 12c; any other
+ * permission Android won't ask for again opens Roudio's settings page.
  */
 @Composable
-fun PermissionsRoute(onContinue: () -> Unit, onBack: (() -> Unit)?) {
+fun PermissionsRoute(onContinue: () -> Unit, onNearbyRefused: () -> Unit, onBack: (() -> Unit)?) {
     val context = LocalContext.current
     val activity = LocalActivity.current
     fun read() = PermissionRows(
@@ -39,10 +39,13 @@ fun PermissionsRoute(onContinue: () -> Unit, onBack: (() -> Unit)?) {
     var continueAfterNearby by remember { mutableStateOf(false) }
     val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         rows = read()
-        val refusedForGood = result.any { (permission, granted) ->
+        val refusedForGood = result.filter { (permission, granted) ->
             !granted && activity != null && !ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
+        }.keys
+        when {
+            refusedForGood.any { it in PhoneSettings.nearbyDevices } -> onNearbyRefused()
+            refusedForGood.isNotEmpty() -> context.startActivity(PhoneSettings.appDetails(context))
         }
-        if (refusedForGood) context.startActivity(PhoneSettings.appDetails(context))
         if (continueAfterNearby && rows.nearbyDevices) onContinue()
         continueAfterNearby = false
     }

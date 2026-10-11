@@ -18,8 +18,11 @@ interface RecorderSource {
 
     fun stopSearch()
 
-    /** Link a recorder from the latest [RecorderEvent.Found] for the first time. */
-    fun link(serial: String)
+    /**
+     * Link a recorder from the latest [RecorderEvent.Found]. [alreadyOurs]: it's the recorder
+     * Roudio already has linked, so the ordinary handshake is enough (no force-clear).
+     */
+    fun link(serial: String, alreadyOurs: Boolean = false)
 
     /** Reconnect to the recorder that's already linked. It's found by its serial. */
     fun connect(serial: String)
@@ -37,6 +40,9 @@ sealed interface RecorderEvent {
     data class BluetoothChanged(val on: Boolean) : RecorderEvent
 
     data class Found(val recorders: List<FoundRecorder>) : RecorderEvent
+
+    /** While linking: the Bluetooth connection is up and the handshake is starting (11h). */
+    data object BluetoothLinked : RecorderEvent
 
     /** The handshake finished: the recorder is linked to Roudio and connected. */
     data class Connected(val serial: String) : RecorderEvent
@@ -58,7 +64,10 @@ data class FoundRecorder(
     val model: RecorderModel,
     /** Received signal strength in dBm; higher is nearer. */
     val signal: Int,
-    /** Already linked to another app, so Roudio can't link it (screen 12d). */
+    /**
+     * The recorder says it's bound to an app. Bound to Roudio looks the same, so [RecorderState]
+     * clears this for the recorder Roudio has linked; for any other it means 11g greys it out.
+     */
     val linkedElsewhere: Boolean = false,
 )
 
@@ -76,10 +85,11 @@ enum class LinkFailure {
     Other,
 }
 
-enum class RecorderModel(val displayName: String) {
-    NotePro("Plaud Note Pro"),
-    NotePinS("Plaud NotePin S"),
-    Other("Plaud recorder"),
+/** [shortName] fills "Linking your Note Pro" (11h, 11i, 12d). */
+enum class RecorderModel(val displayName: String, val shortName: String) {
+    NotePro("Plaud Note Pro", "Note Pro"),
+    NotePinS("Plaud NotePin S", "NotePin S"),
+    Other("Plaud recorder", "recorder"),
     ;
 
     companion object {

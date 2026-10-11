@@ -76,4 +76,14 @@ class KeepConnectedTest {
         advanceTimeBy(20_000)
         assertEquals(connects, count("connect $serial"))
     }
+
+    @Test
+    fun `keeps reconnecting when a finished search is left on screen`() = runTest {
+        val recorder = start()
+        recorder.search()
+        val connects = count("connect $serial")
+        advanceTimeBy(RecorderState.SEARCH_TIME.toMillis() + 1)
+        assertEquals(LinkPhase.NothingFound, recorder.state.value.link)
+        assertEquals(connects + 1, count("connect $serial"))
+    }
 }

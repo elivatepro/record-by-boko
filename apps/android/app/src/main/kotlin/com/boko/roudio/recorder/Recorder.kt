@@ -42,6 +42,9 @@ class Recorder(
 
     fun search() {
         searchTimer?.cancel()
+        linkTimer?.cancel()
+        // A connected recorder doesn't show up in a scan.
+        if (_state.value.isConnected) source.disconnect()
         update { it.searching() }
         source.startSearch()
         searchTimer = scope.launch {
@@ -60,8 +63,9 @@ class Recorder(
     fun link(recorder: FoundRecorder) {
         searchTimer?.cancel()
         source.stopSearch()
+        val alreadyOurs = _state.value.linked?.serial == recorder.serial
         update { it.linking(recorder) }
-        source.link(recorder.serial)
+        source.link(recorder.serial, alreadyOurs)
         linkTimer?.cancel()
         linkTimer = scope.launch {
             delay(LINK_TIME.toMillis())
@@ -72,8 +76,23 @@ class Recorder(
         }
     }
 
+    /** 11g: the owner tapped a recorder that's linked to another app. */
+    fun showLinkedElsewhere(recorder: FoundRecorder) {
+        searchTimer?.cancel()
+        source.stopSearch()
+        update { it.linkedElsewhere(recorder) }
+    }
+
+    /** "Cancel" on 11h: drop the half-made connection. */
+    fun cancelLink() {
+        linkTimer?.cancel()
+        if (_state.value.link is LinkPhase.Linking) source.disconnect()
+        update { it.linkIdle() }
+    }
+
     /** Leave an error screen or the found list; nothing is left running. */
     fun clearLink() {
+        if (_state.value.link is LinkPhase.Searching) source.stopSearch()
         searchTimer?.cancel()
         linkTimer?.cancel()
         update { it.linkIdle() }

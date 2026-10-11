@@ -30,9 +30,10 @@
         android:name="android.permission.ACCESS_COARSE_LOCATION"
         android:maxSdkVersion="30" />
 
-    <!-- 11d opens Xiaomi's Autostart list when it exists. -->
+    <!-- 11d opens Xiaomi's Autostart list when it exists; 12d opens the Plaud app. -->
     <queries>
         <package android:name="com.miui.securitycenter" />
+        <package android:name="ai.plaud.android.plaud" />
     </queries>
 
     <application

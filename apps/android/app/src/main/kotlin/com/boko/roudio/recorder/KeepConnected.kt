@@ -64,8 +64,9 @@ class KeepConnected(
     private enum class Mode { Idle, Reconnect, Connected }
 
     private fun RecorderState.mode(): Mode = when {
-        // Nothing linked, Bluetooth off, or the setup flow is busy with the recorder.
-        linked == null || !bluetoothOn || link != LinkPhase.Idle -> Mode.Idle
+        // Nothing linked, Bluetooth off, or the setup flow is busy with the recorder. A finished
+        // search or a failed link left on screen doesn't count: reconnecting goes on.
+        linked == null || !bluetoothOn || link is LinkPhase.Searching || link is LinkPhase.Linking -> Mode.Idle
         isConnected -> Mode.Connected
         else -> Mode.Reconnect
     }
