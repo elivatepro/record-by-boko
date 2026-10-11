@@ -48,6 +48,22 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+        // What goes on the owner's phone until there's a release: optimised like a release (R8,
+        // not debuggable, so Compose runs at full speed), but signed with the debug key so the
+        // debug Google OAuth client still signs in, and with the adb-only recorder commands.
+        create("fast") {
+            initWith(getByName("debug"))
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            matchingFallbacks += listOf("debug")
+        }
+    }
+
+    sourceSets.getByName("fast") {
+        kotlin.directories += "src/debug/kotlin"
+        manifest.srcFile("src/debug/AndroidManifest.xml")
     }
 
     buildFeatures {

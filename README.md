@@ -50,6 +50,8 @@ pnpm --filter @roudio/web dev      # http://localhost:5173
 ./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb reverse tcp:8000 tcp:8000      # phone reaches the local backend at 127.0.0.1:8000
+./gradlew :app:assembleFast        # for the owner's phone: R8-optimised, not debuggable, same key
+adb install -r app/build/outputs/apk/fast/app-fast.apk
 ```
 
 Android reads per-machine settings from `apps/android/local.properties` (git-ignored):

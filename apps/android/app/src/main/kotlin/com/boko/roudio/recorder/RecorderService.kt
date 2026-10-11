@@ -35,7 +35,8 @@ import kotlinx.coroutines.launch
 /**
  * Holds the recorder connection and runs transfers while the screen is off (spec §2, "Transfer
  * service"). A
- * connected-device foreground service: Android shows its notification for as long as it runs.
+ * connected-device foreground service: its notification stays for as long as it runs, and comes
+ * straight back if it's swiped away.
  * Runs whenever a recorder is linked; stops itself after unlinking.
  */
 class RecorderService : Service() {
@@ -130,11 +131,20 @@ class RecorderService : Service() {
             Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        val reshow = PendingIntent.getForegroundService(
+            this,
+            1,
+            Intent(this, RecorderService::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_recorder)
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(open)
+            // Android 14+ lets foreground-service notifications be swiped away; bring it straight
+            // back so the recorder's state is always in the shade.
+            .setDeleteIntent(reshow)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
