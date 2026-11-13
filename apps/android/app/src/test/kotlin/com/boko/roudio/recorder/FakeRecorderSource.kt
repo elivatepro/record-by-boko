@@ -31,6 +31,10 @@ class FakeRecorderSource(var bluetoothOn: Boolean = true) : RecorderSource {
 
     override fun refresh() { commands += "refresh" }
 
+    override fun startRecording(scene: Int?) { commands += if (scene == null) "startRecording" else "startRecording $scene" }
+
+    override fun stopRecording() { commands += "stopRecording" }
+
     /** What [listFiles] returns. */
     var files = listOf<RecorderFile>()
 

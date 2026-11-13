@@ -113,4 +113,93 @@ class RecorderTest {
         advanceTimeBy(Recorder.LINK_TIME.toMillis() + 1)
         assertEquals(LinkPhase.Idle, recorder.state.value.link)
     }
+
+    private suspend fun TestScope.connected(recording: Boolean?): Recorder {
+        store.saved = RecorderState(linked = LinkedRecorder(notePro.serial, RecorderModel.NotePro))
+        val recorder = recorder()
+        source.emit(RecorderEvent.Connected(notePro.serial))
+        if (recording != null) source.emit(RecorderEvent.Recording(recording))
+        runCurrent()
+        source.commands.clear()
+        return recorder
+    }
+
+    @Test
+    fun `start and stop are refused until the recorder says whether it is recording`() = runTest {
+        val recorder = connected(recording = null)
+        assertEquals(RecordControl.Unavailable, recorder.state.value.recordControl)
+        assertEquals(false, recorder.startRecording())
+        assertEquals(false, recorder.stopRecording())
+        assertEquals(emptyList<String>(), source.commands)
+    }
+
+    @Test
+    fun `start is refused while not connected, even with an old reading`() = runTest {
+        store.saved = RecorderState(
+            linked = LinkedRecorder(notePro.serial, RecorderModel.NotePro),
+            recording = Seen(RecordingReading(false, null), now),
+        )
+        val recorder = recorder()
+        assertEquals(false, recorder.startRecording())
+        assertEquals(emptyList<String>(), source.commands)
+    }
+
+    @Test
+    fun `starting shows Starting until the recorder confirms`() = runTest {
+        val recorder = connected(recording = false)
+        assertEquals(RecordControl.Start, recorder.state.value.recordControl)
+        assertEquals(false, recorder.stopRecording())
+
+        assertTrue(recorder.startRecording())
+        assertEquals(listOf("startRecording"), source.commands)
+        assertEquals(RecordControl.Starting, recorder.state.value.recordControl)
+        // A second tap while waiting does nothing.
+        assertEquals(false, recorder.startRecording())
+
+        // A stale "not recording" in between doesn't settle it.
+        source.emit(RecorderEvent.Recording(false))
+        runCurrent()
+        assertEquals(RecordControl.Starting, recorder.state.value.recordControl)
+
+        source.emit(RecorderEvent.Recording(true))
+        runCurrent()
+        assertEquals(RecordControl.Stop, recorder.state.value.recordControl)
+    }
+
+    @Test
+    fun `stopping passes through Stopping to Start`() = runTest {
+        val recorder = connected(recording = true)
+        assertTrue(recorder.stopRecording())
+        assertEquals(RecordControl.Stopping, recorder.state.value.recordControl)
+        source.emit(RecorderEvent.Recording(false))
+        runCurrent()
+        assertEquals(RecordControl.Start, recorder.state.value.recordControl)
+        assertEquals(listOf("stopRecording"), source.commands)
+    }
+
+    @Test
+    fun `a start can ask for a scene`() = runTest {
+        val recorder = connected(recording = false)
+        recorder.startRecording(scene = 2)
+        assertEquals(listOf("startRecording 2"), source.commands)
+    }
+
+    @Test
+    fun `an unanswered command gives up and asks the recorder again`() = runTest {
+        val recorder = connected(recording = false)
+        recorder.startRecording()
+        advanceTimeBy(Recorder.COMMAND_TIME.toMillis() + 1)
+        assertEquals(RecordControl.Start, recorder.state.value.recordControl)
+        assertEquals(listOf("startRecording", "refresh"), source.commands)
+    }
+
+    @Test
+    fun `dropping the connection clears a waiting command`() = runTest {
+        val recorder = connected(recording = false)
+        recorder.startRecording()
+        source.emit(RecorderEvent.Disconnected)
+        runCurrent()
+        assertEquals(null, recorder.state.value.pending)
+        assertEquals(RecordControl.Unavailable, recorder.state.value.recordControl)
+    }
 }

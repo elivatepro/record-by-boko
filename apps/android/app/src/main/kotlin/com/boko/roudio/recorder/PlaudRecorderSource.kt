@@ -349,6 +349,24 @@ class PlaudRecorderSource(
         }
     }
 
+    override fun startRecording(scene: Int?) {
+        if (connectedSerial == null) return
+        scope.launch {
+            Log.i(TAG, "start recording, scene ${scene ?: "default"}")
+            sdk("startRecord") {
+                if (scene == null) PlaudDeviceAgent.startRecord() else PlaudDeviceAgent.startRecord(scene)
+            }
+        }
+    }
+
+    override fun stopRecording() {
+        if (connectedSerial == null) return
+        scope.launch {
+            Log.i(TAG, "stop recording")
+            sdk("stopRecord") { PlaudDeviceAgent.stopRecord() }
+        }
+    }
+
     /** Initialise the SDK once, and hand it a renewed token when ours changes. */
     private suspend fun setUp() = setupLock.withLock {
         val token = tokens.current()
@@ -558,6 +576,8 @@ class PlaudRecorderSource(
 
         override fun bleFileList(files: List<BleFile>) {
             Log.i(TAG, "file list: ${files.size} files")
+            // Milestone 8 check: does the scene tell call recordings apart? (libs/README.md)
+            files.forEach { Log.i(TAG, "file ${it.sessionId}: scene=${it.scene} attribute=${it.attribute} music=${it.isMusic}") }
             fileList?.complete(files.map { RecorderFile(it.sessionId, it.fileSize) })
         }
 
@@ -582,7 +602,7 @@ class PlaudRecorderSource(
         }
 
         override fun bleRecordStart(sessionId: Long, start: Long, status: Int, scene: Int, startTime: Long, reason: Int) {
-            Log.i(TAG, "record start session=$sessionId start=$start startTime=$startTime")
+            Log.i(TAG, "record start session=$sessionId start=$start startTime=$startTime status=$status scene=$scene reason=$reason")
             emit(RecorderEvent.Recording(true, sessionStart(sessionId)))
         }
 
@@ -592,8 +612,10 @@ class PlaudRecorderSource(
         override fun bleRecordPause(sessionId: Long, reason: Int, fileExist: Boolean, fileSize: Long) =
             emit(RecorderEvent.Recording(false))
 
-        override fun bleRecordStop(sessionId: Long, reason: Int, fileExist: Boolean, fileSize: Long) =
+        override fun bleRecordStop(sessionId: Long, reason: Int, fileExist: Boolean, fileSize: Long) {
+            Log.i(TAG, "record stop session=$sessionId reason=$reason fileExist=$fileExist size=$fileSize")
             emit(RecorderEvent.Recording(false))
+        }
 
         override fun bleRecordStateRefreshed(isRecording: Boolean, sessionId: Long) {
             Log.i(TAG, "record state recording=$isRecording session=$sessionId")

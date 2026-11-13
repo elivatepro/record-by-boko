@@ -37,6 +37,15 @@ interface RecorderSource {
     /** Ask a connected recorder for battery, storage and recording state again. */
     fun refresh()
 
+    /**
+     * Ask a connected recorder to start recording. The answer arrives as
+     * [RecorderEvent.Recording]. [scene] is Plaud's recording mode; null leaves the SDK's default.
+     */
+    fun startRecording(scene: Int? = null)
+
+    /** Ask a connected recorder to stop recording. The answer arrives as [RecorderEvent.Recording]. */
+    fun stopRecording()
+
     /** The recordings on the connected recorder. Throws [RecorderBusyException] if it can't say. */
     suspend fun listFiles(): List<RecorderFile>
 

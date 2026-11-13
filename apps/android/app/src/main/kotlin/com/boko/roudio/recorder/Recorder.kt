@@ -26,6 +26,7 @@ class Recorder(
 
     private var searchTimer: Job? = null
     private var linkTimer: Job? = null
+    private var commandTimer: Job? = null
 
     init {
         scope.launch {
@@ -109,6 +110,38 @@ class Recorder(
         if (_state.value.isConnected) source.refresh()
     }
 
+    /**
+     * Start recording, only when the recorder has said on this connection that it isn't. Returns
+     * false (and does nothing) otherwise, so callers never act on a guess.
+     */
+    fun startRecording(scene: Int? = null): Boolean {
+        if (_state.value.recordControl != RecordControl.Start) return false
+        ask(RecordCommand.Start)
+        source.startRecording(scene)
+        return true
+    }
+
+    /** Stop recording, only when the recorder has said on this connection that it is. */
+    fun stopRecording(): Boolean {
+        if (_state.value.recordControl != RecordControl.Stop) return false
+        ask(RecordCommand.Stop)
+        source.stopRecording()
+        return true
+    }
+
+    private fun ask(command: RecordCommand) {
+        update { it.asked(command, now()) }
+        commandTimer?.cancel()
+        commandTimer = scope.launch {
+            delay(COMMAND_TIME.toMillis())
+            if (_state.value.pending != null) {
+                update { it.commandTimedOut() }
+                // Whatever happened, find out what the recorder is doing now.
+                refresh()
+            }
+        }
+    }
+
     suspend fun unlink() {
         val linked = _state.value.linked ?: return
         source.unlink(linked.serial)
@@ -124,5 +157,8 @@ class Recorder(
     companion object {
         /** Linking includes a round trip to Plaud's servers; give it a minute (as Plaud's template). */
         val LINK_TIME: Duration = Duration.ofSeconds(60)
+
+        /** How long "Starting…" / "Stopping…" waits for the recorder to confirm. */
+        val COMMAND_TIME: Duration = Duration.ofSeconds(15)
     }
 }

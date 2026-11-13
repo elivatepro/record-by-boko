@@ -41,6 +41,19 @@ sealed interface RecordingNow {
     data object Unknown : RecordingNow
 }
 
+/** A start or stop the phone asked for and the recorder hasn't confirmed yet. */
+enum class RecordCommand { Start, Stop }
+
+/** What a start/stop control shows: never a button based on a guess. */
+enum class RecordControl {
+    /** Not connected, or the recording state isn't known on this connection. */
+    Unavailable,
+    Start,
+    Stop,
+    Starting,
+    Stopping,
+}
+
 data class RecorderState(
     val bluetoothOn: Boolean = true,
     val linked: LinkedRecorder? = null,
@@ -53,8 +66,28 @@ data class RecorderState(
     val storage: Seen<StorageReading>? = null,
     val recording: Seen<RecordingReading>? = null,
     val firmware: FirmwareReading? = null,
+    /** Set from asking until the recorder reports the matching state (or the command times out). */
+    val pending: Seen<RecordCommand>? = null,
 ) {
     val isConnected: Boolean get() = connectedSince != null
+
+    val recordControl: RecordControl
+        get() = when {
+            !isConnected -> RecordControl.Unavailable
+            pending?.value == RecordCommand.Start -> RecordControl.Starting
+            pending?.value == RecordCommand.Stop -> RecordControl.Stopping
+            else -> when (recordingNow) {
+                is RecordingNow.Recording -> RecordControl.Stop
+                RecordingNow.NotRecording -> RecordControl.Start
+                RecordingNow.Unknown -> RecordControl.Unavailable
+            }
+        }
+
+    /** The phone asked the recorder to start or stop. */
+    fun asked(command: RecordCommand, now: Instant): RecorderState = copy(pending = Seen(command, now))
+
+    /** The recorder never answered; drop the "Starting…" and go back to what it last said. */
+    fun commandTimedOut(): RecorderState = copy(pending = null)
 
     /**
      * Fresh means: connected, and the recorder has reported its recording state since this
@@ -175,11 +208,13 @@ data class RecorderState(
         is RecorderEvent.Recording -> copy(
             recording = Seen(RecordingReading(event.isRecording, event.startedAt), now),
             lastSeen = now,
+            // Only the answer that matches settles a command; a stale report in between doesn't.
+            pending = pending?.takeUnless { (it.value == RecordCommand.Start) == event.isRecording },
         )
     }
 
     private fun disconnected(now: Instant): RecorderState =
-        if (isConnected) copy(connectedSince = null, lastSeen = now) else this
+        if (isConnected) copy(connectedSince = null, lastSeen = now, pending = null) else this
 
     companion object {
         /** How long "Finding your recorder" looks before showing 12a (flow-and-states.md). */

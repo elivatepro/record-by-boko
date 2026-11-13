@@ -26,7 +26,8 @@ import org.json.JSONObject
  * its size, header, duration and SHA-256; nothing is deleted from the recorder; add --ez wifi true
  * to copy it over the recorder's Wi-Fi and log how long joining took), transfer (asks the
  * transfer engine to check now), fast (the next check goes over Wi-Fi), recordings (logs the
- * saved recordings and their tracks).
+ * saved recordings and their tracks), start [--ei scene N] (starts recording, only when the
+ * recorder has said it isn't; scene is Plaud's recording mode, default the SDK's), stop.
  * Each one logs the resulting state under the tag "RecorderDebug".
  */
 class RecorderCommands : BroadcastReceiver() {
@@ -42,6 +43,11 @@ class RecorderCommands : BroadcastReceiver() {
                 if (target == null) Log.w(TAG, "nothing to link; search first") else recorder.link(target)
             }
             "refresh" -> recorder.refresh()
+            "start" -> {
+                val scene = intent.getIntExtra("scene", -1).takeIf { it >= 0 }
+                if (!recorder.startRecording(scene)) Log.w(TAG, "can't start: ${recorder.state.value.recordControl}")
+            }
+            "stop" -> if (!recorder.stopRecording()) Log.w(TAG, "can't stop: ${recorder.state.value.recordControl}")
             "reconnect" -> recorder.reconnect()
             "disconnect" -> recorder.clearLink()
             "unlink" -> {
