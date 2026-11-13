@@ -8,6 +8,9 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
@@ -61,16 +64,19 @@ import kotlinx.coroutines.flow.first
 class RecorderWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val app = context.applicationContext as RoudioApp
-        val now = Instant.now()
-        val model = WidgetModel.build(
-            recorder = app.recorder.state.value,
-            recordings = app.recordings.recordings.first(),
-            now = now,
-            offset = ZoneId.systemDefault().rules.getOffset(now),
-        )
-        val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        val ring = ring(context, model, night)
-        provideContent { Content(context, model, ring) }
+        val firstRecordings = app.recordings.recordings.first()
+        provideContent {
+            // Read inside the composition: Glance keeps this session alive and recomposes on every
+            // change, so "Starting…" shows the moment Start is tapped. (Reading once before
+            // provideContent left the widget stale; seen on the phone, 14 Nov 2026.)
+            val recorder by app.recorder.state.collectAsState()
+            val recordings by app.recordings.recordings.collectAsState(initial = firstRecordings)
+            val now = Instant.now()
+            val model = WidgetModel.build(recorder, recordings, now, ZoneId.systemDefault().rules.getOffset(now))
+            val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+            val ring = remember(model.spans, model.now, model.status, night) { ring(context, model, night) }
+            Content(context, model, ring)
+        }
     }
 
     @Composable
@@ -115,6 +121,7 @@ class RecorderWidget : GlanceAppWidget() {
                 .background(ColorProvider(day = P.Paper, night = P.NightRaised))
                 .padding(start = 20.dp, top = 16.dp, end = 16.dp, bottom = 14.dp)
                 .clickable(open),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Image(ImageProvider(ring), contentDescription = null, modifier = GlanceModifier.size(56.dp))
