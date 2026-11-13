@@ -47,7 +47,7 @@
     <string name="recorder_notification_stopping">Stopping recording…</string>
     <string name="start_recording">Start recording</string>
     <string name="stop_recording">Stop recording</string>
-    <string name="qs_tile_label">Plaud</string>
+    <string name="qs_tile_label">Plaud recording</string>
     <string name="qs_tile_recording">Recording</string>
     <string name="qs_tile_not_recording">Not recording</string>
     <string name="qs_tile_not_connected">Not connected</string>

@@ -190,6 +190,19 @@ class RecorderTest {
         recorder.startRecording()
         advanceTimeBy(Recorder.COMMAND_TIME.toMillis() + 1)
         assertEquals(RecordControl.Start, recorder.state.value.recordControl)
+        assertEquals(listOf("startRecording", "refresh", "refresh", "refresh", "refresh"), source.commands)
+    }
+
+    @Test
+    fun `a waiting command asks the recorder after 2 seconds and stops asking once confirmed`() = runTest {
+        val recorder = connected(recording = false)
+        recorder.startRecording()
+        advanceTimeBy(2_001)
+        assertEquals(listOf("startRecording", "refresh"), source.commands)
+
+        source.emit(RecorderEvent.Recording(true))
+        advanceTimeBy(Recorder.COMMAND_TIME.toMillis())
+        assertEquals(RecordControl.Stop, recorder.state.value.recordControl)
         assertEquals(listOf("startRecording", "refresh"), source.commands)
     }
 

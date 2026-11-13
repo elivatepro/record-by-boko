@@ -133,7 +133,16 @@ class Recorder(
         update { it.asked(command, now()) }
         commandTimer?.cancel()
         commandTimer = scope.launch {
-            delay(COMMAND_TIME.toMillis())
+            // The Note Pro doesn't announce starts and stops the phone asked for (seen 14 Nov
+            // 2026), so ask what it's doing a few times instead of waiting for an event.
+            var waited = 0L
+            for (check in COMMAND_CHECKS) {
+                delay(check.toMillis() - waited)
+                waited = check.toMillis()
+                if (_state.value.pending == null) return@launch
+                refresh()
+            }
+            delay(COMMAND_TIME.toMillis() - waited)
             if (_state.value.pending != null) {
                 update { it.commandTimedOut() }
                 // Whatever happened, find out what the recorder is doing now.
@@ -160,5 +169,8 @@ class Recorder(
 
         /** How long "Starting…" / "Stopping…" waits for the recorder to confirm. */
         val COMMAND_TIME: Duration = Duration.ofSeconds(15)
+
+        /** When to ask the recorder for its recording state while a command waits. */
+        val COMMAND_CHECKS: List<Duration> = listOf(2L, 5L, 10L).map(Duration::ofSeconds)
     }
 }

@@ -17,10 +17,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * The Quick Settings tile: "Recording", "Not recording" or "Not connected". Tapping starts or
- * stops (only when the recorder has said what it's doing); when it can't, tapping opens the
- * recorder screen. Long-press opens the recorder screen too (ACTION_QS_TILE_PREFERENCES in
- * MainActivity).
+ * The Quick Settings tile "Plaud recording": on (Recording), off (Not recording) or unavailable
+ * (Not connected). Tapping starts or stops, only when the recorder has said what it's doing.
+ * Long-press opens the recorder screen (ACTION_QS_TILE_PREFERENCES in MainActivity). HyperOS
+ * shows only the icon and announces "Plaud recording is on/off".
  */
 class RecorderTileService : TileService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -62,8 +62,8 @@ class RecorderTileService : TileService() {
             RecordControl.Stopping -> Tile.STATE_ACTIVE to R.string.qs_tile_stopping
             RecordControl.Starting -> Tile.STATE_ACTIVE to R.string.qs_tile_starting
             RecordControl.Start -> Tile.STATE_INACTIVE to R.string.qs_tile_not_recording
-            // Still clickable (it opens the recorder screen), so not STATE_UNAVAILABLE.
-            RecordControl.Unavailable -> Tile.STATE_INACTIVE to R.string.qs_tile_not_connected
+            // Greyed out: "off" would claim the recorder isn't recording. Long-press still opens 13a.
+            RecordControl.Unavailable -> Tile.STATE_UNAVAILABLE to R.string.qs_tile_not_connected
         }
         tile.state = state
         tile.label = getString(R.string.qs_tile_label)
