@@ -106,9 +106,33 @@ class MainActivity : ComponentActivity() {
         GoogleAuth(this, BuildConfig.GOOGLE_SERVER_CLIENT_ID, consentLauncher)
     }
 
+    private val turnOnBluetooth = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+
+    /** Set once Bluetooth has been asked for, until Roudio leaves the screen; "Don't allow" doesn't re-ask. */
+    private var askedForBluetooth = false
+
     override fun onResume() {
         super.onResume()
         if (app.session.signedIn.value) SyncWork.now(this)
+        askForBluetoothIfOff()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        askedForBluetooth = false
+    }
+
+    /**
+     * Opening Roudio with a recorder linked and Bluetooth off shows Android's "turn on Bluetooth?"
+     * dialog straight away; Android 13+ doesn't let an app switch it on by itself. Only with
+     * Nearby devices allowed, so it never jumps into Settings unasked. Setup has its own 12b screen.
+     */
+    private fun askForBluetoothIfOff() {
+        val state = app.recorder.state.value
+        if (askedForBluetooth || state.bluetoothOn || state.linked == null || !app.session.signedIn.value) return
+        if (!PhoneSettings.granted(this, PhoneSettings.nearbyDevices)) return
+        askedForBluetooth = true
+        turnOnBluetooth.launch(PhoneSettings.enableBluetooth(this))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
