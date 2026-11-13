@@ -160,6 +160,8 @@ class TodayModelTest {
         assertEquals("Daniel, Speaker 2", row.people)
         assertEquals(2, row.decisions)
         assertEquals("09:30", row.time)
+        // The conversation sits inside the recording: two hours recorded, not two hours 44.
+        assertEquals(Duration.ofHours(2), model.recorded)
     }
 
     @Test
@@ -181,5 +183,55 @@ class TodayModelTest {
         assertEquals(RowTitle.Length(Duration.ofMinutes(1)), row.title)
         assertEquals(quiet.id, row.pendingId)
         assertEquals(SpanKind.Quiet, model.spans.single().kind)
+    }
+
+    @Test
+    fun `the longest waking gap so far today is named, up to now`() {
+        // 09:00–10:00 and 11:00–11:30 local; now is 14:32; waking from 07:00.
+        val model = build(
+            listOf(
+                recording("2026-10-11T08:00:00Z", 60, TransferState.Uploaded),
+                recording("2026-10-11T10:00:00Z", 30, TransferState.Uploaded),
+            ),
+        )
+        assertEquals(Gap((11 * 60 + 30) * 60, (14 * 60 + 32) * 60), model.biggestGap)
+    }
+
+    @Test
+    fun `gaps under an hour, or outside waking hours, aren't mentioned`() {
+        val covered = TodayModel.merge(listOf(7 * 3600 until 12 * 3600, (12 * 3600 + 1800) until 23 * 3600))
+        assertNull(TodayModel.biggestGap(covered, com.boko.roudio.nudge.WakingHours(), upTo = 86_400))
+        // Asleep 23:00–07:00 with nothing recorded: still no gap.
+        assertNull(TodayModel.biggestGap(TodayModel.merge(listOf(7 * 3600 until 23 * 3600)), com.boko.roudio.nudge.WakingHours(), 86_400))
+    }
+
+    @Test
+    fun `a past day looks at all of its waking hours`() {
+        val day = LocalDate.of(2026, 10, 10)
+        val model = build(listOf(recording("2026-10-10T08:00:00Z", 60, TransferState.Uploaded)), day = day)
+        // Recorded 09:00–10:00 local; the rest of 10:00–23:00 is the gap.
+        assertEquals(Gap(10 * 3600, 23 * 3600), model.biggestGap)
+    }
+
+    @Test
+    fun `gap ranges read naturally on 12- and 24-hour phones`() {
+        assertEquals("7–10 am", gapRange(Gap(7 * 3600, 10 * 3600), is24Hour = false))
+        assertEquals("11 am–2 pm", gapRange(Gap(11 * 3600, 14 * 3600), false))
+        assertEquals("2–5 pm", gapRange(Gap(14 * 3600, 17 * 3600), false))
+        // Rounded inwards to 5 minutes, never claiming more than the gap.
+        assertEquals("11:35 am–2:30 pm", gapRange(Gap(11 * 3600 + 31 * 60, 14 * 3600 + 32 * 60), false))
+        assertEquals("9 pm–12 am", gapRange(Gap(21 * 3600, 86_400), false))
+        assertEquals("12–1 pm", gapRange(Gap(12 * 3600, 13 * 3600), false))
+        assertEquals("07:00–10:00", gapRange(Gap(7 * 3600, 10 * 3600), true))
+        assertEquals("21:00–24:00", gapRange(Gap(21 * 3600, 86_400), true))
+    }
+
+    @Test
+    fun `waking hours can run across midnight`() {
+        val night = com.boko.roudio.nudge.WakingHours(java.time.LocalTime.of(22, 0), java.time.LocalTime.of(6, 0))
+        assertTrue(night.contains(java.time.LocalTime.of(23, 30)))
+        assertTrue(night.contains(java.time.LocalTime.of(2, 0)))
+        assertFalse(night.contains(java.time.LocalTime.of(12, 0)))
+        assertEquals(listOf(22 * 3600 until 86_400, 0 until 6 * 3600), night.secondRanges())
     }
 }

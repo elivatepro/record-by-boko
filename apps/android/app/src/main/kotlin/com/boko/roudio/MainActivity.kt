@@ -411,8 +411,9 @@ class MainActivity : ComponentActivity() {
         val conversations by app.database.library().observeConversations().collectAsState(initial = emptyList())
         val digestRow by app.database.library().observeDigest(day.toString()).collectAsState(initial = null)
         val digest = remember(digestRow) { digestRow?.json?.let { runCatching { Sync.decodeDigest(it) }.getOrNull() } }
-        val model = remember(recordings, recorder, progress, day, now, conversations) {
-            TodayModel.build(recordings, recorder, progress, day, now, offset, conversations)
+        val nudges by app.nudgeSettings.settings.collectAsState()
+        val model = remember(recordings, recorder, progress, day, now, conversations, nudges.waking) {
+            TodayModel.build(recordings, recorder, progress, day, now, offset, conversations, nudges.waking)
         }
         TodayScreen(
             model = model,

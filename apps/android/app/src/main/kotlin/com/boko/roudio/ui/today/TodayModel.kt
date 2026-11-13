@@ -1,5 +1,6 @@
 package com.boko.roudio.ui.today
 
+import com.boko.roudio.nudge.WakingHours
 import com.boko.roudio.recorder.RecorderState
 import com.boko.roudio.recorder.RecordingNow
 import com.boko.roudio.store.BackupState
@@ -33,6 +34,8 @@ data class TodayModel(
     val onRecorder: Int,
     /** Which kinds the dial shows, for the legend. */
     val kinds: Set<SpanKind> = spans.map { it.kind }.toSet(),
+    /** The longest stretch of waking hours with nothing recorded (so far, today); null if none worth saying. */
+    val biggestGap: Gap? = null,
 ) {
     companion object {
         fun build(
@@ -43,6 +46,7 @@ data class TodayModel(
             now: Instant,
             nowOffset: ZoneOffset,
             conversations: List<ConversationEntity> = emptyList(),
+            waking: WakingHours = WakingHours(),
         ): TodayModel {
             val today = now.atOffset(nowOffset).toLocalDate()
             val open = recorder.openRecording()
@@ -98,11 +102,15 @@ data class TodayModel(
                 }
             }
 
+            val covered = merge(spans.map { it.startSecond until it.endSecond })
+            val nowSecond = now.atOffset(nowOffset).toLocalTime().toSecondOfDay()
             return TodayModel(
                 day = day,
                 isToday = day == today,
                 spans = spans.sortedBy { it.startSecond },
-                recorded = Duration.ofSeconds(spans.sumOf { (it.endSecond - it.startSecond).toLong() }),
+                // Conversations sit inside their recording's span, so count the merged cover, not the sum.
+                recorded = Duration.ofSeconds(covered.sumOf { (it.last - it.first + 1).toLong() }),
+                biggestGap = biggestGap(covered, waking, upTo = if (day == today) nowSecond else DAY_SECONDS.toInt()),
                 now = if (day == today) fractionOfDay(now.atOffset(nowOffset).toLocalTime().toSecondOfDay()) else null,
                 rows = rows,
                 waitingToUpload = recordings.count { it.transfer == TransferState.OnPhone || it.transfer == TransferState.Uploading },
@@ -196,11 +204,71 @@ data class TodayModel(
 
         private fun fractionOfDay(seconds: Int) = seconds / DAY_SECONDS
 
+        /** Overlapping or touching second ranges joined into one sorted list. */
+        internal fun merge(ranges: List<IntRange>): List<IntRange> {
+            val out = mutableListOf<IntRange>()
+            for (r in ranges.filterNot { it.isEmpty() }.sortedBy { it.first }) {
+                val last = out.lastOrNull()
+                if (last != null && r.first <= last.last + 1) {
+                    out[out.lastIndex] = last.first..maxOf(last.last, r.last)
+                } else {
+                    out += r
+                }
+            }
+            return out
+        }
+
+        /** The longest uncovered stretch of waking hours before [upTo], if it's at least [MIN_GAP]. */
+        internal fun biggestGap(covered: List<IntRange>, waking: WakingHours, upTo: Int): Gap? =
+            waking.secondRanges().flatMap { window ->
+                val end = minOf(window.last + 1, upTo)
+                var cursor = window.first
+                val gaps = mutableListOf<Gap>()
+                for (c in covered) {
+                    if (c.last < cursor || c.first >= end) continue
+                    if (c.first > cursor) gaps += Gap(cursor, c.first)
+                    cursor = maxOf(cursor, c.last + 1)
+                }
+                if (end > cursor) gaps += Gap(cursor, end)
+                gaps
+            }.filter { it.endSecond - it.startSecond >= MIN_GAP.seconds }.maxByOrNull { it.endSecond - it.startSecond }
+
+        /** A gap only gets a line when it's long enough to matter. */
+        val MIN_GAP: Duration = Duration.ofHours(1)
+
         private fun java.time.LocalTime.toHHmm() = "%02d:%02d".format(hour, minute)
 
         private const val DAY_SECONDS = 86_400f
         private const val OPUS_BITS_PER_SECOND = 33_000L
     }
+}
+
+/** Seconds from midnight, [startSecond] inclusive, [endSecond] exclusive. */
+data class Gap(val startSecond: Int, val endSecond: Int)
+
+/**
+ * "7–10 am", "11 am–2 pm", "7:30–10 am" on a 12-hour phone; "07:00–10:00" on a 24-hour one. The
+ * ends are rounded inwards to 5 minutes, so the line never claims more than the gap.
+ */
+fun gapRange(gap: Gap, is24Hour: Boolean): String {
+    val step = 300
+    val from = (gap.startSecond + step - 1) / step * step
+    val until = gap.endSecond / step * step
+    fun hm(s: Int) = (s / 3600 % 24) to (s % 3600 / 60)
+    if (is24Hour) {
+        val (h1, m1) = hm(from)
+        val (h2, m2) = hm(until)
+        return "%02d:%02d–%02d:%02d".format(h1, m1, if (until >= 86_400) 24 else h2, m2)
+    }
+    fun clock(s: Int): Pair<String, String> {
+        val (h, m) = hm(s)
+        val half = if (h < 12 || s >= 86_400) "am" else "pm"
+        val h12 = if (h % 12 == 0) 12 else h % 12
+        return (if (m == 0) "$h12" else "$h12:%02d".format(m)) to half
+    }
+    val (a, halfA) = clock(from)
+    val (b, halfB) = clock(until)
+    return if (halfA == halfB) "$a–$b $halfB" else "$a $halfA–$b $halfB"
 }
 
 /** A stretch of the 24-hour dial, in seconds from midnight; [start]/[end] as fractions of the day. */

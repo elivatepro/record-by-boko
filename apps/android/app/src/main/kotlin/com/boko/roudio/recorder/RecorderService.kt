@@ -29,6 +29,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import com.boko.roudio.widget.RecorderWidget
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -45,6 +47,24 @@ class RecorderService : Service() {
     private var keeper: KeepConnected? = null
     private var watcher: Job? = null
     private var bluetoothWatcher: Job? = null
+    private var widgetWatcher: Job? = null
+
+    /** What the widget shows from the recorder, so it isn't redrawn for nothing. */
+    private data class WidgetKey(
+        val linked: Boolean,
+        val connected: Boolean,
+        val control: RecordControl,
+        val battery: Int?,
+        val since: java.time.Instant?,
+    ) {
+        constructor(state: RecorderState) : this(
+            linked = state.linked != null,
+            connected = state.isConnected,
+            control = state.recordControl,
+            battery = state.battery?.value?.percent,
+            since = (state.recordingNow as? RecordingNow.Recording)?.since,
+        )
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -82,6 +102,20 @@ class RecorderService : Service() {
                     }
                 }
             }
+            // The widget follows the recorder and today's recordings, and ticks while recording.
+            widgetWatcher = scope.launch {
+                val app = application as RoudioApp
+                kotlinx.coroutines.flow.combine(
+                    recorder.state.map { WidgetKey(it) }.distinctUntilChanged(),
+                    app.recordings.recordings,
+                ) { key, _ -> key }.collectLatest { key ->
+                    while (true) {
+                        RecorderWidget.refresh(this@RecorderService)
+                        if (key.control != RecordControl.Stop) break
+                        kotlinx.coroutines.delay(WIDGET_TICK_MS)
+                    }
+                }
+            }
             // Each time Bluetooth goes off (or is off when the service starts), ask to turn it on.
             bluetoothWatcher = scope.launch {
                 recorder.state.map { it.bluetoothOn }.distinctUntilChanged().collect { on ->
@@ -97,6 +131,7 @@ class RecorderService : Service() {
         (application as RoudioApp).transfers.stop()
         watcher?.cancel()
         bluetoothWatcher?.cancel()
+        widgetWatcher?.cancel()
         scope.cancel()
         super.onDestroy()
     }
@@ -230,6 +265,7 @@ class RecorderService : Service() {
     companion object {
         private const val TAG = "RecorderService"
         private const val CHANNEL_ID = "recorder"
+        private const val WIDGET_TICK_MS = 5 * 60_000L
         private const val NOTIFICATION_ID = 1
         private val TIME = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 

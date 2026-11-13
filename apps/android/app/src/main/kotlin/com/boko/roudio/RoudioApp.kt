@@ -34,6 +34,7 @@ class RoudioApp : Application() {
 
     val session by lazy { SessionStore(this) }
     val theme by lazy { ThemePreference(this) }
+    val nudgeSettings by lazy { com.boko.roudio.nudge.NudgePrefs(this) }
     val api by lazy { RoudioApi(session) }
 
     val plaudTokens by lazy {

@@ -157,6 +157,7 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.work.runtime.ktx)
     implementation(libs.media3.exoplayer)
+    implementation(libs.glance.appwidget)
 
     // Plaud SDK (app/libs/README.md) and the libraries it needs at runtime. Timber is replaced
     // by a silent copy in src/main/java/timber, so the SDK can't log secrets.

@@ -118,6 +118,7 @@ fun TodayScreen(
             Dial(model, now)
         }
         Legend(model.kinds)
+        model.biggestGap?.let { GapLine(it, model.isToday) }
         Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 6.dp), contentAlignment = Alignment.Center) {
             if (model.isToday) {
                 RecorderChip(recorder, model.onRecorder, onRecorder)
@@ -294,6 +295,36 @@ private fun Legend(kinds: Set<SpanKind>) {
             LegendItem(c.ink.copy(alpha = 0.55f), outlined = false, stringResource(R.string.legend_not_written_up))
         }
         LegendItem(c.buoy, outlined = true, stringResource(R.string.legend_still_on_plaud))
+    }
+}
+
+/** 01d: "Nothing from 7–10 am, your longest gap today", with a dashed swatch like the legend's. */
+@Composable
+private fun GapLine(gap: Gap, today: Boolean) {
+    val c = RoudioTheme.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val range = gapRange(gap, android.text.format.DateFormat.is24HourFormat(context))
+    Row(
+        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Canvas(Modifier.width(14.dp).height(6.dp)) {
+            drawRoundRect(
+                color = c.muted,
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()),
+                style = Stroke(
+                    width = 1.dp.toPx(),
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 1.5.dp.toPx())),
+                ),
+            )
+        }
+        Text(
+            stringResource(if (today) R.string.gap_today else R.string.gap_that_day, range),
+            style = roudioText(13.sp, 18.sp),
+            color = c.muted,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
