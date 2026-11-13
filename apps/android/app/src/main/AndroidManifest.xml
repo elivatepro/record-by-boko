@@ -24,6 +24,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Optional (15d): "Meeting started — start recording?" reads event names and times on this phone only. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
     <!-- Lets RecorderService show "turn on Bluetooth?" from the background (Display over other apps). -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- The Plaud SDK asks for location for Android 11 and older; Roudio's minimum is 10. -->

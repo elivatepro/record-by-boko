@@ -62,6 +62,7 @@ import com.boko.roudio.ui.nav.TabScaffold
 import com.boko.roudio.ui.review.ReviewRoute
 import com.boko.roudio.ui.search.SearchRoute
 import com.boko.roudio.ui.settings.LanguagesRoute
+import com.boko.roudio.ui.settings.NotificationsRoute
 import com.boko.roudio.ui.settings.SettingsRoute
 import com.boko.roudio.ui.settings.WordListRoute
 import com.boko.roudio.ui.today.TodayModel
@@ -97,6 +98,7 @@ sealed interface MainKey : NavKey
 @Serializable data object BackupsKey : MainKey // 14
 @Serializable data object WordListKey : MainKey // 15b
 @Serializable data object LanguagesKey : MainKey // 15c
+@Serializable data object NotificationsKey : MainKey // 15d
 
 class MainActivity : ComponentActivity() {
     private val app get() = application as RoudioApp
@@ -288,6 +290,7 @@ class MainActivity : ComponentActivity() {
                             onBackups = { backStack.add(BackupsKey) },
                             onWordList = { backStack.add(WordListKey) },
                             onLanguages = { backStack.add(LanguagesKey) },
+                            onNotifications = { backStack.add(NotificationsKey) },
                             onSignOut = ::signOut,
                         )
                     }
@@ -299,6 +302,7 @@ class MainActivity : ComponentActivity() {
                 entry<BackupsKey> { BackupsRoute(app, onBack = pop) }
                 entry<WordListKey> { WordListRoute(app, onBack = pop) }
                 entry<LanguagesKey> { LanguagesRoute(app, onBack = pop) }
+                entry<NotificationsKey> { NotificationsRoute(app, onBack = pop) }
                 entry<RecorderDetails> {
                     val scope = rememberCoroutineScope()
                     val state by app.recorder.state.collectAsState()
@@ -340,6 +344,7 @@ class MainActivity : ComponentActivity() {
             "refused" -> PermissionRefused
             "find" -> FindRecorder
             "recorder" -> RecorderDetails
+            "notifications" -> NotificationsKey
             else -> null
         }
     }

@@ -83,7 +83,7 @@ fun LanguagesScreen(onBack: () -> Unit) {
 
 /** Fog callout with an info mark (15c). */
 @Composable
-private fun InfoNote(text: String) {
+internal fun InfoNote(text: String) {
     val c = RoudioTheme.colors
     Row(
         Modifier.fillMaxWidth().background(c.raised, RoundedCornerShape(20.dp)).padding(horizontal = 16.dp, vertical = 14.dp),

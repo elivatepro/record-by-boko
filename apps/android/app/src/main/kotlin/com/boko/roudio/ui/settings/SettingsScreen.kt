@@ -65,6 +65,7 @@ fun SettingsRoute(
     onBackups: () -> Unit,
     onWordList: () -> Unit,
     onLanguages: () -> Unit,
+    onNotifications: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -105,6 +106,7 @@ fun SettingsRoute(
         onBackups = onBackups,
         onWordList = onWordList,
         onLanguages = onLanguages,
+        onNotifications = onNotifications,
         onSignOut = onSignOut,
     )
 }
@@ -127,6 +129,7 @@ fun SettingsScreen(
     onBackups: () -> Unit,
     onWordList: () -> Unit,
     onLanguages: () -> Unit,
+    onNotifications: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     val c = RoudioTheme.colors
@@ -159,6 +162,7 @@ fun SettingsScreen(
             }
             Group(stringResource(R.string.settings_recorder_backups)) {
                 NavRow(stringResource(R.string.recorder_title), recorderSummary(recorder), onRecorder)
+                NavRow(stringResource(R.string.notifications_title), stringResource(R.string.settings_notifications_body), onNotifications)
                 NavRow(stringResource(R.string.backups_title), backups?.let { backupsSummary(it) }, onBackups, last = true)
             }
             Group(stringResource(R.string.settings_account)) {
@@ -330,7 +334,7 @@ private val previewRecorder = RecorderState(linked = LinkedRecorder("8810000004F
 @Composable
 private fun SettingsPreview() {
     RoudioTheme(darkTheme = false) {
-        SettingsScreen(previewRecorder, ThemeChoice.System, {}, null, null, BackgroundWarning.Battery, {}, {}, {}, {}, {}, {})
+        SettingsScreen(previewRecorder, ThemeChoice.System, {}, null, null, BackgroundWarning.Battery, {}, {}, {}, {}, {}, {}, {})
     }
 }
 
@@ -338,7 +342,7 @@ private fun SettingsPreview() {
 @Composable
 private fun SettingsDarkPreview() {
     RoudioTheme(darkTheme = true) {
-        SettingsScreen(previewRecorder, ThemeChoice.System, {}, null, null, null, {}, {}, {}, {}, {}, {})
+        SettingsScreen(previewRecorder, ThemeChoice.System, {}, null, null, null, {}, {}, {}, {}, {}, {}, {})
     }
 }
 

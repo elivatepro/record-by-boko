@@ -29,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import com.boko.roudio.nudge.NudgeRunner
 import com.boko.roudio.widget.RecorderWidget
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -48,6 +49,7 @@ class RecorderService : Service() {
     private var watcher: Job? = null
     private var bluetoothWatcher: Job? = null
     private var widgetWatcher: Job? = null
+    private var nudgeWatcher: Job? = null
 
     /** What the widget shows from the recorder, so it isn't redrawn for nothing. */
     private data class WidgetKey(
@@ -116,6 +118,19 @@ class RecorderService : Service() {
                     }
                 }
             }
+            // Nudges: every minute, and as soon as the recorder's state changes.
+            nudgeWatcher = scope.launch {
+                val app = application as RoudioApp
+                val runner = NudgeRunner(this@RecorderService, { app.nudgeSettings.settings.value })
+                kotlinx.coroutines.flow.combine(recorder.state, app.recordings.recordings) { s, r -> s to r }
+                    .collectLatest { (state, recordings) ->
+                        while (true) {
+                            runCatching { kotlinx.coroutines.withContext(Dispatchers.IO) { runner.check(state, recordings) } }
+                                .onFailure { Log.w(TAG, "nudge check failed", it) }
+                            kotlinx.coroutines.delay(NUDGE_TICK_MS)
+                        }
+                    }
+            }
             // Each time Bluetooth goes off (or is off when the service starts), ask to turn it on.
             bluetoothWatcher = scope.launch {
                 recorder.state.map { it.bluetoothOn }.distinctUntilChanged().collect { on ->
@@ -132,6 +147,7 @@ class RecorderService : Service() {
         watcher?.cancel()
         bluetoothWatcher?.cancel()
         widgetWatcher?.cancel()
+        nudgeWatcher?.cancel()
         scope.cancel()
         super.onDestroy()
     }
@@ -266,6 +282,7 @@ class RecorderService : Service() {
         private const val TAG = "RecorderService"
         private const val CHANNEL_ID = "recorder"
         private const val WIDGET_TICK_MS = 5 * 60_000L
+        private const val NUDGE_TICK_MS = 60_000L
         private const val NOTIFICATION_ID = 1
         private val TIME = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
