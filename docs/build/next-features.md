@@ -43,6 +43,36 @@ respected):
 - **Storage:** recorder storage is nearly full and recordings are still
   waiting to transfer. The nudge says what's waiting.
 
+Calls (phone and WhatsApp):
+- Know when a call happens, even with Roudio in the background:
+  - **Phone calls:** `TelephonyCallback` for ringing, answered and ended
+    (needs the Phone permission). The caller's name needs call-log access.
+  - **WhatsApp calls while ringing:** the "Incoming voice call" notification,
+    read through a `NotificationListenerService` (needs notification access).
+  - **Any call app, once answered:** `AudioManager` reports the phone is in
+    a call (`MODE_IN_COMMUNICATION`, which needs no permission). This also
+    catches calls the notification check missed.
+  All three permissions are optional and asked for with a plain reason.
+- **The prompt:** a heads-up notification, "Call from Ada: place your Plaud
+  on the back of the phone", with a Start recording button.
+- **Automatic start (a setting, off by default):** start recording when the
+  call is answered and stop when it ends.
+- **Afterwards:** the recording is titled "Call with Ada · WhatsApp · 12 min"
+  and shows as a call on Today.
+- **Hardware call mode (needs checking).** The SDK tags every recording
+  with a `scene` (`BleFile.getScene()`, and in `bleRecordStart`). Also,
+  `PlaudDeviceAgent.startRecord(int)` takes a number that defaults to `1`.
+  That looks like a call mode the app can choose. To confirm:
+  1. Log the scene for each file.
+  2. Make one ordinary recording and one call recording with the Plaud on
+     the back of the phone, and compare their scenes.
+  3. Try `startRecord` with the call-scene value.
+  If it works, recordings started for a call use call mode. Until it's
+  confirmed, say nothing about modes in the app.
+- **Consent:** the first time automatic start is switched on, a one-line
+  reminder that call-recording rules differ by country and that telling the
+  other person is the safe habit.
+
 On Today:
 - Show "Captured 9 h 20 m today" next to the dial, with a gentle line about
   the biggest gap during waking hours ("Nothing from 2–5 pm"). Count from
