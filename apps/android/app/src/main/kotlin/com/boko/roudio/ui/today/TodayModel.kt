@@ -110,7 +110,8 @@ data class TodayModel(
                 spans = spans.sortedBy { it.startSecond },
                 // Conversations sit inside their recording's span, so count the merged cover, not the sum.
                 recorded = Duration.ofSeconds(covered.sumOf { (it.last - it.first + 1).toLong() }),
-                biggestGap = biggestGap(covered, waking, upTo = if (day == today) nowSecond else DAY_SECONDS.toInt()),
+                // With nothing recorded, the empty state already says so; a gap line would repeat it.
+                biggestGap = if (covered.isEmpty()) null else biggestGap(covered, waking, upTo = if (day == today) nowSecond else DAY_SECONDS.toInt()),
                 now = if (day == today) fractionOfDay(now.atOffset(nowOffset).toLocalTime().toSecondOfDay()) else null,
                 rows = rows,
                 waitingToUpload = recordings.count { it.transfer == TransferState.OnPhone || it.transfer == TransferState.Uploading },

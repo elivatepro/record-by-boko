@@ -214,6 +214,12 @@ class TodayModelTest {
     }
 
     @Test
+    fun `a day with nothing recorded has no gap line, its empty state says it`() {
+        assertNull(build(emptyList(), day = LocalDate.of(2026, 10, 10)).biggestGap)
+        assertNull(build(emptyList()).biggestGap)
+    }
+
+    @Test
     fun `gap ranges read naturally on 12- and 24-hour phones`() {
         assertEquals("7–10 am", gapRange(Gap(7 * 3600, 10 * 3600), is24Hour = false))
         assertEquals("11 am–2 pm", gapRange(Gap(11 * 3600, 14 * 3600), false))
