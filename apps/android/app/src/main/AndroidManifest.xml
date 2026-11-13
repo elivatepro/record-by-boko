@@ -24,6 +24,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Lets RecorderService show "turn on Bluetooth?" from the background (Display over other apps). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- The Plaud SDK asks for location for Android 11 and older; Roudio's minimum is 10. -->
     <uses-permission
         android:name="android.permission.ACCESS_FINE_LOCATION"
@@ -56,6 +58,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".recorder.TurnOnBluetoothActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Roudio.Invisible" />
 
         <service
             android:name=".recorder.RecorderService"

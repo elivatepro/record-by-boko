@@ -17,6 +17,13 @@ class SettingsModelTest {
     }
 
     @Test
+    fun `pop-ups warn last`() {
+        assertEquals(BackgroundWarning.Autostart, SettingsModel.backgroundWarning(true, Autostart.Off, canPopUp = false))
+        assertEquals(BackgroundWarning.PopUps, SettingsModel.backgroundWarning(true, Autostart.On, canPopUp = false))
+        assertNull(SettingsModel.backgroundWarning(true, Autostart.Unknown, canPopUp = true))
+    }
+
+    @Test
     fun `words split into those to confirm and the list, A to Z`() {
         val words = listOf(
             WordView(1, "kumasi", Source.MANUAL, true),

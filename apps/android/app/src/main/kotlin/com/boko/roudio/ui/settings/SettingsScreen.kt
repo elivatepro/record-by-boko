@@ -71,7 +71,7 @@ fun SettingsRoute(
     val recorder by app.recorder.state.collectAsState()
     var words by remember { mutableStateOf<WordLists?>(null) }
     var backups by remember { mutableStateOf<BackupsView?>(null) }
-    fun readWarning() = SettingsModel.backgroundWarning(PhoneSettings.batteryUnrestricted(context), PhoneSettings.autostart(context))
+    fun readWarning() = SettingsModel.backgroundWarning(PhoneSettings.batteryUnrestricted(context), PhoneSettings.autostart(context), PhoneSettings.canPopUp(context))
     var warning by remember { mutableStateOf(readWarning()) }
     LifecycleResumeEffect(Unit) {
         warning = readWarning()
@@ -97,6 +97,7 @@ fun SettingsRoute(
                     battery.launch(if (ask.resolveActivity(context.packageManager) != null) ask else PhoneSettings.appDetails(context))
                 }
                 BackgroundWarning.Autostart -> context.startActivity(PhoneSettings.autostartSettings(context))
+                BackgroundWarning.PopUps -> context.startActivity(PhoneSettings.popUpSettings(context))
                 null -> Unit
             }
         },
@@ -243,12 +244,24 @@ private fun BackgroundWarningCard(warning: BackgroundWarning, onFix: () -> Unit)
         Icon(RoudioIcons.Warning, contentDescription = null, tint = c.buoyText, modifier = Modifier.padding(top = 1.dp).size(22.dp))
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                stringResource(if (warning == BackgroundWarning.Battery) R.string.settings_battery_title else R.string.settings_autostart_title),
+                stringResource(
+                    when (warning) {
+                        BackgroundWarning.Battery -> R.string.settings_battery_title
+                        BackgroundWarning.Autostart -> R.string.settings_autostart_title
+                        BackgroundWarning.PopUps -> R.string.settings_popups_title
+                    },
+                ),
                 style = roudioText(16.sp, 22.sp, FontWeight.SemiBold),
                 color = c.ink,
             )
             Text(
-                stringResource(if (warning == BackgroundWarning.Battery) R.string.settings_battery_body else R.string.settings_autostart_body),
+                stringResource(
+                    when (warning) {
+                        BackgroundWarning.Battery -> R.string.settings_battery_body
+                        BackgroundWarning.Autostart -> R.string.settings_autostart_body
+                        BackgroundWarning.PopUps -> R.string.settings_popups_body
+                    },
+                ),
                 style = roudioText(15.sp, 21.sp),
                 color = c.ink,
             )

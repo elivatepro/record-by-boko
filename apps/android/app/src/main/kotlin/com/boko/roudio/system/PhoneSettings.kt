@@ -89,20 +89,10 @@ object PhoneSettings {
      */
     fun autostart(context: Context): Autostart {
         if (!isXiaomi) return Autostart.Unknown
-        return try {
-            val ops = context.getSystemService(AppOpsManager::class.java)
-            val check = AppOpsManager::class.java.getMethod(
-                "checkOpNoThrow",
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType,
-                String::class.java,
-            )
-            when (check.invoke(ops, XIAOMI_AUTOSTART_OP, Process.myUid(), context.packageName) as Int) {
-                AppOpsManager.MODE_ALLOWED -> Autostart.On
-                else -> Autostart.Off
-            }
-        } catch (e: Exception) {
-            Autostart.Unknown
+        return when (xiaomiOp(context, XIAOMI_AUTOSTART_OP)) {
+            true -> Autostart.On
+            false -> Autostart.Off
+            null -> Autostart.Unknown
         }
     }
 
@@ -114,5 +104,42 @@ object PhoneSettings {
         return if (xiaomi.resolveActivity(context.packageManager) != null) xiaomi else appDetails(context)
     }
 
+    // Pop-ups from the background
+
+    /**
+     * Whether Roudio may open "turn on Bluetooth?" while it isn't on screen: Android's "Display
+     * over other apps", plus Xiaomi's "Display pop-up windows while running in the background"
+     * (private app-op 10021). When the Xiaomi one can't be read, only Android's counts.
+     */
+    fun canPopUp(context: Context): Boolean {
+        if (!Settings.canDrawOverlays(context)) return false
+        if (!isXiaomi) return true
+        return xiaomiOp(context, XIAOMI_BACKGROUND_POPUP_OP) != false
+    }
+
+    /** Xiaomi's "Other permissions" page for Roudio, which holds both switches; else Android's. */
+    fun popUpSettings(context: Context): Intent {
+        val xiaomi = Intent("miui.intent.action.APP_PERM_EDITOR")
+            .setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+            .putExtra("extra_pkgname", context.packageName)
+        if (isXiaomi && xiaomi.resolveActivity(context.packageManager) != null) return xiaomi
+        return Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri())
+    }
+
+    /** A private Xiaomi app-op through the hidden int-op check; null when Android blocks it. */
+    private fun xiaomiOp(context: Context, op: Int): Boolean? = try {
+        val ops = context.getSystemService(AppOpsManager::class.java)
+        val check = AppOpsManager::class.java.getMethod(
+            "checkOpNoThrow",
+            Int::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType,
+            String::class.java,
+        )
+        check.invoke(ops, op, Process.myUid(), context.packageName) as Int == AppOpsManager.MODE_ALLOWED
+    } catch (e: Exception) {
+        null
+    }
+
     private const val XIAOMI_AUTOSTART_OP = 10008
+    private const val XIAOMI_BACKGROUND_POPUP_OP = 10021
 }

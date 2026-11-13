@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import com.boko.roudio.MainActivity
 import com.boko.roudio.R
 import com.boko.roudio.RoudioApp
+import com.boko.roudio.system.PhoneSettings
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -43,6 +44,7 @@ class RecorderService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var keeper: KeepConnected? = null
     private var watcher: Job? = null
+    private var bluetoothWatcher: Job? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -80,6 +82,12 @@ class RecorderService : Service() {
                     }
                 }
             }
+            // Each time Bluetooth goes off (or is off when the service starts), ask to turn it on.
+            bluetoothWatcher = scope.launch {
+                recorder.state.map { it.bluetoothOn }.distinctUntilChanged().collect { on ->
+                    if (!on) askForBluetooth()
+                }
+            }
         }
         return START_STICKY
     }
@@ -88,8 +96,23 @@ class RecorderService : Service() {
         keeper?.stop()
         (application as RoudioApp).transfers.stop()
         watcher?.cancel()
+        bluetoothWatcher?.cancel()
         scope.cancel()
         super.onDestroy()
+    }
+
+    /**
+     * Shows "turn on Bluetooth?" over whatever is on screen. Android only allows that from the
+     * background with Display over other apps (and Xiaomi's background pop-ups) switched on;
+     * otherwise it's quietly refused and the notification's Turn on button is the way.
+     */
+    private fun askForBluetooth() {
+        if (!PhoneSettings.granted(this, PhoneSettings.nearbyDevices)) return
+        try {
+            startActivity(TurnOnBluetoothActivity.intent(this))
+        } catch (e: Exception) {
+            Log.w(TAG, "can't ask to turn on Bluetooth", e)
+        }
     }
 
     /** Only what the notification shows, so it isn't re-posted for every battery tick. */
@@ -137,11 +160,18 @@ class RecorderService : Service() {
             Intent(this, RecorderService::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        val turnOn = PendingIntent.getActivity(
+            this,
+            2,
+            TurnOnBluetoothActivity.intent(this),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_recorder)
             .setContentTitle(title)
             .setContentText(text)
-            .setContentIntent(open)
+            .setContentIntent(if (content.bluetoothOn) open else turnOn)
+            .apply { if (!content.bluetoothOn) addAction(0, getString(R.string.turn_on_bluetooth), turnOn) }
             // Android 14+ lets foreground-service notifications be swiped away; bring it straight
             // back so the recorder's state is always in the shade.
             .setDeleteIntent(reshow)

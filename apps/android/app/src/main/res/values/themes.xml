@@ -4,4 +4,9 @@
     <style name="Theme.Roudio" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/paper</item>
     </style>
+
+    <!-- TurnOnBluetoothActivity: nothing of its own shows, only Android's dialog. -->
+    <style name="Theme.Roudio.Invisible" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

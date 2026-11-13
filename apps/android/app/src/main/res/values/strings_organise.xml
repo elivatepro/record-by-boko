@@ -78,6 +78,8 @@
     <string name="settings_battery_title">Battery saver is limiting Roudio again</string>
     <string name="settings_battery_body">It was switched back on, maybe by a phone update. Transfers may stop when the screen is off.</string>
     <string name="settings_autostart_title">Autostart is off for Roudio</string>
+    <string name="settings_popups_title">Roudio can’t ask to turn Bluetooth on</string>
+    <string name="settings_popups_body">Allow pop-ups, including while running in the background, so Roudio can ask the moment Bluetooth goes off.</string>
     <string name="settings_autostart_body">After the phone restarts, Roudio can’t reconnect to the recorder until you open it.</string>
     <string name="settings_fix_it">Fix it</string>
     <string name="settings_look">Look and feel</string>

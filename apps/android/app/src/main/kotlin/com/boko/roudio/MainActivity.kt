@@ -34,6 +34,7 @@ import com.boko.roudio.data.errorDetail
 import com.boko.roudio.data.Sync
 import com.boko.roudio.data.SyncWork
 import com.boko.roudio.recorder.RecorderService
+import com.boko.roudio.recorder.TurnOnBluetoothActivity
 import com.boko.roudio.system.PhoneSettings
 import com.boko.roudio.ui.setup.FindRecorderRoute
 import com.boko.roudio.ui.setup.KeepRunningRoute
@@ -106,33 +107,27 @@ class MainActivity : ComponentActivity() {
         GoogleAuth(this, BuildConfig.GOOGLE_SERVER_CLIENT_ID, consentLauncher)
     }
 
-    private val turnOnBluetooth = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
-
-    /** Set once Bluetooth has been asked for, until Roudio leaves the screen; "Don't allow" doesn't re-ask. */
-    private var askedForBluetooth = false
-
     override fun onResume() {
         super.onResume()
         if (app.session.signedIn.value) SyncWork.now(this)
+    }
+
+    override fun onStart() {
+        super.onStart()
         askForBluetoothIfOff()
     }
 
-    override fun onStop() {
-        super.onStop()
-        askedForBluetooth = false
-    }
-
     /**
-     * Opening Roudio with a recorder linked and Bluetooth off shows Android's "turn on Bluetooth?"
-     * dialog straight away; Android 13+ doesn't let an app switch it on by itself. Only with
-     * Nearby devices allowed, so it never jumps into Settings unasked. Setup has its own 12b screen.
+     * Opening Roudio with a recorder linked and Bluetooth off asks to turn it on straight away
+     * (RecorderService asks the moment it goes off). onStart, not onResume: closing the dialog
+     * only resumes Roudio, so "Don't allow" isn't asked again until Roudio is opened again.
+     * Setup has its own 12b screen.
      */
     private fun askForBluetoothIfOff() {
         val state = app.recorder.state.value
-        if (askedForBluetooth || state.bluetoothOn || state.linked == null || !app.session.signedIn.value) return
+        if (state.bluetoothOn || state.linked == null || !app.session.signedIn.value) return
         if (!PhoneSettings.granted(this, PhoneSettings.nearbyDevices)) return
-        askedForBluetooth = true
-        turnOnBluetooth.launch(PhoneSettings.enableBluetooth(this))
+        startActivity(TurnOnBluetoothActivity.intent(this))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
