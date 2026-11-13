@@ -74,3 +74,15 @@ screen in dark during the build.
 - **01b · empty past day:** "Nothing was recorded on this day."
 - **12d step 2** now says to unlink "with the recorder next to your phone" (Paper and export updated).
 
+
+## Milestone 8: Never miss a moment (13 Nov 2026, waiting for the owner's sign-off)
+
+Paper page **08 Never miss a moment (M8)**. Exports in `exports/tide-clock/`.
+
+| # | Artboard | Light | Dark | Covers |
+| --- | --- | --- | --- | --- |
+| 01d | Today · biggest gap | ✓ | ✓ | "Nothing from 7–10 am, your longest gap today" under the dial legend (waking hours only). The dial's "recorded today" stays as the captured total |
+| 15d | Settings · Notifications | ✓ | ✓ | Waking hours; nudges (meeting needs calendar → Allow in place, idle with 15 / 30 / 60 min, battery, storage); calls (prompt switch, phone / who's calling / WhatsApp permissions in the 11c pattern, automatic start off by default); "never uses this phone's microphone" |
+| 15e | Notifications · automatic start consent | ✓ | — | One-time sheet the first time automatic start is turned on |
+| 16 | Widget · states | ✓ | ✓ | Recording (Stop), not recording (Start), not connected (no button), no recorder (Open Roudio). A mini 24-hour ring echoes the dial; the buoy marks now |
+| 17 | Notification, tile, nudges, call prompt | ✓ | — | Recorder notification with Start / Stop (never on a guess; "Starting…" until confirmed), Quick Settings tile in three states, meeting heads-up, idle / battery / charge-tonight / storage nudges, call prompt. System UI, so light only |
