@@ -73,6 +73,8 @@ notes, conventions, and release instructions here as the project develops.
   for transcription.
 - Build plan (milestones 0–7, repo layout, prerequisites): `docs/build/build-plan.md`.
   Start each new development thread from `docs/build/new-thread-handoff.md`.
+- Chosen next features (milestones 8–10: never miss a moment, mark key
+  moments, look back): `docs/build/next-features.md`.
 - What's built so far, lessons learned and open items: `docs/build/progress.md`.
   Update it when a milestone finishes.
 - Repo layout, tools and everyday commands: `README.md`. CI

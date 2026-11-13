@@ -285,6 +285,11 @@ Done:
 - The recorder notification comes straight back if it's swiped away (Android 14+ allows the swipe).
 - Launcher icon and favicon from the working mark; Today rows name who spoke and count decisions
   (phone and web).
+- Bluetooth off (13 Nov 2026): Android 13+ won't let an app switch it on, so Roudio raises
+  Android's one-tap "turn on Bluetooth?" dialog when the app opens and, from RecorderService, the
+  moment Bluetooth goes off. From the background that needs Display over other apps plus Xiaomi's
+  "pop-up windows while running in the background" (Settings warns when they're off); the
+  notification's Turn on Bluetooth button works without them. Not yet seen popping up on the phone.
 
 Still to do:
 - Restore test: restore a backup into staging (Railway dashboard → Postgres → Backups → Restore;
