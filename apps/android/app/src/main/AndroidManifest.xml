@@ -57,6 +57,10 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-pressing the Quick Settings tile opens the recorder screen. -->
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
         </activity>
 
         <activity
@@ -71,6 +75,22 @@
             android:name=".recorder.RecorderService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
+
+        <!-- Start / Stop from the recorder notification (and the widget). -->
+        <receiver
+            android:name=".recorder.RecordingControlReceiver"
+            android:exported="false" />
+
+        <service
+            android:name=".recorder.RecorderTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_recorder"
+            android:label="@string/qs_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <receiver
             android:name=".recorder.RecorderBootReceiver"

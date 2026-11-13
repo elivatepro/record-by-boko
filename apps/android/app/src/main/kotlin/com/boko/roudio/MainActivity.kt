@@ -1,8 +1,11 @@
 package com.boko.roudio
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.service.quicksettings.TileService
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.boko.roudio.ui.fastMotionRecomposer
@@ -130,8 +133,18 @@ class MainActivity : ComponentActivity() {
         startActivity(TurnOnBluetoothActivity.intent(this))
     }
 
+    /** Bumped each time something outside the app (the tile, a notification) asks for 13a. */
+    private var recorderRequests by mutableIntStateOf(0)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (wantsRecorder(intent)) recorderRequests++
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null && wantsRecorder(intent)) recorderRequests++
         enableEdgeToEdge()
         setContent(parent = fastMotionRecomposer()) {
             val choice by app.theme.choice.collectAsState()
@@ -171,6 +184,16 @@ class MainActivity : ComponentActivity() {
                 else -> section !is MainKey && section != Welcome && section != SignIn && section != Linked
             }
             if (!inRightSection && debugScreen() == null) backStack.resetTo(start)
+        }
+        // The tile's long-press (and later the widget) opens the recorder screen over Today.
+        var recorderHandled by rememberSaveable { mutableIntStateOf(0) }
+        LaunchedEffect(recorderRequests, signedIn, linked) {
+            if (recorderRequests == recorderHandled || !signedIn || !linked) return@LaunchedEffect
+            recorderHandled = recorderRequests
+            if (backStack.lastOrNull() != RecorderDetails) {
+                backStack.resetTo(Home)
+                backStack.add(RecorderDetails)
+            }
         }
         // The service keeps the link alive with the screen off; start it once there's a recorder.
         LaunchedEffect(linked) {
@@ -321,6 +344,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun wantsRecorder(intent: Intent?): Boolean =
+        intent?.action == TileService.ACTION_QS_TILE_PREFERENCES || intent?.getStringExtra(EXTRA_OPEN) == OPEN_RECORDER
+
     private fun NavBackStack<NavKey>.resetTo(key: NavKey) {
         clear()
         add(key)
@@ -426,5 +452,16 @@ class MainActivity : ComponentActivity() {
         val tokens = response.body()
         if (!response.isSuccessful || tokens == null) throw ApiException(response.errorDetail(), response.code())
         app.session.store(tokens.accessToken, tokens.accessExpiresAt.toInstant(), tokens.refreshToken)
+    }
+
+    companion object {
+        private const val EXTRA_OPEN = "open"
+        private const val OPEN_RECORDER = "recorder"
+
+        /** Opens the recorder screen (13a) over Today, reusing the running app if there is one. */
+        fun recorderIntent(context: Context): Intent =
+            Intent(context, MainActivity::class.java)
+                .putExtra(EXTRA_OPEN, OPEN_RECORDER)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
     }
 }

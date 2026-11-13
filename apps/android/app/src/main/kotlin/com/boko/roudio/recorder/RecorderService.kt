@@ -122,6 +122,8 @@ class RecorderService : Service() {
         val bluetoothOn: Boolean,
         val battery: Int?,
         val lastSeenMinute: Long?,
+        val control: RecordControl,
+        val recordingSince: java.time.Instant?,
     ) {
         constructor(state: RecorderState) : this(
             serial = state.linked?.serial,
@@ -129,6 +131,8 @@ class RecorderService : Service() {
             bluetoothOn = state.bluetoothOn,
             battery = state.battery?.value?.percent,
             lastSeenMinute = state.lastSeen?.epochSecond?.div(60),
+            control = state.recordControl,
+            recordingSince = (state.recordingNow as? RecordingNow.Recording)?.since,
         )
     }
 
@@ -139,9 +143,7 @@ class RecorderService : Service() {
             ?: getString(R.string.app_name)
         val text = when {
             !content.bluetoothOn -> getString(R.string.recorder_notification_bluetooth_off)
-            content.connected && content.battery != null ->
-                getString(R.string.recorder_notification_connected_battery, content.battery)
-            content.connected -> getString(R.string.recorder_notification_connected)
+            content.connected -> connectedText(content)
             state.lastSeen != null -> getString(
                 R.string.recorder_notification_not_connected_seen,
                 TIME.format(state.lastSeen.atZone(ZoneId.systemDefault())),
@@ -172,6 +174,22 @@ class RecorderService : Service() {
             .setContentText(text)
             .setContentIntent(if (content.bluetoothOn) open else turnOn)
             .apply { if (!content.bluetoothOn) addAction(0, getString(R.string.turn_on_bluetooth), turnOn) }
+            .apply {
+                // Only when the recorder has said what it's doing on this connection (never a guess).
+                when (content.control) {
+                    RecordControl.Start -> addAction(
+                        0,
+                        getString(R.string.start_recording),
+                        RecordingControlReceiver.pendingIntent(this@RecorderService, RecordingControlReceiver.ACTION_START),
+                    )
+                    RecordControl.Stop -> addAction(
+                        0,
+                        getString(R.string.stop_recording),
+                        RecordingControlReceiver.pendingIntent(this@RecorderService, RecordingControlReceiver.ACTION_STOP),
+                    )
+                    else -> Unit
+                }
+            }
             // Android 14+ lets foreground-service notifications be swiped away; bring it straight
             // back so the recorder's state is always in the shade.
             .setDeleteIntent(reshow)
@@ -181,6 +199,20 @@ class RecorderService : Service() {
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
+    }
+
+    /** "Recording since 09:12 · battery 64%", "Not recording · battery 64%", "Starting recording…". */
+    private fun connectedText(content: NotificationContent): String {
+        val state = when (content.control) {
+            RecordControl.Starting -> return getString(R.string.recorder_notification_starting)
+            RecordControl.Stopping -> return getString(R.string.recorder_notification_stopping)
+            RecordControl.Stop -> content.recordingSince
+                ?.let { getString(R.string.recorder_notification_recording_since, TIME.format(it.atZone(ZoneId.systemDefault()))) }
+                ?: getString(R.string.recorder_notification_recording)
+            RecordControl.Start -> getString(R.string.recorder_notification_not_recording)
+            RecordControl.Unavailable -> getString(R.string.recorder_notification_connected)
+        }
+        return content.battery?.let { getString(R.string.recorder_notification_with_battery, state, it) } ?: state
     }
 
     private fun ensureChannel() {
