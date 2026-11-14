@@ -43,6 +43,8 @@
     <string name="recorder_notification_with_battery">%1$s · battery %2$d%%</string>
     <string name="recorder_notification_recording_since">Recording since %1$s</string>
     <string name="recorder_notification_recording">Recording</string>
+    <string name="recorder_notification_since">since %1$s</string>
+    <string name="recorder_notification_battery">battery %1$d%%</string>
     <string name="recorder_notification_not_recording">Not recording</string>
     <string name="recorder_notification_starting">Starting recording…</string>
     <string name="recorder_notification_stopping">Stopping recording…</string>

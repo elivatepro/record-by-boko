@@ -190,10 +190,14 @@ class RecorderService : Service() {
     private fun notification(state: RecorderState, content: NotificationContent = NotificationContent(state)): Notification {
         ensureChannel()
         val linked = state.linked
-        val title = linked?.let { "${it.model.displayName} · ${it.serial.serialEnding}" }
+        val device = linked?.let { "${it.model.displayName} · ${it.serial.serialEnding}" }
             ?: getString(R.string.app_name)
+        val recording = content.connected && (content.control == RecordControl.Stop || content.control == RecordControl.Stopping)
+        // While recording, the title is what the HyperOS island and the lock screen show first.
+        val title = if (recording) getString(R.string.recorder_notification_recording) else device
         val text = when {
             !content.bluetoothOn -> getString(R.string.recorder_notification_bluetooth_off)
+            recording -> recordingText(device, content)
             content.connected -> connectedText(content)
             state.lastSeen != null -> getString(
                 R.string.recorder_notification_not_connected_seen,
@@ -222,7 +226,6 @@ class RecorderService : Service() {
         // While recording: a waveform in the status bar, a running timer, a silent channel that
         // HyperOS shows on the lock screen and in the status bar, and Android 16's status-bar chip
         // when the system allows it. Nothing in it is private, so it shows in full when locked.
-        val recording = content.control == RecordControl.Stop || content.control == RecordControl.Stopping
         val since = content.recordingSince.takeIf { recording }
         return NotificationCompat.Builder(this, if (recording) RECORDING_CHANNEL_ID else CHANNEL_ID)
             .setSmallIcon(if (recording) R.drawable.ic_stat_recording else R.drawable.ic_stat_recorder)
@@ -233,7 +236,10 @@ class RecorderService : Service() {
                     setShowWhen(true)
                     setUsesChronometer(true)
                 }
-                if (recording) setRequestPromotedOngoing(true)
+                if (recording) {
+                    setRequestPromotedOngoing(true)
+                    setShortCriticalText(getString(R.string.recorder_notification_recording))
+                }
             }
             .setContentTitle(title)
             .setContentText(text)
@@ -264,6 +270,17 @@ class RecorderService : Service() {
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
+    }
+
+    /** Under the "Recording" title: "Plaud Note Pro · 1437 · since 1:03 AM · battery 64%", or "Stopping recording…". */
+    private fun recordingText(device: String, content: NotificationContent): String {
+        if (content.control == RecordControl.Stopping) return getString(R.string.recorder_notification_stopping)
+        val parts = listOfNotNull(
+            device,
+            content.recordingSince?.let { getString(R.string.recorder_notification_since, TIME.format(it.atZone(ZoneId.systemDefault()))) },
+            content.battery?.let { getString(R.string.recorder_notification_battery, it) },
+        )
+        return parts.joinToString(" · ")
     }
 
     /** "Recording since 09:12 · battery 64%", "Not recording · battery 64%", "Starting recording…". */
