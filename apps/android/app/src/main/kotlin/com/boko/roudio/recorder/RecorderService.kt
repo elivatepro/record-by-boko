@@ -253,10 +253,14 @@ class RecorderService : Service() {
                         getString(R.string.start_recording),
                         RecordingControlReceiver.pendingIntent(this@RecorderService, RecordingControlReceiver.ACTION_START),
                     )
+                    // The owner's rule: a recording can't be stopped from the lock screen. Android
+                    // asks to unlock first, then runs the action.
                     RecordControl.Stop -> addAction(
-                        0,
-                        getString(R.string.stop_recording),
-                        RecordingControlReceiver.pendingIntent(this@RecorderService, RecordingControlReceiver.ACTION_STOP),
+                        NotificationCompat.Action.Builder(
+                            0,
+                            getString(R.string.stop_recording),
+                            RecordingControlReceiver.pendingIntent(this@RecorderService, RecordingControlReceiver.ACTION_STOP),
+                        ).setAuthenticationRequired(true).build(),
                     )
                     else -> Unit
                 }

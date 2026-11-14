@@ -49,7 +49,8 @@ class RecorderTileService : TileService() {
         super.onClick()
         when (recorder.state.value.recordControl) {
             RecordControl.Start -> recorder.startRecording()
-            RecordControl.Stop -> recorder.stopRecording()
+            // Quick Settings opens over the lock screen; stopping needs the phone unlocked first.
+            RecordControl.Stop -> if (isLocked) unlockAndRun { recorder.stopRecording() } else recorder.stopRecording()
             RecordControl.Starting, RecordControl.Stopping -> Unit
             RecordControl.Unavailable -> openRecorder()
         }
