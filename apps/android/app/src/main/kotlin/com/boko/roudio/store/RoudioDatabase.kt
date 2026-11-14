@@ -16,12 +16,13 @@ import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 
 @Database(
-    entities = [Recording::class, ConversationEntity::class, DigestEntity::class, SearchEntry::class],
-    version = 4,
+    entities = [Recording::class, ConversationEntity::class, DigestEntity::class, SearchEntry::class, CallEntity::class],
+    version = 5,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // upload fields
         AutoMigration(from = 2, to = 3), // server states, conversations, digests, search
         AutoMigration(from = 3, to = 4), // who spoke and decisions on each conversation
+        AutoMigration(from = 4, to = 5), // calls the phone noticed (milestone 8)
     ],
 )
 @TypeConverters(Converters::class)
@@ -29,6 +30,8 @@ abstract class RoudioDatabase : RoomDatabase() {
     abstract fun recordings(): RecordingDao
 
     abstract fun library(): LibraryDao
+
+    abstract fun calls(): CallDao
 
     companion object {
         fun open(context: Context): RoudioDatabase =

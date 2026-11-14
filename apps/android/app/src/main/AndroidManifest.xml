@@ -28,6 +28,11 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Optional (15d): "Meeting started — start recording?" reads event names and times on this phone only. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <!-- Optional (15d, Calls): know when a phone call rings, starts and ends. -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- Optional (15d, "Who's calling"): the caller's name for "Call from Ada". No numbers are kept. -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Lets RecorderService show "turn on Bluetooth?" from the background (Display over other apps). -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- The Plaud SDK asks for location for Android 11 and older; Roudio's minimum is 10. -->
@@ -84,6 +89,17 @@
         <receiver
             android:name=".recorder.RecordingControlReceiver"
             android:exported="false" />
+
+        <!-- Optional (15d, "WhatsApp calls"): reads WhatsApp's call notification and nothing else. -->
+        <service
+            android:name=".call.CallNotificationListener"
+            android:exported="true"
+            android:label="@string/call_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
 
         <receiver
             android:name=".widget.RecorderWidgetReceiver"

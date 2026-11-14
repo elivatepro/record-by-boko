@@ -27,7 +27,10 @@ import org.json.JSONObject
  * to copy it over the recorder's Wi-Fi and log how long joining took), transfer (asks the
  * transfer engine to check now), fast (the next check goes over Wi-Fi), recordings (logs the
  * saved recordings and their tracks), start [--ei scene N] (starts recording, only when the
- * recorder has said it isn't; scene is Plaud's recording mode, default the SDK's), stop.
+ * recorder has said it isn't; scene is Plaud's recording mode, default the SDK's), stop,
+ * call --es state ring|answer|end [--es name …] and whatsapp --es state ring|answer|end
+ * [--es name …] (pretend a call is happening, to test prompts and automatic start without a real
+ * call), calls (logs the calls saved in the last day).
  * Each one logs the resulting state under the tag "RecorderDebug".
  */
 class RecorderCommands : BroadcastReceiver() {
@@ -46,6 +49,24 @@ class RecorderCommands : BroadcastReceiver() {
             "start" -> {
                 val scene = intent.getIntExtra("scene", -1).takeIf { it >= 0 }
                 if (!recorder.startRecording(scene)) Log.w(TAG, "can't start: ${recorder.state.value.recordControl}")
+            }
+            "call" -> app.callSignals.phone.value = when (intent.getStringExtra("state")) {
+                "ring" -> com.boko.roudio.call.PhoneSignal.Ringing(intent.getStringExtra("name"))
+                "answer" -> com.boko.roudio.call.PhoneSignal.OffHook
+                else -> com.boko.roudio.call.PhoneSignal.Idle
+            }
+            "whatsapp" -> app.callSignals.whatsApp.value = when (intent.getStringExtra("state")) {
+                "ring" -> com.boko.roudio.call.WhatsAppSignal(intent.getStringExtra("name"), ringing = true)
+                "answer" -> com.boko.roudio.call.WhatsAppSignal(intent.getStringExtra("name"), ringing = false)
+                else -> null
+            }
+            "calls" -> {
+                val pending = goAsync()
+                app.appScope.launch {
+                    app.database.calls().since(java.time.Instant.now().minusSeconds(86_400)).forEach { Log.i(TAG, "call $it") }
+                    pending.finish()
+                }
+                return
             }
             "stop" -> if (!recorder.stopRecording()) Log.w(TAG, "can't stop: ${recorder.state.value.recordControl}")
             "reconnect" -> recorder.reconnect()

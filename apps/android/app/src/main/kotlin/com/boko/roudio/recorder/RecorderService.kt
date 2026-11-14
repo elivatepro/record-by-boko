@@ -50,6 +50,7 @@ class RecorderService : Service() {
     private var bluetoothWatcher: Job? = null
     private var widgetWatcher: Job? = null
     private var nudgeWatcher: Job? = null
+    private var callWatcher: com.boko.roudio.call.CallWatcher? = null
 
     /** What the widget shows from the recorder, so it isn't redrawn for nothing. */
     private data class WidgetKey(
@@ -131,6 +132,8 @@ class RecorderService : Service() {
                         }
                     }
             }
+            // Calls: the prompt, automatic start and stop, and remembering each answered call.
+            callWatcher = com.boko.roudio.call.CallWatcher(this, scope).also { it.start() }
             // Each time Bluetooth goes off (or is off when the service starts), ask to turn it on.
             bluetoothWatcher = scope.launch {
                 recorder.state.map { it.bluetoothOn }.distinctUntilChanged().collect { on ->
@@ -148,6 +151,7 @@ class RecorderService : Service() {
         bluetoothWatcher?.cancel()
         widgetWatcher?.cancel()
         nudgeWatcher?.cancel()
+        callWatcher?.stop()
         scope.cancel()
         super.onDestroy()
     }
