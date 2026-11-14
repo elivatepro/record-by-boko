@@ -2,7 +2,6 @@ package com.boko.roudio.widget
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -11,10 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
@@ -73,14 +71,13 @@ class RecorderWidget : GlanceAppWidget() {
             val recordings by app.recordings.recordings.collectAsState(initial = firstRecordings)
             val now = Instant.now()
             val model = WidgetModel.build(recorder, recordings, now, ZoneId.systemDefault().rules.getOffset(now))
-            val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-            val ring = remember(model.spans, model.now, model.status, night) { ring(context, model, night) }
+            val ring = remember(model.spans, model.now, model.status) { ringLayers(context, model) }
             Content(context, model, ring)
         }
     }
 
     @Composable
-    private fun Content(context: Context, m: WidgetModel, ring: Bitmap) {
+    private fun Content(context: Context, m: WidgetModel, ring: RingLayers) {
         val ink = ColorProvider(day = P.Navy, night = P.NightInk)
         val muted = ColorProvider(day = P.Muted, night = P.NightMuted)
         val clock = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
@@ -124,7 +121,7 @@ class RecorderWidget : GlanceAppWidget() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Image(ImageProvider(ring), contentDescription = null, modifier = GlanceModifier.size(56.dp))
+                Ring(m, ring)
                 Spacer(GlanceModifier.width(14.dp))
                 Column(GlanceModifier.defaultWeight()) {
                     Text(title, style = TextStyle(color = ink, fontSize = 20.sp, fontWeight = FontWeight.Medium), maxLines = 1)
@@ -185,35 +182,55 @@ class RecorderWidget : GlanceAppWidget() {
         else -> context.getString(R.string.seconds_only, d.seconds.toInt())
     }
 
-    /** The mini dial: captured spans on a track, and the buoy at now (it marks "now" only). */
-    private fun ring(context: Context, m: WidgetModel, night: Boolean): Bitmap {
+    /** The ring's layers as white masks; [Ring] tints each one so day and night both work. */
+    private class RingLayers(val track: Bitmap, val arcs: Bitmap, val halo: Bitmap?, val buoy: Bitmap?)
+
+    /**
+     * The mini dial: captured spans on a track, and the buoy at now (it marks "now" only). Drawn as
+     * masks and tinted by Glance, because a bitmap's own colours can't follow the phone's dark mode.
+     */
+    @Composable
+    private fun Ring(m: WidgetModel, layers: RingLayers) {
+        val full = GlanceModifier.fillMaxSize()
+        val arc = if (m.status == WidgetModel.Status.NotConnected) {
+            ColorProvider(day = P.Navy.copy(alpha = 0.45f), night = P.NightInk.copy(alpha = 0.45f))
+        } else {
+            ColorProvider(day = P.Navy, night = P.NightInk)
+        }
+        Box(GlanceModifier.size(56.dp)) {
+            Image(ImageProvider(layers.track), null, full, colorFilter = ColorFilter.tint(ColorProvider(day = P.Hairline, night = P.NightCardTile)))
+            Image(ImageProvider(layers.arcs), null, full, colorFilter = ColorFilter.tint(arc))
+            layers.halo?.let { Image(ImageProvider(it), null, full, colorFilter = ColorFilter.tint(ColorProvider(day = P.Paper, night = P.NightRaised))) }
+            layers.buoy?.let { Image(ImageProvider(it), null, full, colorFilter = ColorFilter.tint(ColorProvider(day = P.Buoy, night = P.NightBuoy))) }
+        }
+    }
+
+    private fun ringLayers(context: Context, m: WidgetModel): RingLayers {
         val px = (56 * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
-        val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
+        fun layer(draw: Canvas.() -> Unit) = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also { Canvas(it).draw() }
         val stroke = px * 7f / 64f
         val inset = stroke / 2 + px * 2f / 64f
         val box = RectF(inset, inset, px - inset, px - inset)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = stroke }
-        paint.color = (if (night) P.NightCardTile else P.Hairline).toArgb()
-        canvas.drawArc(box, 0f, 360f, false, paint)
-        val arc: Color = if (night) P.NightInk else P.Navy
-        paint.color = (if (m.status == WidgetModel.Status.NotConnected) arc.copy(alpha = 0.45f) else arc).toArgb()
-        for (span in m.spans) {
-            val sweep = ((span.end - span.start) * 360f).coerceAtLeast(MIN_SWEEP)
-            canvas.drawArc(box, -90f + span.start * 360f, sweep, false, paint)
+        val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = stroke; color = android.graphics.Color.WHITE }
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+        val track = layer { drawArc(box, 0f, 360f, false, line) }
+        val arcs = layer {
+            for (span in m.spans) {
+                val sweep = ((span.end - span.start) * 360f).coerceAtLeast(MIN_SWEEP)
+                drawArc(box, -90f + span.start * 360f, sweep, false, line)
+            }
         }
-        if (m.status != WidgetModel.Status.NoRecorder) {
-            val angle = Math.toRadians((m.now * 360f - 90f).toDouble())
-            val r = box.width() / 2
-            val cx = box.centerX() + r * Math.cos(angle).toFloat()
-            val cy = box.centerY() + r * Math.sin(angle).toFloat()
-            val dot = Paint(Paint.ANTI_ALIAS_FLAG)
-            dot.color = (if (night) P.NightRaised else P.Paper).toArgb()
-            canvas.drawCircle(cx, cy, stroke * 0.95f, dot)
-            dot.color = (if (night) P.NightBuoy else P.Buoy).toArgb()
-            canvas.drawCircle(cx, cy, stroke * 0.7f, dot)
-        }
-        return bitmap
+        if (m.status == WidgetModel.Status.NoRecorder) return RingLayers(track, arcs, null, null)
+        val angle = Math.toRadians((m.now * 360f - 90f).toDouble())
+        val r = box.width() / 2
+        val cx = box.centerX() + r * Math.cos(angle).toFloat()
+        val cy = box.centerY() + r * Math.sin(angle).toFloat()
+        return RingLayers(
+            track,
+            arcs,
+            halo = layer { drawCircle(cx, cy, stroke * 0.95f, fill) },
+            buoy = layer { drawCircle(cx, cy, stroke * 0.7f, fill) },
+        )
     }
 
     companion object {
