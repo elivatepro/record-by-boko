@@ -219,8 +219,22 @@ class RecorderService : Service() {
             TurnOnBluetoothActivity.intent(this),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_recorder)
+        // While recording: a waveform in the status bar, a running timer, a silent channel that
+        // HyperOS shows on the lock screen and in the status bar, and Android 16's status-bar chip
+        // when the system allows it. Nothing in it is private, so it shows in full when locked.
+        val recording = content.control == RecordControl.Stop || content.control == RecordControl.Stopping
+        val since = content.recordingSince.takeIf { recording }
+        return NotificationCompat.Builder(this, if (recording) RECORDING_CHANNEL_ID else CHANNEL_ID)
+            .setSmallIcon(if (recording) R.drawable.ic_stat_recording else R.drawable.ic_stat_recorder)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .apply {
+                if (since != null) {
+                    setWhen(since.toEpochMilli())
+                    setShowWhen(true)
+                    setUsesChronometer(true)
+                }
+                if (recording) setRequestPromotedOngoing(true)
+            }
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(if (content.bluetoothOn) open else turnOn)
@@ -268,6 +282,20 @@ class RecorderService : Service() {
 
     private fun ensureChannel() {
         val manager = getSystemService(NotificationManager::class.java)
+        if (manager.getNotificationChannel(RECORDING_CHANNEL_ID) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    RECORDING_CHANNEL_ID,
+                    getString(R.string.recording_notification_channel),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    setSound(null, null)
+                    enableVibration(false)
+                    setShowBadge(false)
+                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                },
+            )
+        }
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return
         manager.createNotificationChannel(
             NotificationChannel(
@@ -281,6 +309,7 @@ class RecorderService : Service() {
     companion object {
         private const val TAG = "RecorderService"
         private const val CHANNEL_ID = "recorder"
+        private const val RECORDING_CHANNEL_ID = "recording"
         private const val WIDGET_TICK_MS = 5 * 60_000L
         private const val NUDGE_TICK_MS = 60_000L
         private const val NOTIFICATION_ID = 1

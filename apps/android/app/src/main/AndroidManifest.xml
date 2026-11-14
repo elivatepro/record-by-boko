@@ -13,6 +13,8 @@
         tools:targetApi="s" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16: the recording notification may ask for the status-bar chip (Live Updates). -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <!-- Wi-Fi fast transfer (optional, 11c). Never used for location. -->
     <uses-permission
         android:name="android.permission.NEARBY_WIFI_DEVICES"

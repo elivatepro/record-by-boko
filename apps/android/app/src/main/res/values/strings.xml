@@ -38,6 +38,7 @@
 
     <!-- Recorder service notification (no design yet; screen-inventory "Still to design") -->
     <string name="recorder_notification_channel">Recorder connection</string>
+    <string name="recording_notification_channel">Recording now</string>
     <string name="recorder_notification_connected">Connected</string>
     <string name="recorder_notification_with_battery">%1$s · battery %2$d%%</string>
     <string name="recorder_notification_recording_since">Recording since %1$s</string>
