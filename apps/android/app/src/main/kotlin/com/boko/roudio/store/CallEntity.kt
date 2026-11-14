@@ -33,6 +33,9 @@ interface CallDao {
     @Insert
     suspend fun insert(call: CallEntity): Long
 
+    @Query("DELETE FROM calls WHERE id = :id")
+    suspend fun delete(id: Long)
+
     @Query("SELECT * FROM calls WHERE endedAt >= :since ORDER BY startedAt")
     suspend fun since(since: Instant): List<CallEntity>
 }

@@ -179,7 +179,15 @@ class CallWatcher(private val context: Context, private val scope: CoroutineScop
             CallAction.StopRecording -> if (!recorder.stopRecording()) Log.i(TAG, "automatic stop refused")
             is CallAction.Finished -> scope.launch(Dispatchers.IO) { save(action.call) }
         }
-        Log.i(TAG, "call: ${action::class.simpleName}")
+        // Named here: the fast build renames classes, so simpleName would log nonsense.
+        val what = when (action) {
+            is CallAction.ShowPrompt -> "prompt ${action.call.app} ${action.call.direction} canStart=${action.canStart}"
+            CallAction.HidePrompt -> "hide prompt"
+            CallAction.StartRecording -> "automatic start"
+            CallAction.StopRecording -> "automatic stop"
+            is CallAction.Finished -> "finished ${action.call.app} ${action.call.direction}"
+        }
+        Log.i(TAG, what)
     }
 
     private suspend fun save(call: FinishedCall) {

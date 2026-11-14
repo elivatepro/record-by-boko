@@ -30,7 +30,8 @@ import org.json.JSONObject
  * recorder has said it isn't; scene is Plaud's recording mode, default the SDK's), stop,
  * call --es state ring|answer|end [--es name …] and whatsapp --es state ring|answer|end
  * [--es name …] (pretend a call is happening, to test prompts and automatic start without a real
- * call), calls (logs the calls saved in the last day).
+ * call), calls (logs the calls saved in the last day), forget-call --el id N (deletes a
+ * pretend call).
  * Each one logs the resulting state under the tag "RecorderDebug".
  */
 class RecorderCommands : BroadcastReceiver() {
@@ -59,6 +60,15 @@ class RecorderCommands : BroadcastReceiver() {
                 "ring" -> com.boko.roudio.call.WhatsAppSignal(intent.getStringExtra("name"), ringing = true)
                 "answer" -> com.boko.roudio.call.WhatsAppSignal(intent.getStringExtra("name"), ringing = false)
                 else -> null
+            }
+            "forget-call" -> {
+                val id = intent.getLongExtra("id", 0)
+                val pending = goAsync()
+                app.appScope.launch {
+                    app.database.calls().delete(id)
+                    pending.finish()
+                }
+                return
             }
             "calls" -> {
                 val pending = goAsync()
