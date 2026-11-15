@@ -321,6 +321,11 @@ Done:
   on exact text, then the same kind at ≥ 0.8 similarity within 2 minutes, else
   `item.sync_lost`.
 
+Live on production since 15 Nov 2026. Root's key (`read`, `annotate`) was added through
+`AGENT_KEY_HASHES` on the worker; the key itself is only on her VPS. She checked a read and a
+write round trip on production. She waits for the owner's yes before she classifies the
+existing conversations. Root has no staging key yet (it needs a staging Railway token).
+
 Lessons:
 - Reprocessing used to commit the new conversations before the recording was "done". It now
   commits them together, so a reader never sees half a write-up.
