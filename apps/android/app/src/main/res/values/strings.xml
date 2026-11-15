@@ -372,6 +372,7 @@
     <string name="tab_settings">Settings</string>
     <string name="chip_linked">Plaud linked</string>
     <string name="chip_linked_battery">Plaud linked · %1$d%%</string>
+    <string name="chip_linked_charging">Plaud linked · %1$d%% · charging</string>
     <string name="chip_not_connected_seen">Plaud not connected · seen %1$s</string>
     <string name="chip_not_connected">Plaud not connected</string>
     <string name="chip_bluetooth_off">Bluetooth off · Plaud not connected</string>
@@ -382,6 +383,7 @@
     <string name="previous_day">Previous day</string>
     <string name="back_to_today">Back to today</string>
     <string name="chip_linked_battery_on_device">Plaud linked · %1$d%% · %2$d on device</string>
+    <string name="chip_linked_charging_on_device">Plaud linked · %1$d%% · charging · %2$d on device</string>
     <string name="recorded_today">recorded today</string>
     <string name="gap_today">Nothing from %1$s, your longest gap today</string>
     <string name="gap_that_day">Nothing from %1$s, the longest gap that day</string>

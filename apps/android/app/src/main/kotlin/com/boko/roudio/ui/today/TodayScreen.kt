@@ -345,17 +345,23 @@ private fun LegendItem(colour: Color, outlined: Boolean, text: String) {
 
 /**
  * The recorder chip (01, S1). Fog when connected; a buoy rim when not, with when it was last seen.
- * Battery only shows once the recorder has reported it on this connection.
+ * Battery only shows once the recorder has reported it on this connection, with "charging" while
+ * it's on its charger.
  */
 @Composable
 fun RecorderChip(state: RecorderState, onRecorder: Int, onClick: () -> Unit) {
     val connected = state.isConnected
     val freshBattery = state.battery?.takeIf { b -> state.connectedSince?.let { !b.at.isBefore(it) } == true }
     val seen = state.lastSeen?.let(::clockTime)
+    val charging = freshBattery?.value?.charging == true
     val text = when {
-        connected && freshBattery != null && onRecorder > 0 ->
-            stringResource(R.string.chip_linked_battery_on_device, freshBattery.value.percent, onRecorder)
-        connected && freshBattery != null -> stringResource(R.string.chip_linked_battery, freshBattery.value.percent)
+        connected && freshBattery != null && onRecorder > 0 -> stringResource(
+            if (charging) R.string.chip_linked_charging_on_device else R.string.chip_linked_battery_on_device,
+            freshBattery.value.percent,
+            onRecorder,
+        )
+        connected && freshBattery != null ->
+            stringResource(if (charging) R.string.chip_linked_charging else R.string.chip_linked_battery, freshBattery.value.percent)
         connected -> stringResource(R.string.chip_linked)
         !state.bluetoothOn -> stringResource(R.string.chip_bluetooth_off)
         seen != null -> stringResource(R.string.chip_not_connected_seen, seen)
