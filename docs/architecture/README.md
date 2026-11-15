@@ -5,6 +5,8 @@ How Roudio is built. Code layout and commands: `../../README.md`.
 - `decisions.md`: what has been decided, when, and why.
 - `spec.md`: the first technical spec. It covers the parts, the life of a
   recording, the data, the rules for deleting, and the open questions.
+- `agent-feed.md`: the feed Root (the owner's Hermes agent) pulls, and the
+  notes she writes back. Agreed with Root on 15 Nov 2026; not built yet.
 
 Related: the product brief (`../roudio-brief.md`) and the design
 (`../design/README.md`). Hardware and design questions that only a real build
