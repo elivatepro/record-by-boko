@@ -45,6 +45,7 @@
     <string name="recorder_notification_recording">Recording</string>
     <string name="recorder_notification_since">since %1$s</string>
     <string name="recorder_notification_battery">battery %1$d%%</string>
+    <string name="recorder_notification_with_battery_charging">%1$s · battery %2$d%%, charging</string>
     <string name="recorder_notification_not_recording">Not recording</string>
     <string name="recorder_notification_starting">Starting recording…</string>
     <string name="recorder_notification_stopping">Stopping recording…</string>
@@ -86,6 +87,8 @@
     <string name="notifications_idle_hours">%1$d hour</string>
     <string name="notifications_battery">Its battery runs low</string>
     <string name="notifications_battery_body">Below 20 %. In the evening, a reminder to charge it overnight if it’s under half.</string>
+    <string name="notifications_charging">It’s charging</string>
+    <string name="notifications_charging_body">When you plug it in, and when it’s full</string>
     <string name="notifications_storage">Its storage is nearly full</string>
     <string name="notifications_storage_body">While recordings still wait to come across</string>
     <string name="notifications_microphone">Roudio never uses this phone’s microphone. Your Plaud does the recording, and only when you start it.</string>
@@ -127,6 +130,10 @@
     <string name="nudge_battery_body">Charge it soon so it doesn’t stop partway through the day.</string>
     <string name="nudge_charge_title">Charge your Plaud tonight</string>
     <string name="nudge_charge_body">It’s at %1$d%%, not enough for tomorrow.</string>
+    <string name="nudge_charging_title">Your Plaud is charging</string>
+    <string name="nudge_charging_body">It’s at %1$d%%. We’ll tell you when it’s full.</string>
+    <string name="nudge_charged_title">Your Plaud is fully charged</string>
+    <string name="nudge_charged_body">You can unplug it.</string>
     <string name="nudge_storage_title">Plaud storage nearly full</string>
     <plurals name="nudge_storage_body">
         <item quantity="one">%1$d recording (%2$s) still waiting to come across. Keep it near your phone.</item>

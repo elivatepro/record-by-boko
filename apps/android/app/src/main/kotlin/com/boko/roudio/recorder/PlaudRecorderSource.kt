@@ -593,8 +593,10 @@ class PlaudRecorderSource(
 
         override fun blePowerChange(power: Int, oldPower: Int) = emit(RecorderEvent.Battery(power))
 
-        override fun bleChargingState(isCharging: Boolean, level: Int) =
+        override fun bleChargingState(isCharging: Boolean, level: Int) {
+            Log.i(TAG, "charging=$isCharging level=$level")
             emit(RecorderEvent.Battery(level, isCharging))
+        }
 
         override fun bleStorage(total: Long, free: Long, duration: Long) {
             Log.i(TAG, "storage total=$total free=$free duration=$duration")

@@ -65,7 +65,7 @@ class RecorderService : Service() {
             connected = state.isConnected,
             control = state.recordControl,
             battery = state.battery?.value?.percent,
-            since = (state.recordingNow as? RecordingNow.Recording)?.since,
+            since =(state.recordingNow as? RecordingNow.Recording)?.since,
         )
     }
 
@@ -176,6 +176,7 @@ class RecorderService : Service() {
         val connected: Boolean,
         val bluetoothOn: Boolean,
         val battery: Int?,
+        val charging: Boolean,
         val lastSeenMinute: Long?,
         val control: RecordControl,
         val recordingSince: java.time.Instant?,
@@ -185,6 +186,7 @@ class RecorderService : Service() {
             connected = state.isConnected,
             bluetoothOn = state.bluetoothOn,
             battery = state.battery?.value?.percent,
+            charging = state.battery?.value?.charging == true,
             lastSeenMinute = state.lastSeen?.epochSecond?.div(60),
             control = state.recordControl,
             recordingSince = (state.recordingNow as? RecordingNow.Recording)?.since,
@@ -302,7 +304,8 @@ class RecorderService : Service() {
             RecordControl.Start -> getString(R.string.recorder_notification_not_recording)
             RecordControl.Unavailable -> getString(R.string.recorder_notification_connected)
         }
-        return content.battery?.let { getString(R.string.recorder_notification_with_battery, state, it) } ?: state
+        val withBattery = if (content.charging) R.string.recorder_notification_with_battery_charging else R.string.recorder_notification_with_battery
+        return content.battery?.let { getString(withBattery, state, it) } ?: state
     }
 
     private fun ensureChannel() {

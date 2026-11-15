@@ -33,6 +33,8 @@ data class NudgeSettings(
     val idle: Boolean = true,
     val idleMinutes: Int = 30,
     val battery: Boolean = true,
+    /** When the recorder starts charging, and when it's full. */
+    val charging: Boolean = true,
     val storage: Boolean = true,
     val callPrompts: Boolean = true,
     /** Off by default (next-features.md); turning it on the first time shows 15e. */
@@ -59,6 +61,7 @@ class NudgePrefs(context: Context) {
             .putBoolean(IDLE, next.idle)
             .putInt(IDLE_MINUTES, next.idleMinutes)
             .putBoolean(BATTERY, next.battery)
+            .putBoolean(CHARGING, next.charging)
             .putBoolean(STORAGE, next.storage)
             .putBoolean(CALL_PROMPTS, next.callPrompts)
             .putBoolean(AUTO_START, next.autoStartCalls)
@@ -76,6 +79,7 @@ class NudgePrefs(context: Context) {
             idle = prefs.getBoolean(IDLE, d.idle),
             idleMinutes = prefs.getInt(IDLE_MINUTES, d.idleMinutes).takeIf { it in NudgeSettings.IDLE_CHOICES } ?: d.idleMinutes,
             battery = prefs.getBoolean(BATTERY, d.battery),
+            charging = prefs.getBoolean(CHARGING, d.charging),
             storage = prefs.getBoolean(STORAGE, d.storage),
             callPrompts = prefs.getBoolean(CALL_PROMPTS, d.callPrompts),
             autoStartCalls = prefs.getBoolean(AUTO_START, d.autoStartCalls),
@@ -90,6 +94,7 @@ class NudgePrefs(context: Context) {
         const val IDLE = "idle"
         const val IDLE_MINUTES = "idle_minutes"
         const val BATTERY = "battery"
+        const val CHARGING = "charging"
         const val STORAGE = "storage"
         const val CALL_PROMPTS = "call_prompts"
         const val AUTO_START = "auto_start_calls"

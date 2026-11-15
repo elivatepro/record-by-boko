@@ -40,6 +40,9 @@ respected):
   hours. The default is 30 min. Waking hours are a setting.
 - **Battery:** the recorder battery is below 20 %. In the evening, a
   reminder to charge it overnight if it's under 50 %.
+- **Charging:** the recorder has just been plugged in (at any hour, since
+  the owner just did it), and again when it's full (waking hours only). Added
+  15 Nov 2026 at the owner's request; its own switch in Settings → Notifications.
 - **Storage:** recorder storage is nearly full and recordings are still
   waiting to transfer. The nudge says what's waiting.
 

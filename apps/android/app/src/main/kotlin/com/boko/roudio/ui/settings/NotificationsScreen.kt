@@ -216,6 +216,13 @@ fun NotificationsScreen(
             ) { on -> onChange { it.copy(battery = on) } }
             Divider()
             SwitchRow(
+                stringResource(R.string.notifications_charging),
+                stringResource(R.string.notifications_charging_body),
+                settings.charging,
+                enabled = true,
+            ) { on -> onChange { it.copy(charging = on) } }
+            Divider()
+            SwitchRow(
                 stringResource(R.string.notifications_storage),
                 stringResource(R.string.notifications_storage_body),
                 settings.storage,

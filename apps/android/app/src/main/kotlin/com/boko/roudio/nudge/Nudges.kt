@@ -147,7 +147,14 @@ class NudgeRunner(
         if (nudge is Nudge.Meeting) {
             builder.addAction(0, context.getString(R.string.nudge_not_this_one), RecordingControlReceiver.pendingIntent(context, RecordingControlReceiver.ACTION_DISMISS, id))
         }
-        context.getSystemService(NotificationManager::class.java).notify(id, builder.build())
+        val manager = context.getSystemService(NotificationManager::class.java)
+        // On the charger: a low-battery or charge-tonight nudge still showing is answered.
+        if (nudge is Nudge.Charging || nudge is Nudge.Charged) {
+            manager.cancel(BATTERY_ID)
+            manager.cancel(CHARGE_ID)
+            manager.cancel(if (nudge is Nudge.Charged) CHARGING_ID else CHARGED_ID)
+        }
+        manager.notify(id, builder.build())
         Log.i(TAG, "nudge ${nudge::class.simpleName}")
     }
 
@@ -157,6 +164,8 @@ class NudgeRunner(
         is Nudge.Idle -> context.getString(R.string.nudge_idle_title, n.minutes) to context.getString(R.string.nudge_idle_body)
         is Nudge.BatteryLow -> context.getString(R.string.nudge_battery_title, n.percent) to context.getString(R.string.nudge_battery_body)
         is Nudge.ChargeTonight -> context.getString(R.string.nudge_charge_title) to context.getString(R.string.nudge_charge_body, n.percent)
+        is Nudge.Charging -> context.getString(R.string.nudge_charging_title) to context.getString(R.string.nudge_charging_body, n.percent)
+        is Nudge.Charged -> context.getString(R.string.nudge_charged_title) to context.getString(R.string.nudge_charged_body)
         is Nudge.StorageFull -> context.getString(R.string.nudge_storage_title) to
             context.resources.getQuantityString(R.plurals.nudge_storage_body, n.waiting, n.waiting, length(n.waitingLength))
     }
@@ -173,6 +182,8 @@ class NudgeRunner(
         is Nudge.Idle -> IDLE_ID
         is Nudge.BatteryLow -> BATTERY_ID
         is Nudge.ChargeTonight -> CHARGE_ID
+        is Nudge.Charging -> CHARGING_ID
+        is Nudge.Charged -> CHARGED_ID
         is Nudge.StorageFull -> STORAGE_ID
     }
 
@@ -192,6 +203,8 @@ class NudgeRunner(
         const val BATTERY_ID = 20_001
         const val CHARGE_ID = 20_002
         const val STORAGE_ID = 20_003
+        const val CHARGING_ID = 20_004
+        const val CHARGED_ID = 20_005
         const val OPUS_BITS_PER_SECOND = 33_000L
     }
 }

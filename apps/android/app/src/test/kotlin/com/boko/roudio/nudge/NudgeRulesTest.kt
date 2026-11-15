@@ -127,6 +127,49 @@ class NudgeRulesTest {
     }
 
     @Test
+    fun `plugging it in says it's charging once, then once more when it's full`() {
+        val t = (0..4).map { noon.plusSeconds(it * 600L) }
+        val results = run(
+            input(connected(t[0], battery = 40), at = t[0]),
+            input(connected(t[1], battery = 42, charging = true), at = t[1]),
+            input(connected(t[2], battery = 70, charging = true), at = t[2]),
+            input(connected(t[3], battery = 100, charging = true), at = t[3]),
+            input(connected(t[4], battery = 100, charging = true), at = t[4]),
+        )
+        val charging = results.map { r -> r.filter { it is Nudge.Charging || it is Nudge.Charged } }
+        assertEquals(listOf(emptyList(), listOf(Nudge.Charging(42, "charging")), emptyList(), listOf(Nudge.Charged("charged")), emptyList()), charging)
+    }
+
+    @Test
+    fun `unplugging and plugging back in says so again, a dropped connection doesn't`() {
+        val t = (0..3).map { noon.plusSeconds(it * 600L) }
+        val results = run(
+            input(connected(t[0], battery = 50, charging = true), at = t[0]),
+            input(linked.copy(lastSeen = t[1]), at = t[1]),
+            input(connected(t[2], battery = 55, charging = true), at = t[2]),
+            input(connected(t[3], battery = 55), at = t[3]),
+            input(connected(t[3].plusSeconds(60), battery = 55, charging = true), at = t[3].plusSeconds(60)),
+        )
+        assertEquals(listOf(1, 0, 0, 0, 1), results.map { r -> r.count { it is Nudge.Charging } })
+    }
+
+    @Test
+    fun `charging answers at night, full waits for the morning, and the switch turns both off`() {
+        val night = Instant.parse("2026-11-14T01:00:00Z") // 02:00 local
+        val morning = Instant.parse("2026-11-14T06:05:00Z") // 07:05 local
+        val results = run(
+            input(connected(night, battery = 30, charging = true), at = night),
+            input(connected(night.plusSeconds(7200), battery = 100, charging = true), at = night.plusSeconds(7200)),
+            input(connected(morning, battery = 100, charging = true), at = morning),
+        )
+        assertEquals(listOf(listOf(Nudge.Charging(30, "charging")), emptyList(), listOf(Nudge.Charged("charged"))), results)
+        val off = NudgeSettings(charging = false)
+        assertTrue(run(input(connected(noon, battery = 30, charging = true), settings = off))[0].isEmpty())
+        // Plugged in already full: just "fully charged".
+        assertEquals(listOf(Nudge.Charged("charged")), run(input(connected(noon, battery = 100, charging = true)))[0])
+    }
+
+    @Test
     fun `storage nearly full nudges only while recordings wait to transfer`() {
         assertTrue(run(input(connected(noon, freeOf100 = 5), waiting = 0))[0].isEmpty())
         val due = run(input(connected(noon, freeOf100 = 5), waiting = 3))[0].single()
