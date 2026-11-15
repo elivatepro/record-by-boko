@@ -1221,6 +1221,49 @@
         }
       }
     },
+    "/updates/{update_id}/undo": {
+      "post": {
+        "tags": [
+          "organise"
+        ],
+        "summary": "Undo Update",
+        "description": "Undo what Root changed (an update with action \"undo\"): her title or kind goes.",
+        "operationId": "undoUpdate",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "update_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "format": "int64",
+              "title": "Update Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/search": {
       "get": {
         "tags": [
@@ -1681,10 +1724,1330 @@
           }
         }
       }
+    },
+    "/agent/v1/feed": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Feed",
+        "description": "What changed after `cursor` (leave it out to start from the beginning).",
+        "operationId": "agentFeed",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Feed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/v1/conversations/{conversation_id}": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Get Conversation",
+        "operationId": "agentGetConversation",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentConversation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/v1/conversations/{conversation_id}/transcript": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Get Transcript",
+        "operationId": "agentGetTranscript",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentTranscript"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/v1/days/{day}/digest": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Get Digest",
+        "description": "The day's digest as the app shows it; 404 until it's finished (or the day was quiet).",
+        "operationId": "agentGetDigest",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "day",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Day"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDigest"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/v1/conversations/{conversation_id}/annotation": {
+      "put": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Put Annotation",
+        "description": "Replace her annotation. A stale If-Match gets 409 `stale_annotation` with the current one.",
+        "operationId": "agentPutAnnotation",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          },
+          {
+            "name": "if-match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentConversation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/v1/conversations/{conversation_id}/corrections": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Correct",
+        "description": "Override the title or kind. Applied now, shown in Updates with undo, kept on reprocess.\nSending the same correction again confirms one that came back with `recheck`.",
+        "operationId": "agentCorrect",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentConversation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/v1/speakers/{speaker_id}": {
+      "patch": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Name Speaker",
+        "description": "Name a speaker for their whole recording. A name the owner set is never overwritten.",
+        "operationId": "agentNameSpeaker",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "speaker_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "format": "int64",
+              "title": "Speaker Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeakerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentSpeaker"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/v1/items/{item_id}/sync": {
+      "put": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Sync Item",
+        "description": "Where an item went (ClickUp for project tasks, TickTick for personal ones), or that she\ndismissed it. `synced` also accepts its Review item, so it stops asking the owner.",
+        "operationId": "agentSyncItem",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "format": "int64",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/v1/actions": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Actions",
+        "description": "Every write, oldest first; `actor` \"owner\" is the owner undoing one of hers.",
+        "operationId": "agentActions",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ActionPage": {
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionView"
+            },
+            "type": "array",
+            "title": "Actions"
+          },
+          "next_cursor": {
+            "type": "string",
+            "title": "Next Cursor"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More"
+          }
+        },
+        "type": "object",
+        "required": [
+          "actions",
+          "next_cursor",
+          "has_more"
+        ],
+        "title": "ActionPage"
+      },
+      "ActionView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "actor": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "owner"
+            ],
+            "title": "Actor"
+          },
+          "endpoint": {
+            "type": "string",
+            "title": "Endpoint"
+          },
+          "target_type": {
+            "type": "string",
+            "title": "Target Type"
+          },
+          "target_id": {
+            "type": "string",
+            "title": "Target Id"
+          },
+          "old_value": {
+            "title": "Old Value"
+          },
+          "new_value": {
+            "title": "New Value"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "at",
+          "actor",
+          "endpoint",
+          "target_type",
+          "target_id",
+          "old_value",
+          "new_value",
+          "confidence",
+          "reason"
+        ],
+        "title": "ActionView"
+      },
+      "AgentConversation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "recording_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recording Id"
+          },
+          "results_version": {
+            "type": "integer",
+            "title": "Results Version"
+          },
+          "replaces": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Replaces"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "ended_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ended At"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "conversation",
+              "event",
+              "voice_note"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "speakers": {
+            "items": {
+              "$ref": "#/components/schemas/AgentSpeaker"
+            },
+            "type": "array",
+            "title": "Speakers"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "annotation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnnotationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "annotation_version": {
+            "type": "integer",
+            "title": "Annotation Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "recording_id",
+          "results_version",
+          "replaces",
+          "day",
+          "started_at",
+          "ended_at",
+          "kind",
+          "title",
+          "summary",
+          "language",
+          "speakers",
+          "items",
+          "note",
+          "annotation",
+          "annotation_version"
+        ],
+        "title": "AgentConversation"
+      },
+      "AgentCorrectionView": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "title",
+              "kind"
+            ],
+            "title": "Field"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "original_value": {
+            "type": "string",
+            "title": "Original Value"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "recheck": {
+            "type": "boolean",
+            "title": "Recheck"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "value",
+          "original_value",
+          "confidence",
+          "reason",
+          "recheck",
+          "created_at"
+        ],
+        "title": "AgentCorrectionView"
+      },
+      "AgentDigest": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "digest": {
+            "$ref": "#/components/schemas/DigestView"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "updated_at",
+          "digest"
+        ],
+        "title": "AgentDigest"
+      },
+      "AgentItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "decision",
+              "task",
+              "key_moment"
+            ],
+            "title": "Kind"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "At Ms"
+          },
+          "review_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "waiting",
+                  "accepted",
+                  "done",
+                  "dismissed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review State"
+          },
+          "sync": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentSync"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "text",
+          "at_ms",
+          "review_state",
+          "sync"
+        ],
+        "title": "AgentItem"
+      },
+      "AgentLink": {
+        "properties": {
+          "system": {
+            "type": "string",
+            "enum": [
+              "notion",
+              "clickup",
+              "ticktick"
+            ],
+            "title": "System"
+          },
+          "kind": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Kind"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "system",
+          "kind"
+        ],
+        "title": "AgentLink"
+      },
+      "AgentSegment": {
+        "properties": {
+          "idx": {
+            "type": "integer",
+            "title": "Idx"
+          },
+          "speaker": {
+            "type": "string",
+            "title": "Speaker"
+          },
+          "speaker_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speaker Name"
+          },
+          "start_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Start Ms"
+          },
+          "end_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "End Ms"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "edited": {
+            "type": "boolean",
+            "title": "Edited"
+          }
+        },
+        "type": "object",
+        "required": [
+          "idx",
+          "speaker",
+          "speaker_name",
+          "start_ms",
+          "end_ms",
+          "text",
+          "edited"
+        ],
+        "title": "AgentSegment"
+      },
+      "AgentSpeaker": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "name_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "owner",
+                  "root",
+                  "carried"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Source",
+            "description": "Who set the name. Re-check `carried` names after a `replaces`."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "name",
+          "name_source"
+        ],
+        "title": "AgentSpeaker"
+      },
+      "AgentSync": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "synced",
+              "dismissed"
+            ],
+            "title": "State"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "notion",
+                  "clickup",
+                  "ticktick"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "system",
+          "external_id",
+          "url",
+          "updated_at"
+        ],
+        "title": "AgentSync"
+      },
+      "AgentTranscript": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/AgentSegment"
+            },
+            "type": "array",
+            "title": "Segments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "segments"
+        ],
+        "title": "AgentTranscript"
+      },
+      "AnnotationRequest": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Tags",
+            "default": []
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/AgentLink"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Links",
+            "default": []
+          },
+          "needs_review": {
+            "items": {
+              "$ref": "#/components/schemas/NeedsReview"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Needs Review",
+            "default": []
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "title": "AnnotationRequest"
+      },
+      "AnnotationView": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/AgentLink"
+            },
+            "type": "array",
+            "title": "Links",
+            "default": []
+          },
+          "needs_review": {
+            "items": {
+              "$ref": "#/components/schemas/NeedsReview"
+            },
+            "type": "array",
+            "title": "Needs Review",
+            "default": []
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "recheck": {
+            "type": "boolean",
+            "title": "Recheck",
+            "description": "Moved here by a reprocess: confirm by sending it again, or drop it",
+            "default": false
+          },
+          "corrections": {
+            "items": {
+              "$ref": "#/components/schemas/AgentCorrectionView"
+            },
+            "type": "array",
+            "title": "Corrections",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "AnnotationView"
+      },
       "AskLink": {
         "properties": {
           "title": {
@@ -2000,6 +3363,16 @@
             },
             "type": "array",
             "title": "Asks"
+          },
+          "root": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RootNote"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -2015,6 +3388,33 @@
           "asks"
         ],
         "title": "ConversationDetail"
+      },
+      "ConversationEvent": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Seq"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "conversation.ready",
+              "conversation.updated"
+            ],
+            "title": "Type"
+          },
+          "conversation": {
+            "$ref": "#/components/schemas/AgentConversation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "type",
+          "conversation"
+        ],
+        "title": "ConversationEvent"
       },
       "ConversationRename": {
         "properties": {
@@ -2108,6 +3508,55 @@
           "end_ms"
         ],
         "title": "ConversationSummary"
+      },
+      "CorrectionRequest": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "title",
+              "kind"
+            ],
+            "title": "Field"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Value"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "value"
+        ],
+        "title": "CorrectionRequest"
       },
       "CostLine": {
         "properties": {
@@ -2299,6 +3748,38 @@
         ],
         "title": "DigestMoment"
       },
+      "DigestReadyEvent": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Seq"
+          },
+          "type": {
+            "type": "string",
+            "const": "digest.ready",
+            "title": "Type"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "type",
+          "day",
+          "updated_at"
+        ],
+        "title": "DigestReadyEvent"
+      },
       "DigestView": {
         "properties": {
           "state": {
@@ -2401,6 +3882,60 @@
         ],
         "title": "ElevenLabsAccount",
         "description": "Live from ElevenLabs: the plan and how many of this period's credits are used."
+      },
+      "Feed": {
+        "properties": {
+          "events": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ConversationEvent"
+                },
+                {
+                  "$ref": "#/components/schemas/RemovedEvent"
+                },
+                {
+                  "$ref": "#/components/schemas/DigestReadyEvent"
+                },
+                {
+                  "$ref": "#/components/schemas/RecordingEmptyEvent"
+                },
+                {
+                  "$ref": "#/components/schemas/SyncLostEvent"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "conversation.ready": "#/components/schemas/ConversationEvent",
+                  "conversation.removed": "#/components/schemas/RemovedEvent",
+                  "conversation.updated": "#/components/schemas/ConversationEvent",
+                  "digest.ready": "#/components/schemas/DigestReadyEvent",
+                  "item.sync_lost": "#/components/schemas/SyncLostEvent",
+                  "recording.empty": "#/components/schemas/RecordingEmptyEvent"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "next_cursor": {
+            "type": "string",
+            "title": "Next Cursor"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More",
+            "description": "Call again straight away"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events",
+          "next_cursor",
+          "has_more"
+        ],
+        "title": "Feed"
       },
       "GoogleSignInRequest": {
         "properties": {
@@ -2564,6 +4099,31 @@
         ],
         "title": "Me"
       },
+      "NeedsReview": {
+        "properties": {
+          "what": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "What"
+          },
+          "options": {
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Options",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "what"
+        ],
+        "title": "NeedsReview"
+      },
       "NoteRequest": {
         "properties": {
           "text": {
@@ -2657,6 +4217,38 @@
           "conversations"
         ],
         "title": "RecordingConversations"
+      },
+      "RecordingEmptyEvent": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Seq"
+          },
+          "type": {
+            "type": "string",
+            "const": "recording.empty",
+            "title": "Type"
+          },
+          "recording_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recording Id"
+          },
+          "speech_ms": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Speech Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "type",
+          "recording_id",
+          "speech_ms"
+        ],
+        "title": "RecordingEmptyEvent"
       },
       "RecordingSummary": {
         "properties": {
@@ -2873,6 +4465,41 @@
         ],
         "title": "RefreshRequest"
       },
+      "RemovedEvent": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Seq"
+          },
+          "type": {
+            "type": "string",
+            "const": "conversation.removed",
+            "title": "Type"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "reprocessed",
+              "deleted"
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "type",
+          "id",
+          "reason"
+        ],
+        "title": "RemovedEvent"
+      },
       "ReviewChange": {
         "properties": {
           "state": {
@@ -2967,6 +4594,121 @@
           "updated_at"
         ],
         "title": "ReviewView"
+      },
+      "RootLink": {
+        "properties": {
+          "system": {
+            "type": "string",
+            "title": "System"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "system",
+          "kind"
+        ],
+        "title": "RootLink"
+      },
+      "RootNote": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/RootLink"
+            },
+            "type": "array",
+            "title": "Links",
+            "default": []
+          },
+          "needs_review": {
+            "items": {
+              "$ref": "#/components/schemas/RootQuestion"
+            },
+            "type": "array",
+            "title": "Needs Review",
+            "description": "Not empty: show a \"check this\" badge",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "RootNote",
+        "description": "What Root (the owner's agent) noted on a conversation: links and \"check this\" questions."
+      },
+      "RootQuestion": {
+        "properties": {
+          "what": {
+            "type": "string",
+            "title": "What"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Options",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "what"
+        ],
+        "title": "RootQuestion"
       },
       "SearchHit": {
         "properties": {
@@ -3243,6 +4985,46 @@
         ],
         "title": "SpeakerRename"
       },
+      "SpeakerRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "SpeakerRequest"
+      },
       "SpeakerView": {
         "properties": {
           "id": {
@@ -3297,6 +5079,133 @@
           "updated_at"
         ],
         "title": "SyncDigest"
+      },
+      "SyncLostEvent": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Seq"
+          },
+          "type": {
+            "type": "string",
+            "const": "item.sync_lost",
+            "title": "Type"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "old_item_id": {
+            "type": "integer",
+            "format": "int64",
+            "title": "Old Item Id"
+          },
+          "old_text": {
+            "type": "string",
+            "title": "Old Text"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "synced",
+              "dismissed"
+            ],
+            "title": "State"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "type",
+          "conversation_id",
+          "old_item_id",
+          "old_text",
+          "state",
+          "system",
+          "external_id"
+        ],
+        "title": "SyncLostEvent"
+      },
+      "SyncRequest": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "synced",
+              "dismissed"
+            ],
+            "title": "State"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "notion",
+                  "clickup",
+                  "ticktick"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state"
+        ],
+        "title": "SyncRequest"
       },
       "SyncView": {
         "properties": {

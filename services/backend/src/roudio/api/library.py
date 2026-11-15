@@ -17,9 +17,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from roudio.agent import events, owner
 from roudio.api.deps import AppServices, CurrentSession, Db, error
 from roudio.api.schema import INT64, Id64
 from roudio.models import (
+    AgentAnnotation,
     AskTurn,
     Conversation,
     DayDigest,
@@ -146,6 +148,30 @@ class AskView(BaseModel):
     created_at: datetime
 
 
+class RootLink(BaseModel):
+    system: str
+    kind: str
+    external_id: str | None = None
+    url: str | None = None
+    label: str | None = None
+
+
+class RootQuestion(BaseModel):
+    what: str
+    options: list[str] = []
+
+
+class RootNote(BaseModel):
+    """What Root (the owner's agent) noted on a conversation: links and "check this" questions."""
+
+    category: str | None = None
+    tags: list[str] = []
+    links: list[RootLink] = []
+    needs_review: list[RootQuestion] = Field(
+        default=[], description='Not empty: show a "check this" badge'
+    )
+
+
 class ConversationDetail(BaseModel):
     conversation: ConversationSummary
     recording: RecordingSummary
@@ -156,6 +182,7 @@ class ConversationDetail(BaseModel):
     language: str | None
     note: str | None
     asks: list[AskView]
+    root: RootNote | None = None
 
 
 def recording_view(r: Recording) -> RecordingSummary:
@@ -337,6 +364,7 @@ async def get_conversation(conversation_id: UUID, _: CurrentSession, db: Db) -> 
         )
     )
     note = await db.get(Note, c.id)
+    annotation = await db.get(AgentAnnotation, c.id)
     asks = list(
         await db.scalars(
             select(AskTurn).where(AskTurn.conversation_id == c.id).order_by(AskTurn.id)
@@ -366,6 +394,9 @@ async def get_conversation(conversation_id: UUID, _: CurrentSession, db: Db) -> 
         language=r.language,
         note=note.text if note else None,
         asks=[ask_view(a) for a in asks],
+        root=RootNote(**{k: v for k, v in annotation.data.items() if k in RootNote.model_fields})
+        if annotation
+        else None,
     )
 
 
@@ -429,6 +460,7 @@ async def rename_conversation(
     c, r = await _conversation(db, conversation_id)
     c.title = body.title.strip()
     r.results_version += 1
+    await owner.owner_renamed(db, c.id, c.title)
     await db.commit()
     return conversation_view(c, r)
 
@@ -522,6 +554,7 @@ async def set_note(conversation_id: UUID, body: NoteRequest, _: CurrentSession, 
         note.text = body.text
     else:
         db.add(Note(conversation_id=conversation_id, text=body.text))
+    await events.conversations_updated(db, [conversation_id])
     await db.commit()
 
 
@@ -549,6 +582,16 @@ async def edit_segment(
         recording = await db.get(Recording, segment.recording_id)
         if recording:
             recording.results_version += 1
+        await events.conversations_updated(
+            db,
+            await db.scalars(
+                select(Conversation.id).where(
+                    Conversation.recording_id == segment.recording_id,
+                    Conversation.start_ms <= segment.start_ms,
+                    Conversation.end_ms >= segment.start_ms,
+                )
+            ),
+        )
         await db.commit()
     names = {
         s.label: s.name
@@ -586,8 +629,10 @@ async def rename_speaker(
     if speaker is None:
         raise error(status.HTTP_404_NOT_FOUND, "not_found", "That speaker isn't there any more.")
     speaker.name = body.name.strip()
+    speaker.name_source = "owner"
     recording = await db.get(Recording, speaker.recording_id)
     if recording:
         recording.results_version += 1
+    await events.recording_updated(db, speaker.recording_id)
     await db.commit()
     return SpeakerView(id=speaker.id, label=speaker.label, name=speaker.name)

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from roudio import __version__
-from roudio.api import auth, backups, library, organise, plaud, recordings
+from roudio.api import agent, auth, backups, library, organise, plaud, recordings
 from roudio.api.deps import Db, Services
 from roudio.auth.crypto import TokenCipher
 from roudio.auth.google import HttpDriveCodeExchanger, HttpGoogleVerifier
@@ -94,6 +94,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         generate_unique_id_function=_operation_id,
     )
     app.state.services = services or build_services(settings)
+    app.state.agent_limiter = agent.RateLimiter(settings.agent_requests_per_minute)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -117,4 +118,5 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     app.include_router(library.router)
     app.include_router(organise.router)
     app.include_router(backups.router)
+    app.include_router(agent.router)
     return app

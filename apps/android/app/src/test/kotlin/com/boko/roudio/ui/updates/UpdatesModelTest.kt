@@ -78,5 +78,10 @@ class UpdatesModelTest {
         assertEquals(listOf(UpdateAction.SeeCleanup), UpdatesModel.actions(update(3, "cleanup_partial"), canOpen = false))
         // Writing up has no retry endpoint yet, so its "retry" only offers the recording.
         assertEquals(listOf(UpdateAction.OpenRecording), UpdatesModel.actions(update(4, "processing_failed", action = "retry"), canOpen = true))
+        // Root renamed a conversation: undo first, then open it.
+        assertEquals(
+            listOf(UpdateAction.Undo, UpdateAction.OpenRecording),
+            UpdatesModel.actions(update(5, "agent_correction", action = "undo"), canOpen = true),
+        )
     }
 }

@@ -149,6 +149,10 @@ fun UpdatesRoute(
         },
         onOpen = { id -> onOpenConversation(id, null) },
         onBackups = onBackups,
+        onUndo = { update ->
+            rows = rows?.map { if (it.update.id == update.id) it.copy(update = it.update.copy(action = null, read = true)) else it }
+            scope.launch { if (send { app.api.organise.undoUpdate(update.id) }) SyncWork.now(context) }
+        },
         onDismiss = { update ->
             rows = rows?.filterNot { it.update.id == update.id }
             scope.launch { if (send { app.api.organise.dismissUpdate(update.id) }) SyncWork.now(context) }
@@ -171,6 +175,7 @@ fun UpdatesSheet(
     onBack: () -> Unit,
     initialFilter: Int = 0,
     onDismiss: (UpdateView) -> Unit = {},
+    onUndo: (UpdateView) -> Unit = {},
 ) {
     val c = RoudioTheme.colors
     var filter by rememberSaveable { mutableIntStateOf(initialFilter) }
@@ -210,7 +215,7 @@ fun UpdatesSheet(
                 Box(Modifier.width(36.dp).height(4.dp).background(c.hairline, RoundedCornerShape(2.dp)))
             }
             when {
-                rows != null -> Loaded(rows, filter, { filter = it }, retries, onMarkAllRead, onRetryBackup, onOpen, onBackups, onDismiss)
+                rows != null -> Loaded(rows, filter, { filter = it }, retries, onMarkAllRead, onRetryBackup, onOpen, onBackups, onDismiss, onUndo)
                 failed -> Padded {
                     Header(null, onMarkAllRead)
                     CouldNotLoad(stringResource(R.string.no_connection), onRetryLoad)
@@ -240,6 +245,7 @@ private fun Loaded(
     onOpen: (String) -> Unit,
     onBackups: () -> Unit,
     onDismiss: (UpdateView) -> Unit,
+    onUndo: (UpdateView) -> Unit,
 ) {
     val unread = rows.count { !it.update.read }
     val needsYou = rows.filter { UpdatesModel.needsYou(it.update) }
@@ -287,7 +293,7 @@ private fun Loaded(
             items(updates, key = { it.id }) { update ->
                 val row = byId.getValue(update.id)
                 SwipeAway(onGone = { onDismiss(update) }) {
-                    UpdateItem(row, retries[update.id] ?: RetryState.Idle, onRetryBackup, onOpen, onBackups)
+                    UpdateItem(row, retries[update.id] ?: RetryState.Idle, onRetryBackup, onOpen, onBackups, onUndo)
                 }
             }
         }
@@ -338,6 +344,7 @@ private fun UpdateItem(
     onRetryBackup: (UpdateView) -> Unit,
     onOpen: (String) -> Unit,
     onBackups: () -> Unit,
+    onUndo: (UpdateView) -> Unit,
 ) {
     val c = RoudioTheme.colors
     val update = row.update
@@ -377,6 +384,7 @@ private fun UpdateItem(
                     Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         actions.forEach { action ->
                             when (action) {
+                                UpdateAction.Undo -> PillButton(stringResource(R.string.updates_undo), filled = false) { onUndo(update) }
                                 UpdateAction.RetryBackup -> RetryButton(retry) { onRetryBackup(update) }
                                 UpdateAction.OpenRecording -> PillButton(stringResource(R.string.updates_open_recording), filled = false) {
                                     row.conversationId?.let(onOpen)

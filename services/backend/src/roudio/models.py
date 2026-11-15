@@ -26,6 +26,7 @@ from sqlalchemy import (
 )
 from sqlalchemy import text as sql_text  # models below have a column called `text`
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -225,6 +226,8 @@ class Speaker(Base):
     )
     label: Mapped[str] = mapped_column(String(32))
     name: Mapped[str | None] = mapped_column(String(120))
+    # Who set the name: owner, root (the agent), or carried over from before a reprocess.
+    name_source: Mapped[str | None] = mapped_column(String(16))
 
 
 class TranscriptSegment(Base):
@@ -288,6 +291,8 @@ class Conversation(Base):
     summary: Mapped[str] = mapped_column(Text)
     # Transcript segment idx values the summary comes from (its tappable times).
     summary_sources: Mapped[list[int]] = mapped_column(ARRAY(Integer), server_default="{}")
+    # The conversations from before a reprocess that this one overlaps in time (agent feed).
+    replaces: Mapped[list[UUID]] = mapped_column(ARRAY(PgUUID(as_uuid=True)), server_default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     search: Mapped[str] = mapped_column(
         TSVECTOR,
@@ -434,6 +439,10 @@ class Notification(Base):
     title: Mapped[str] = mapped_column(Text)
     body: Mapped[str] = mapped_column(Text, server_default="")
     action: Mapped[str | None] = mapped_column(String(32))
+    # Root's correction this update can undo (action "undo").
+    agent_correction_id: Mapped[int | None] = mapped_column(
+        ForeignKey("agent_correction.id", ondelete="SET NULL")
+    )
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
@@ -486,3 +495,111 @@ class AppSetting(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+# The agent feed (docs/architecture/agent-feed.md): Root reads Roudio and writes notes back.
+# Her writes live in these agent_* tables, apart from Roudio's results, and move to the new
+# conversation when a recording is reprocessed (pipeline/carry.py).
+
+
+class AgentKey(Base):
+    """An agent's API key for /agent/v1. Only its SHA-256 is stored."""
+
+    __tablename__ = "agent_key"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    name: Mapped[str] = mapped_column(String(64))
+    key_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    scopes: Mapped[list[str]] = mapped_column(ARRAY(String(16)))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AgentEvent(Base):
+    """The change feed. `seq` is the cursor; rows are written under a lock so they commit in
+    `seq` order. Conversations are rendered at read time, so only their id is kept."""
+
+    __tablename__ = "agent_event"
+
+    seq: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    type: Mapped[str] = mapped_column(String(32))
+    conversation_id: Mapped[UUID | None] = mapped_column(index=True)
+    data: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentAnnotation(Base):
+    """Root's own layer on a conversation: category, tags, links, questions for the owner."""
+
+    __tablename__ = "agent_annotation"
+
+    conversation_id: Mapped[UUID] = mapped_column(
+        ForeignKey("conversation.id", ondelete="CASCADE"), primary_key=True
+    )
+    # {category, tags, links, needs_review, confidence, reason}
+    data: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    version: Mapped[int] = mapped_column(Integer, server_default="0")
+    # Moved to a new conversation by a reprocess: the summary under it may have changed.
+    recheck: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentCorrection(Base):
+    """Root's override of a conversation's title or kind, applied straight away (undoable)."""
+
+    __tablename__ = "agent_correction"
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "field", name="uq_agent_correction_field"),
+        CheckConstraint("field IN ('title', 'kind')", name="ck_agent_correction_field"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    conversation_id: Mapped[UUID] = mapped_column(
+        ForeignKey("conversation.id", ondelete="CASCADE"), index=True
+    )
+    field: Mapped[str] = mapped_column(String(16))
+    value: Mapped[str] = mapped_column(Text)
+    # What Roudio had before; undo puts it back.
+    original_value: Mapped[str] = mapped_column(Text)
+    confidence: Mapped[float | None] = mapped_column()
+    reason: Mapped[str | None] = mapped_column(Text)
+    recheck: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentItemSync(Base):
+    """Whether Root copied an item to ClickUp, TickTick or Notion, or dismissed it."""
+
+    __tablename__ = "agent_item_sync"
+    __table_args__ = (
+        CheckConstraint("state IN ('synced', 'dismissed')", name="ck_agent_item_sync_state"),
+    )
+
+    generated_item_id: Mapped[int] = mapped_column(
+        ForeignKey("generated_item.id", ondelete="CASCADE"), primary_key=True
+    )
+    state: Mapped[str] = mapped_column(String(16))
+    system: Mapped[str | None] = mapped_column(String(16))
+    external_id: Mapped[str | None] = mapped_column(Text)
+    url: Mapped[str | None] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentAction(Base):
+    """The audit log of every agent write: what changed, before and after, confidence, reason."""
+
+    __tablename__ = "agent_action"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    key_id: Mapped[int | None] = mapped_column(ForeignKey("agent_key.id", ondelete="SET NULL"))
+    # "agent" for her own writes, "owner" when the owner undid one, "roudio" for a carry-over.
+    actor: Mapped[str] = mapped_column(String(16), server_default="agent")
+    endpoint: Mapped[str] = mapped_column(String(64))
+    target_type: Mapped[str] = mapped_column(String(32))
+    target_id: Mapped[str] = mapped_column(String(64))
+    old_value: Mapped[Any] = mapped_column(JSONB, nullable=True)
+    new_value: Mapped[Any] = mapped_column(JSONB, nullable=True)
+    confidence: Mapped[float | None] = mapped_column()
+    reason: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

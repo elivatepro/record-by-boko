@@ -173,6 +173,7 @@
     <string name="updates_earlier_today">Earlier today</string>
     <string name="updates_title_with_recording">%1$s · %2$s</string>
     <string name="updates_open_recording">Open recording</string>
+    <string name="updates_undo">Undo</string>
     <string name="updates_see_cleanup">See clean-up</string>
     <string name="updates_nothing_title">Nothing needs you</string>
     <string name="updates_empty_title">No updates yet</string>

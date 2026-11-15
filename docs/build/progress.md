@@ -298,3 +298,31 @@ Still to do:
   on every phone screen.
 - Soak tests (72 h recording, phone restart mid-transfer, a day in airplane mode, Railway restart
   mid-job), then three days of real use.
+
+## Agent feed for Root (built 15 Nov 2026)
+
+`/agent/v1` on the backend, for Root, the owner's Hermes agent on the VPS. It follows
+`docs/architecture/agent-feed.md`, which Root approved; its "As built" section lists what the
+build settled.
+
+Done:
+- `agent_key` keys (hashed, `read` / `annotate`, only on `/agent/v1`, 60 a minute) and the
+  `roudio-agent-key` CLI.
+- The change feed (`agent_event`, opaque cursor, written under an advisory lock so events
+  commit in order). Conversations are rendered when the feed is read. It has ready, updated,
+  removed, `digest.ready`, `recording.empty` and `item.sync_lost`.
+- Reads: conversation, transcript and digest. Writes: annotation (If-Match), title/kind
+  corrections (Updates entry with Undo on the phone and the web), speaker names with
+  `name_source`, and item sync (`synced` accepts the Review item). Every write is logged in
+  `agent_action`.
+- Reprocessing (`pipeline/process.py` + `agent/carry.py`) now writes the new conversations
+  before deleting the old ones, in the same transaction as "done". Her annotation and
+  corrections move to the most-overlapping new conversation with `recheck`. Sync states match
+  on exact text, then the same kind at ≥ 0.8 similarity within 2 minutes, else
+  `item.sync_lost`.
+
+Lessons:
+- Reprocessing used to commit the new conversations before the recording was "done". It now
+  commits them together, so a reader never sees half a write-up.
+- The owner's own conversation notes (`note`) still go when a recording is reprocessed. That
+  hasn't changed, and it's worth fixing the same way.

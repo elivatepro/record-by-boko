@@ -13,7 +13,8 @@ import { EmptyState, ErrorState, Loading } from "./common";
 import { Icon, type IconName } from "./Icon";
 
 function needsYou(u: Update): boolean {
-  return u.action !== null || u.kind.includes("failed");
+  // "undo" is Root's correction: worth a look, but nothing stopped.
+  return (u.action !== null && u.action !== "undo") || u.kind.includes("failed");
 }
 
 function iconFor(u: Update): { name: IconName; tone: "alert" | "signal" | "plain" } {
@@ -135,12 +136,30 @@ export function UpdatesDrawer({ onClose }: { onClose: () => void }) {
 
 function UpdateRow({ update, today, onDone }: { update: Update; today: string; onDone: () => void }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const icon = iconFor(update);
+  const [undoing, setUndoing] = useState(false);
   const [opening, setOpening] = useState(false);
   const [retrying, setRetrying] = useState<"idle" | "busy" | "done">("idle");
   const [failed, setFailed] = useState<string | null>(null);
   const day = localDayOf(update.created_at);
   const when = day === today ? localTime(update.created_at) : dayLabel(day, today);
+
+  async function undo() {
+    setUndoing(true);
+    setFailed(null);
+    try {
+      await must(api.POST("/updates/{update_id}/undo", { params: { path: { update_id: update.id } } }), "Couldn’t undo that.");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.updates }),
+        queryClient.invalidateQueries({ queryKey: keys.sync }),
+      ]);
+    } catch (error) {
+      setFailed(error instanceof Error ? error.message : "Couldn’t undo that.");
+    } finally {
+      setUndoing(false);
+    }
+  }
 
   async function open() {
     if (update.conversation_id) {
@@ -185,6 +204,13 @@ function UpdateRow({ update, today, onDone }: { update: Update; today: string; o
           </time>
         </div>
         <p>{update.body}</p>
+        {update.action === "undo" && (
+          <div className="update__actions">
+            <button type="button" className="button button--soft button--small" onClick={() => void undo()} disabled={undoing}>
+              {undoing ? "Undoing…" : "Undo"}
+            </button>
+          </div>
+        )}
         {(update.action === "retry" || update.action === "retry_backup") && update.recording_id && (
           <div className="update__actions">
             <button

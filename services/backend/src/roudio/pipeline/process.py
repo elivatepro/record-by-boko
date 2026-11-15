@@ -19,6 +19,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from roudio import jobs
+from roudio.agent import carry, events
 from roudio.db import get_sessionmaker
 from roudio.models import (
     Conversation,
@@ -237,8 +238,15 @@ async def _run(
         for s in await db.scalars(select(Speaker).where(Speaker.recording_id == recording.id))
     }
     await db.execute(delete(Speaker).where(Speaker.recording_id == recording.id))
+    # Names carry over by label, but a fresh transcription may label people differently.
     db.add_all(
-        Speaker(recording_id=recording.id, label=label, name=names.get(label)) for label in labels
+        Speaker(
+            recording_id=recording.id,
+            label=label,
+            name=names.get(label),
+            name_source="carried" if names.get(label) else None,
+        )
+        for label in labels
     )
     rows = [
         TranscriptSegment(
@@ -286,11 +294,12 @@ async def _run(
             len(understood.value),
             sum(len(c.items) for c in understood.value),
         )
-        await _save_conversations(db, recording, rows, understood.value)
+        carried = await _save_conversations(db, recording, rows, understood.value)
     else:
-        await _save_conversations(db, recording, rows, [])
+        carried = await _save_conversations(db, recording, rows, [])
 
-    # Done.
+    # Done, in the same transaction as the new conversations, so the agent feed only ever sees
+    # finished ones.
     await db.refresh(recording)
     recording.processing_state = ProcessingState.DONE.value
     recording.processing_error = None
@@ -302,6 +311,7 @@ async def _run(
         .where(Notification.recording_id == recording.id, Notification.kind == "processing_failed")
         .values(read_at=func.now())
     )
+    await _feed(db, recording, carried)
     await db.commit()
     log.info("recording %s written up (version %d)", recording.id, recording.results_version)
     for day in {local_day(recording, 0), local_day(recording, recording.duration_ms or 0)}:
@@ -310,6 +320,22 @@ async def _run(
     from roudio.backup.job import enqueue_backup
 
     await enqueue_backup(db, recording)
+
+
+async def _feed(db: AsyncSession, recording: Recording, carried: carry.Carried) -> None:
+    for conversation_id in carried.new_ids:
+        await events.emit(db, "conversation.ready", conversation_id)
+    for lost in carried.sync_lost:
+        await events.emit(db, "item.sync_lost", UUID(lost["conversation_id"]), **lost)
+    for old_id in carried.removed_ids:
+        await events.emit(db, "conversation.removed", old_id, id=str(old_id), reason="reprocessed")
+    if not carried.new_ids:
+        await events.emit(
+            db,
+            "recording.empty",
+            recording_id=str(recording.id),
+            speech_ms=recording.speech_ms or 0,
+        )
 
 
 def _groups(segments: list[tuple[int, int]]) -> list[list[tuple[int, int]]]:
@@ -329,7 +355,8 @@ async def _save_conversations(
     recording: Recording,
     rows: list[TranscriptSegment],
     understood: list[Understood],
-) -> None:
+) -> carry.Carried:
+    """Replace the recording's conversations. Flushes only: the caller commits with "done"."""
     by_idx = {r.idx: r for r in rows}
     # Keep the owner's Review decisions across reprocessing, matched on the task's text.
     old_states: dict[str, tuple[str, str | None]] = {}
@@ -344,8 +371,9 @@ async def _save_conversations(
         # The same task can appear twice; a decision the owner made beats "waiting".
         if key not in old_states or old_states[key][0] == ReviewState.WAITING:
             old_states[key] = (state, edited)
-    await db.execute(delete(Conversation).where(Conversation.recording_id == recording.id))
-    await db.flush()
+    # Root's notes move to the new conversations before the old ones go (agent/carry.py).
+    before = await carry.snapshot(db, recording.id)
+    created: list[tuple[Conversation, list[GeneratedItem]]] = []
     for c in sorted(understood, key=lambda c: c.start_idx):
         start, end = max(c.start_idx, 0), min(c.end_idx, len(rows) - 1)
         if start > end or start not in by_idx:
@@ -370,6 +398,7 @@ async def _save_conversations(
         )
         db.add(conversation)
         await db.flush()
+        created.append((conversation, []))
         for position, item in enumerate(c.items):
             sources = sorted({i for i in item.sources if i in inside})
             if not sources or item.kind not in {k.value for k in ItemKind} or not item.text.strip():
@@ -383,13 +412,15 @@ async def _save_conversations(
                 position=position,
             )
             db.add(generated)
+            created[-1][1].append(generated)
             if item.kind == ItemKind.TASK:
                 await db.flush()
                 state, edited = old_states.get(
                     generated.text.lower(), (ReviewState.WAITING.value, None)
                 )
                 db.add(ReviewItem(generated_item_id=generated.id, state=state, edited_text=edited))
-    await db.commit()
+    await db.flush()
+    return await carry.carry_over(db, before, created)
 
 
 async def _cost(

@@ -16,7 +16,7 @@ sealed interface UpdateSection {
 }
 
 /** A button under an update. */
-enum class UpdateAction { RetryBackup, SeeCleanup, OpenRecording }
+enum class UpdateAction { Undo, RetryBackup, SeeCleanup, OpenRecording }
 
 /** Updates' logic, apart from the UI: what needs the owner, sections, actions and the safe line. */
 object UpdatesModel {
@@ -55,6 +55,8 @@ object UpdatesModel {
 
     /** The buttons an update offers. Opening needs a conversation to open; [canOpen] says if there is one. */
     fun actions(update: UpdateView, canOpen: Boolean): List<UpdateAction> = buildList {
+        // Root (the owner's agent) changed a title or kind; the owner can put it back.
+        if (update.action == "undo") add(UpdateAction.Undo)
         if (update.action == "retry_backup" && update.recordingId != null) add(UpdateAction.RetryBackup)
         if (canOpen) add(UpdateAction.OpenRecording)
         if (update.kind == "cleanup_partial") add(UpdateAction.SeeCleanup)

@@ -63,6 +63,9 @@ class Settings(BaseSettings):
     # Uploads arrive in parts of this size (S3 needs at least 5 MiB for all but the last).
     upload_part_bytes: int = 8 * 1024 * 1024
 
+    # The agent feed (/agent/v1): requests a minute per key.
+    agent_requests_per_minute: int = 60
+
     worker_poll_seconds: float = 2.0
     job_lease_minutes: int = 15
 

@@ -142,3 +142,79 @@ def openapi() -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(app.openapi(), indent=2, sort_keys=False) + "\n")
     print(f"Wrote {target}")
+
+
+def agent_key() -> None:
+    """Make, list or revoke agent keys for /agent/v1 (docs/architecture/agent-feed.md).
+
+    uv run roudio-agent-key create root --scopes read,annotate [--key-file PATH]
+    uv run roudio-agent-key list
+    uv run roudio-agent-key revoke root
+    """
+    import argparse
+    from datetime import UTC, datetime
+
+    from sqlalchemy import select
+
+    from roudio.agent.keys import create_key
+    from roudio.db import get_sessionmaker
+    from roudio.models import AgentKey
+
+    parser = argparse.ArgumentParser(prog="roudio-agent-key", description=agent_key.__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    make = commands.add_parser("create", help="make a key; it's shown once, only its hash is kept")
+    make.add_argument("name")
+    make.add_argument("--scopes", default="read", help="comma-separated: read, annotate")
+    make.add_argument(
+        "--key-file",
+        type=Path,
+        help="write the key to this new file (mode 600) instead of printing it",
+    )
+    commands.add_parser("list", help="names, scopes and last use (never the keys)")
+    revoke = commands.add_parser("revoke", help="stop a name's keys working")
+    revoke.add_argument("name")
+    args = parser.parse_args()
+
+    async def main() -> None:
+        async with get_sessionmaker()() as db:
+            if args.command == "create":
+                if args.key_file:
+                    # Refuse to overwrite, and never let the key be readable by others.
+                    fd = os.open(args.key_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                try:
+                    row, plain = await create_key(db, args.name, args.scopes.split(","))
+                except Exception:
+                    if args.key_file:
+                        os.close(fd)
+                        args.key_file.unlink()
+                    raise
+                if args.key_file:
+                    with os.fdopen(fd, "w") as out:
+                        out.write(plain + "\n")
+                    print(
+                        f"Made key {row.id} for {row.name} ({','.join(row.scopes)});"
+                        f" written to {args.key_file}"
+                    )
+                else:
+                    print(f"Made key {row.id} for {row.name} ({','.join(row.scopes)}).")
+                    print("It won't be shown again:")
+                    print(plain)
+            elif args.command == "list":
+                for k in await db.scalars(select(AgentKey).order_by(AgentKey.id)):
+                    state = f"revoked {k.revoked_at:%Y-%m-%d}" if k.revoked_at else "active"
+                    used = f"{k.last_used_at:%Y-%m-%d %H:%M}" if k.last_used_at else "never"
+                    print(f"{k.id}\t{k.name}\t{','.join(k.scopes)}\t{state}\tlast used {used}")
+            else:
+                rows = list(
+                    await db.scalars(
+                        select(AgentKey).where(
+                            AgentKey.name == args.name, AgentKey.revoked_at.is_(None)
+                        )
+                    )
+                )
+                for k in rows:
+                    k.revoked_at = datetime.now(UTC)
+                await db.commit()
+                print(f"Revoked {len(rows)} key(s) for {args.name}")
+
+    asyncio.run(main())

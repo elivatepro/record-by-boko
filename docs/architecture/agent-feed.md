@@ -1,6 +1,8 @@
 # Agent feed: Root reads Roudio and writes notes back
 
-Status: **draft for Root and the owner to review** (15 Nov 2026). Nothing is built yet.
+Status: **agreed with Root and built** (15 Nov 2026). The code is
+`services/backend/src/roudio/api/agent.py` and `src/roudio/agent/`; "As built" at the end
+says where the build pins down what this left open.
 
 Root is the owner's Hermes agent on the VPS (`srv1931183`). She classifies each
 conversation and keeps people, projects and tasks up to date in Notion, ClickUp
@@ -247,3 +249,41 @@ For a question she can't settle, she asks the owner directly on WhatsApp.
 - Pinning `category` to a fixed list.
 - Write access to summaries, items or transcript text.
 - Root's own cost cap. She runs that on her side.
+
+## As built (15 Nov 2026)
+
+Details the build settled, without changing the contract above:
+
+- **Errors** look like the app's: `{"detail": {"code": "…", "message": "…"}}`. Codes: `bad_key`
+  (401), `missing_scope` (403), `not_found` / `not_ready` (404), `stale_annotation`,
+  `owner_set` (409), `if_match_required` (428), `rate_limited` (429, with `Retry-After`),
+  `bad_cursor` (400).
+- **`If-Match` is required** on the annotation PUT: send `0` before her first one. Quoted
+  values (`"3"`) work too.
+- **Her own writes don't echo.** Annotations, corrections, speaker names and item sync don't
+  produce `conversation.updated`; only the owner's changes (and the owner's undo) do.
+- **Dropping a correction:** send the correction again with its `original_value`. Sending the
+  same value again confirms it and clears its `recheck`. A new annotation PUT clears the
+  annotation's own `recheck`. `annotation.recheck` is true while either needs a look.
+- **The owner wins.** The owner renaming a conversation removes her title correction. Undo in
+  Updates puts Roudio's value back. Both show in `/actions` with `actor: "owner"`.
+- **`item.sync_lost`** also carries `old_item_id` and `state` (`dismissed` items can be lost
+  too). Its `conversation_id` is the new conversation the old one moved to, or the old ID
+  when nothing replaced it.
+- **`results_version`** also goes up on the owner's edits (renames, transcript fixes). IDs
+  only change when a recording is processed again, and that always comes with `replaces`.
+- **`removed` with `deleted`** is in the contract, but Roudio has no way to delete a
+  conversation yet, so only `reprocessed` happens today.
+- **The digest read** answers `{day, updated_at, digest}`, where `digest` is the app's
+  `DigestView`. "Ready" means `finished` or `quiet`.
+- **Limits:** `/feed` takes `limit` up to 200 (default 50), and `/actions` up to 500
+  (default 100).
+- **Starting point:** the deploy put every conversation that was already written up, and
+  every finished digest, into the feed, oldest first. A first pull without a cursor sees
+  everything.
+- **The owner's app** shows her links and questions on a conversation (`root` on
+  `GET /conversations/{id}`), her notes in Updates (`agent_speaker`, `agent_correction`), and
+  an Undo button on corrections (`POST /updates/{id}/undo`).
+- **Keys:** `uv run roudio-agent-key create root --scopes read,annotate [--key-file PATH]`,
+  `… list`, `… revoke root`. `--key-file` writes the key to a new mode-600 file instead of
+  printing it.

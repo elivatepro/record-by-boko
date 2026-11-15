@@ -31,6 +31,7 @@ uv run alembic upgrade head
 uv run roudio-api                  # http://localhost:8000 (docs at /docs)
 uv run roudio-worker                # processing, Drive backup, digests (needs ffmpeg)
 uv run roudio-reprocess            # write every uploaded recording up again (after adding keys)
+uv run roudio-agent-key create root --scopes read,annotate --key-file key.txt  # Root's /agent/v1 key
 uv run roudio-vad-report day/*.ogg --out /tmp/dropped  # speech detector: kept vs dropped, clips to hear
 uv run pytest                      # uses roudio_test; pipeline tests need ffmpeg
 uv run ruff check . && uv run mypy src tests

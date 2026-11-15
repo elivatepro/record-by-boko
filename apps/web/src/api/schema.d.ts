@@ -405,6 +405,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/updates/{update_id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo Update
+         * @description Undo what Root changed (an update with action "undo"): her title or kind goes.
+         */
+        post: operations["undoUpdate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/search": {
         parameters: {
             query?: never;
@@ -587,10 +607,485 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/agent/v1/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Feed
+         * @description What changed after `cursor` (leave it out to start from the beginning).
+         */
+        get: operations["agentFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/v1/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["agentGetConversation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/v1/conversations/{conversation_id}/transcript": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Transcript */
+        get: operations["agentGetTranscript"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/v1/days/{day}/digest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Digest
+         * @description The day's digest as the app shows it; 404 until it's finished (or the day was quiet).
+         */
+        get: operations["agentGetDigest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/v1/conversations/{conversation_id}/annotation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Annotation
+         * @description Replace her annotation. A stale If-Match gets 409 `stale_annotation` with the current one.
+         */
+        put: operations["agentPutAnnotation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/v1/conversations/{conversation_id}/corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correct
+         * @description Override the title or kind. Applied now, shown in Updates with undo, kept on reprocess.
+         *     Sending the same correction again confirms one that came back with `recheck`.
+         */
+        post: operations["agentCorrect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/v1/speakers/{speaker_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Name Speaker
+         * @description Name a speaker for their whole recording. A name the owner set is never overwritten.
+         */
+        patch: operations["agentNameSpeaker"];
+        trace?: never;
+    };
+    "/agent/v1/items/{item_id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Sync Item
+         * @description Where an item went (ClickUp for project tasks, TickTick for personal ones), or that she
+         *     dismissed it. `synced` also accepts its Review item, so it stops asking the owner.
+         */
+        put: operations["agentSyncItem"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/v1/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Actions
+         * @description Every write, oldest first; `actor` "owner" is the owner undoing one of hers.
+         */
+        get: operations["agentActions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActionPage */
+        ActionPage: {
+            /** Actions */
+            actions: components["schemas"]["ActionView"][];
+            /** Next Cursor */
+            next_cursor: string;
+            /** Has More */
+            has_more: boolean;
+        };
+        /** ActionView */
+        ActionView: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Actor
+             * @enum {string}
+             */
+            actor: "agent" | "owner";
+            /** Endpoint */
+            endpoint: string;
+            /** Target Type */
+            target_type: string;
+            /** Target Id */
+            target_id: string;
+            /** Old Value */
+            old_value: unknown;
+            /** New Value */
+            new_value: unknown;
+            /** Confidence */
+            confidence: number | null;
+            /** Reason */
+            reason: string | null;
+        };
+        /** AgentConversation */
+        AgentConversation: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Recording Id
+             * Format: uuid
+             */
+            recording_id: string;
+            /** Results Version */
+            results_version: number;
+            /** Replaces */
+            replaces: string[];
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "conversation" | "event" | "voice_note";
+            /** Title */
+            title: string;
+            /** Summary */
+            summary: string;
+            /** Language */
+            language: string | null;
+            /** Speakers */
+            speakers: components["schemas"]["AgentSpeaker"][];
+            /** Items */
+            items: components["schemas"]["AgentItem"][];
+            /** Note */
+            note: string | null;
+            annotation: components["schemas"]["AnnotationView"] | null;
+            /** Annotation Version */
+            annotation_version: number;
+        };
+        /** AgentCorrectionView */
+        AgentCorrectionView: {
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "title" | "kind";
+            /** Value */
+            value: string;
+            /** Original Value */
+            original_value: string;
+            /** Confidence */
+            confidence: number | null;
+            /** Reason */
+            reason: string | null;
+            /** Recheck */
+            recheck: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AgentDigest */
+        AgentDigest: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            digest: components["schemas"]["DigestView"];
+        };
+        /** AgentItem */
+        AgentItem: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "decision" | "task" | "key_moment";
+            /** Text */
+            text: string;
+            /**
+             * At Ms
+             * Format: int64
+             */
+            at_ms: number;
+            /** Review State */
+            review_state: ("waiting" | "accepted" | "done" | "dismissed") | null;
+            sync: components["schemas"]["AgentSync"] | null;
+        };
+        /** AgentLink */
+        AgentLink: {
+            /**
+             * System
+             * @enum {string}
+             */
+            system: "notion" | "clickup" | "ticktick";
+            /** Kind */
+            kind: string;
+            /** External Id */
+            external_id?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Label */
+            label?: string | null;
+        };
+        /** AgentSegment */
+        AgentSegment: {
+            /** Idx */
+            idx: number;
+            /** Speaker */
+            speaker: string;
+            /** Speaker Name */
+            speaker_name: string | null;
+            /**
+             * Start Ms
+             * Format: int64
+             */
+            start_ms: number;
+            /**
+             * End Ms
+             * Format: int64
+             */
+            end_ms: number;
+            /** Text */
+            text: string;
+            /** Edited */
+            edited: boolean;
+        };
+        /** AgentSpeaker */
+        AgentSpeaker: {
+            /**
+             * Id
+             * Format: int64
+             */
+            id: number;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string | null;
+            /**
+             * Name Source
+             * @description Who set the name. Re-check `carried` names after a `replaces`.
+             */
+            name_source: ("owner" | "root" | "carried") | null;
+        };
+        /** AgentSync */
+        AgentSync: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "synced" | "dismissed";
+            /** System */
+            system: ("notion" | "clickup" | "ticktick") | null;
+            /** External Id */
+            external_id: string | null;
+            /** Url */
+            url: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AgentTranscript */
+        AgentTranscript: {
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Segments */
+            segments: components["schemas"]["AgentSegment"][];
+        };
+        /** AnnotationRequest */
+        AnnotationRequest: {
+            /** Category */
+            category?: string | null;
+            /**
+             * Tags
+             * @default []
+             */
+            tags: string[];
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["AgentLink"][];
+            /**
+             * Needs Review
+             * @default []
+             */
+            needs_review: components["schemas"]["NeedsReview"][];
+            /** Confidence */
+            confidence?: number | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** AnnotationView */
+        AnnotationView: {
+            /** Category */
+            category?: string | null;
+            /**
+             * Tags
+             * @default []
+             */
+            tags: string[];
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["AgentLink"][];
+            /**
+             * Needs Review
+             * @default []
+             */
+            needs_review: components["schemas"]["NeedsReview"][];
+            /** Confidence */
+            confidence?: number | null;
+            /** Reason */
+            reason?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /**
+             * Recheck
+             * @description Moved here by a reprocess: confirm by sending it again, or drop it
+             * @default false
+             */
+            recheck: boolean;
+            /**
+             * Corrections
+             * @default []
+             */
+            corrections: components["schemas"]["AgentCorrectionView"][];
+        };
         /** AskLink */
         AskLink: {
             /** Title */
@@ -727,6 +1222,21 @@ export interface components {
             note: string | null;
             /** Asks */
             asks: components["schemas"]["AskView"][];
+            root?: components["schemas"]["RootNote"] | null;
+        };
+        /** ConversationEvent */
+        ConversationEvent: {
+            /**
+             * Seq
+             * Format: int64
+             */
+            seq: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "conversation.ready" | "conversation.updated";
+            conversation: components["schemas"]["AgentConversation"];
         };
         /** ConversationRename */
         ConversationRename: {
@@ -786,6 +1296,20 @@ export interface components {
              * @default 0
              */
             decisions: number;
+        };
+        /** CorrectionRequest */
+        CorrectionRequest: {
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "title" | "kind";
+            /** Value */
+            value: string;
+            /** Confidence */
+            confidence?: number | null;
+            /** Reason */
+            reason?: string | null;
         };
         /** CostLine */
         CostLine: {
@@ -880,6 +1404,29 @@ export interface components {
              */
             at: string;
         };
+        /** DigestReadyEvent */
+        DigestReadyEvent: {
+            /**
+             * Seq
+             * Format: int64
+             */
+            seq: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "digest.ready";
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** DigestView */
         DigestView: {
             /**
@@ -921,6 +1468,18 @@ export interface components {
             credits_limit: number;
             /** Resets At */
             resets_at: string | null;
+        };
+        /** Feed */
+        Feed: {
+            /** Events */
+            events: (components["schemas"]["ConversationEvent"] | components["schemas"]["RemovedEvent"] | components["schemas"]["DigestReadyEvent"] | components["schemas"]["RecordingEmptyEvent"] | components["schemas"]["SyncLostEvent"])[];
+            /** Next Cursor */
+            next_cursor: string;
+            /**
+             * Has More
+             * @description Call again straight away
+             */
+            has_more: boolean;
         };
         /**
          * GoogleSignInRequest
@@ -991,6 +1550,16 @@ export interface components {
             /** Drive Connected */
             drive_connected: boolean;
         };
+        /** NeedsReview */
+        NeedsReview: {
+            /** What */
+            what: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+        };
         /** NoteRequest */
         NoteRequest: {
             /** Text */
@@ -1036,6 +1605,29 @@ export interface components {
             recording: components["schemas"]["RecordingSummary"];
             /** Conversations */
             conversations: components["schemas"]["ConversationSummary"][];
+        };
+        /** RecordingEmptyEvent */
+        RecordingEmptyEvent: {
+            /**
+             * Seq
+             * Format: int64
+             */
+            seq: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "recording.empty";
+            /**
+             * Recording Id
+             * Format: uuid
+             */
+            recording_id: string;
+            /**
+             * Speech Ms
+             * Format: int64
+             */
+            speech_ms: number;
         };
         /** RecordingSummary */
         RecordingSummary: {
@@ -1137,6 +1729,29 @@ export interface components {
             /** Refresh Token */
             refresh_token: string;
         };
+        /** RemovedEvent */
+        RemovedEvent: {
+            /**
+             * Seq
+             * Format: int64
+             */
+            seq: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "conversation.removed";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "reprocessed" | "deleted";
+        };
         /** ReviewChange */
         ReviewChange: {
             /** State */
@@ -1176,6 +1791,53 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** RootLink */
+        RootLink: {
+            /** System */
+            system: string;
+            /** Kind */
+            kind: string;
+            /** External Id */
+            external_id?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Label */
+            label?: string | null;
+        };
+        /**
+         * RootNote
+         * @description What Root (the owner's agent) noted on a conversation: links and "check this" questions.
+         */
+        RootNote: {
+            /** Category */
+            category?: string | null;
+            /**
+             * Tags
+             * @default []
+             */
+            tags: string[];
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["RootLink"][];
+            /**
+             * Needs Review
+             * @description Not empty: show a "check this" badge
+             * @default []
+             */
+            needs_review: components["schemas"]["RootQuestion"][];
+        };
+        /** RootQuestion */
+        RootQuestion: {
+            /** What */
+            what: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
         };
         /** SearchHit */
         SearchHit: {
@@ -1311,6 +1973,15 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** SpeakerRequest */
+        SpeakerRequest: {
+            /** Name */
+            name: string;
+            /** Confidence */
+            confidence?: number | null;
+            /** Reason */
+            reason?: string | null;
+        };
         /** SpeakerView */
         SpeakerView: {
             /**
@@ -1334,6 +2005,54 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** SyncLostEvent */
+        SyncLostEvent: {
+            /**
+             * Seq
+             * Format: int64
+             */
+            seq: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "item.sync_lost";
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /**
+             * Old Item Id
+             * Format: int64
+             */
+            old_item_id: number;
+            /** Old Text */
+            old_text: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "synced" | "dismissed";
+            /** System */
+            system: string | null;
+            /** External Id */
+            external_id: string | null;
+        };
+        /** SyncRequest */
+        SyncRequest: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "synced" | "dismissed";
+            /** System */
+            system?: ("notion" | "clickup" | "ticktick") | null;
+            /** External Id */
+            external_id?: string | null;
+            /** Url */
+            url?: string | null;
         };
         /** SyncView */
         SyncView: {
@@ -2219,6 +2938,35 @@ export interface operations {
             };
         };
     };
+    undoUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                update_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search: {
         parameters: {
             query: {
@@ -2515,6 +3263,305 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agentFeed: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Feed"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agentGetConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentConversation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agentGetTranscript: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentTranscript"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agentGetDigest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                day: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentDigest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agentPutAnnotation: {
+        parameters: {
+            query?: never;
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentConversation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agentCorrect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentConversation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agentNameSpeaker: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                speaker_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeakerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentSpeaker"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agentSyncItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agentActions: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionPage"];
+                };
             };
             /** @description Validation Error */
             422: {

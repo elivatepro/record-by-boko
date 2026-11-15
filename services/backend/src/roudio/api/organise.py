@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, literal, select, update
 from sqlalchemy.exc import IntegrityError
 
+from roudio.agent import events, owner
 from roudio.api.deps import CurrentSession, Db, error
 from roudio.api.library import (
     ConversationSummary,
@@ -19,6 +20,7 @@ from roudio.api.library import (
 )
 from roudio.api.schema import INT64, Id64
 from roudio.models import (
+    AgentCorrection,
     Conversation,
     DayDigest,
     GeneratedItem,
@@ -107,6 +109,7 @@ async def update_review(
     if body.text is not None:
         item.edited_text = body.text.strip() or None
     item.updated_at = datetime.now(UTC)
+    await events.conversations_updated(db, [conversation.id])
     await db.commit()
     return _review_view(item, generated, conversation, recording)
 
@@ -224,6 +227,23 @@ async def mark_updates_read(_: CurrentSession, db: Db) -> None:
 async def dismiss_update(update_id: Id64, _: CurrentSession, db: Db) -> None:
     """Swiped away on the phone: gone for good. A new failure raises a new update."""
     await db.execute(delete(Notification).where(Notification.id == update_id))
+    await db.commit()
+
+
+@router.post("/updates/{update_id}/undo", operation_id="undoUpdate", status_code=204)
+async def undo_update(update_id: Id64, _: CurrentSession, db: Db) -> None:
+    """Undo what Root changed (an update with action "undo"): her title or kind goes."""
+    notification = await db.get(Notification, update_id)
+    correction = (
+        await db.get(AgentCorrection, notification.agent_correction_id)
+        if notification and notification.agent_correction_id
+        else None
+    )
+    if notification is None or correction is None:
+        raise error(status.HTTP_404_NOT_FOUND, "not_found", "There's nothing to undo any more.")
+    await owner.undo_correction(db, correction)
+    notification.action = None
+    notification.read_at = func.now()
     await db.commit()
 
 

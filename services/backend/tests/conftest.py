@@ -87,7 +87,8 @@ async def _clean() -> AsyncIterator[None]:
         await db.execute(
             text(
                 "TRUNCATE recording, job, auth_session, drive_grant, owner, word, day_digest,"
-                " notification, cost_entry RESTART IDENTITY CASCADE"
+                " notification, cost_entry, agent_event, agent_key, agent_action"
+                " RESTART IDENTITY CASCADE"
             )
         )
         await db.commit()

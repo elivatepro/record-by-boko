@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from roudio import jobs
+from roudio.agent import events
 from roudio.models import (
     Conversation,
     DayDigest,
@@ -73,6 +74,8 @@ async def build_digest(db: AsyncSession, job: Job) -> None:
         digest.overview = None
         digest.moments = []
         digest.error = None
+        if finished:
+            await _digest_ready(db, day)
         await db.commit()
         return
 
@@ -115,7 +118,15 @@ async def build_digest(db: AsyncSession, job: Job) -> None:
     ][:5]
     digest.state = DigestState.FINISHED.value if finished else DigestState.UPDATING.value
     digest.error = None
+    if finished:
+        await _digest_ready(db, day)
     await db.commit()
+
+
+async def _digest_ready(db: AsyncSession, day: date) -> None:
+    await events.emit(
+        db, "digest.ready", day=day.isoformat(), updated_at=datetime.now(UTC).isoformat()
+    )
 
 
 async def redo_stand_in_results(db: AsyncSession) -> None:
