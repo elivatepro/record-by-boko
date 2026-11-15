@@ -65,6 +65,9 @@ class Settings(BaseSettings):
 
     # The agent feed (/agent/v1): requests a minute per key.
     agent_requests_per_minute: int = 60
+    # Keys to add when the worker starts, as name:scopes:sha256 separated by ";" (e.g.
+    # root:read,annotate:8b1c…). Only hashes, so a deploy can add a key without database access.
+    agent_key_hashes: str = ""
 
     worker_poll_seconds: float = 2.0
     job_lease_minutes: int = 15

@@ -287,3 +287,7 @@ Details the build settled, without changing the contract above:
 - **Keys:** `uv run roudio-agent-key create root --scopes read,annotate [--key-file PATH]`,
   `… list`, `… revoke root`. `--key-file` writes the key to a new mode-600 file instead of
   printing it.
+- **Keys without database access:** the worker variable `AGENT_KEY_HASHES`
+  (`name:scopes:sha256`, `;`-separated) adds those keys when the worker starts. It stores only
+  the hash, and a key that's already there (even revoked) is left alone. Make the key and
+  its hash somewhere private, and set only the hash on Railway.

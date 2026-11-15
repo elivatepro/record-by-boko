@@ -4,6 +4,7 @@ import hashlib
 import secrets
 from collections.abc import Iterable
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from roudio.models import AgentKey
@@ -26,6 +27,26 @@ def check_scopes(scopes: Iterable[str]) -> list[str]:
     if unknown or not chosen:
         raise ValueError(f"scopes must be some of {', '.join(SCOPES)}; got {chosen}")
     return chosen
+
+
+async def add_hashed_keys(db: AsyncSession, spec: str) -> list[str]:
+    """Store keys given as `name:scopes:sha256;…` that aren't there yet; returns their names.
+
+    A key that's already stored, even revoked, is left alone, so revoking one sticks.
+    """
+    added = []
+    for entry in filter(None, (e.strip() for e in spec.split(";"))):
+        name, scopes, digest = entry.split(":")
+        digest = digest.strip().lower()
+        if len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+            raise ValueError(f"{name}: not a SHA-256 hex digest")
+        if await db.scalar(select(AgentKey.id).where(AgentKey.key_hash == digest)) is None:
+            db.add(
+                AgentKey(name=name.strip(), key_hash=digest, scopes=check_scopes(scopes.split(",")))
+            )
+            added.append(name.strip())
+    await db.commit()
+    return added
 
 
 async def create_key(

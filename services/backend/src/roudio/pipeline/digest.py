@@ -148,6 +148,15 @@ async def redo_stand_in_results(db: AsyncSession) -> None:
 async def on_worker_start(db: AsyncSession) -> None:
     """Each deploy: say where every recording stands, give failed write-ups one fresh try (a new
     version usually carries the fix), and redo what the stand-ins wrote."""
+    from roudio.agent.keys import add_hashed_keys
+    from roudio.config import get_settings
+
+    try:
+        added = await add_hashed_keys(db, get_settings().agent_key_hashes)
+        if added:
+            log.info("added agent key(s) for %s", ", ".join(added))
+    except ValueError as exc:
+        log.error("AGENT_KEY_HASHES isn't valid: %s", exc)
     counts = (
         await db.execute(
             select(Recording.processing_state, Recording.written_by, func.count()).group_by(

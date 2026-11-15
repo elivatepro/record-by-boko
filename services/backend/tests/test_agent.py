@@ -586,3 +586,16 @@ async def test_speaker_names_carry_over_marked_carried(
     seen = (await client.get(f"/agent/v1/conversations/{c.id}", headers=root)).json()["speakers"]
     andy = next(s for s in seen if s["name"] == "Andy")
     assert andy["name_source"] == "carried" and andy["id"] != speaker.id
+
+
+async def test_keys_can_arrive_as_hashes(client: AsyncClient, db: AsyncSession) -> None:
+    from roudio.agent.keys import add_hashed_keys, hash_key
+
+    key = "rdo_agent_from-a-deploy"
+    spec = f"root:read,annotate:{hash_key(key)}"
+    assert await add_hashed_keys(db, spec) == ["root"]
+    assert await add_hashed_keys(db, spec) == []  # already there (revoked ones stay revoked)
+    headers = {"Authorization": f"Bearer {key}"}
+    assert (await client.get("/agent/v1/feed", headers=headers)).status_code == 200
+    with pytest.raises(ValueError):
+        await add_hashed_keys(db, "root:read:not-a-hash")
