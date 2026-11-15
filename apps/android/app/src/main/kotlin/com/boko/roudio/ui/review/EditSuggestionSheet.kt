@@ -26,7 +26,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -38,6 +37,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.boko.roudio.R
@@ -71,18 +71,21 @@ fun EditSuggestionSheet(item: ReviewView, onSave: (String) -> Unit, onCancel: ()
             Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Title above its source: side by side, a long conversation title squeezed the heading
+            // into a column ("sugges / tion").
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     stringResource(R.string.review_edit_title),
                     style = roudioText(22.sp, 28.sp, FontWeight.SemiBold),
                     color = c.ink,
-                    modifier = Modifier.weight(1f).semantics { heading() },
+                    modifier = Modifier.semantics { heading() },
                 )
                 Text(
                     stringResource(R.string.review_edit_from, item.conversation.title, positionText(item.atMs)),
                     style = roudioText(13.sp, 18.sp),
                     color = c.muted,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Column(

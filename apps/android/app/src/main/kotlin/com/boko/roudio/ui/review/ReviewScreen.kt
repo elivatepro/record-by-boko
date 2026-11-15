@@ -56,6 +56,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -274,6 +275,7 @@ private fun Waiting(
             color = c.muted,
             textAlign = TextAlign.Center,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         )
     }
@@ -350,7 +352,7 @@ private fun SuggestionCard(
             modifier = Modifier.semantics { heading() },
         )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(item.conversation.title, style = roudioText(15.sp, 20.sp), color = c.muted, maxLines = 1, modifier = Modifier.weight(1f, fill = false))
+            Text(item.conversation.title, style = roudioText(15.sp, 20.sp), color = c.muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             PlayChip(item.atMs) { onOpen(item) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
