@@ -347,7 +347,7 @@ private fun SuggestionCard(
         )
         Text(
             item.text,
-            style = roudioText(24.sp, 30.sp, FontWeight.SemiBold),
+            style = roudioText(19.sp, 26.sp, FontWeight.Medium),
             color = c.ink,
             modifier = Modifier.semantics { heading() },
         )
