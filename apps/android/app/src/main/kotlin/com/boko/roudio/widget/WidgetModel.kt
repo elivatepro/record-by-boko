@@ -20,6 +20,8 @@ data class WidgetModel(
     /** The recorder's model name, for "Note Pro 64 %". */
     val modelName: String?,
     val battery: Int?,
+    /** On its charger (only when [battery] is shown). */
+    val charging: Boolean,
     /** Recording: when it started. Not recording: when today's last recording ended. */
     val since: LocalTime?,
     /** Not connected: when the recorder was last heard from. */
@@ -55,6 +57,7 @@ data class WidgetModel(
                 status = status,
                 modelName = recorder.linked?.model?.shortName,
                 battery = recorder.battery?.value?.percent?.takeIf { status == Status.Recording || status == Status.NotRecording },
+                charging = recorder.battery?.value?.charging == true && (status == Status.Recording || status == Status.NotRecording),
                 since = since,
                 lastHeard = recorder.lastSeen?.takeIf { status == Status.NotConnected }?.let(::local),
                 captured = today.recorded,

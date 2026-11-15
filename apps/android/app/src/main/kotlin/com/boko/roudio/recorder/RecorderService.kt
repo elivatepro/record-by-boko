@@ -58,6 +58,7 @@ class RecorderService : Service() {
         val connected: Boolean,
         val control: RecordControl,
         val battery: Int?,
+        val charging: Boolean,
         val since: java.time.Instant?,
     ) {
         constructor(state: RecorderState) : this(
@@ -65,7 +66,8 @@ class RecorderService : Service() {
             connected = state.isConnected,
             control = state.recordControl,
             battery = state.battery?.value?.percent,
-            since =(state.recordingNow as? RecordingNow.Recording)?.since,
+            charging = state.battery?.value?.charging == true,
+            since = (state.recordingNow as? RecordingNow.Recording)?.since,
         )
     }
 

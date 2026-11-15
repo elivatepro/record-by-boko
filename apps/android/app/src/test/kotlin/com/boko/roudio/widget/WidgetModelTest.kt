@@ -70,6 +70,16 @@ class WidgetModelTest {
     }
 
     @Test
+    fun `charging shows on the gauge only while the battery does`() {
+        val plugged = connected.copy(battery = Seen(BatteryReading(64, true), now))
+        val m = build(plugged.copy(recording = Seen(RecordingReading(false, null), now)))
+        assertEquals(true, m.charging)
+        assertEquals(false, build(connected.copy(recording = Seen(RecordingReading(false, null), now))).charging)
+        // Not yet reported: no battery, so no bolt either.
+        assertEquals(false, build(plugged).charging)
+    }
+
+    @Test
     fun `connected but not yet reported reads as not connected, with no button`() {
         val m = build(connected)
         assertEquals(WidgetModel.Status.NotConnected, m.status)

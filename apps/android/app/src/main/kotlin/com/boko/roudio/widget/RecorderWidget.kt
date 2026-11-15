@@ -72,12 +72,13 @@ class RecorderWidget : GlanceAppWidget() {
             val now = Instant.now()
             val model = WidgetModel.build(recorder, recordings, now, ZoneId.systemDefault().rules.getOffset(now))
             val ring = remember(model.spans, model.now, model.status) { ringLayers(context, model) }
-            Content(context, model, ring)
+            val gauge = remember(model.battery, model.charging, model.status) { gaugeLayers(context, model) }
+            Content(context, model, ring, gauge)
         }
     }
 
     @Composable
-    private fun Content(context: Context, m: WidgetModel, ring: RingLayers) {
+    private fun Content(context: Context, m: WidgetModel, ring: RingLayers, gauge: GaugeLayers) {
         val ink = ColorProvider(day = P.Navy, night = P.NightInk)
         val muted = ColorProvider(day = P.Muted, night = P.NightMuted)
         val clock = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
@@ -121,7 +122,7 @@ class RecorderWidget : GlanceAppWidget() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Ring(m, ring)
+                Ring(m, ring, gauge)
                 Spacer(GlanceModifier.width(14.dp))
                 Column(GlanceModifier.defaultWeight()) {
                     Text(title, style = TextStyle(color = ink, fontSize = 20.sp, fontWeight = FontWeight.Medium), maxLines = 1)
@@ -190,7 +191,7 @@ class RecorderWidget : GlanceAppWidget() {
      * masks and tinted by Glance, because a bitmap's own colours can't follow the phone's dark mode.
      */
     @Composable
-    private fun Ring(m: WidgetModel, layers: RingLayers) {
+    private fun Ring(m: WidgetModel, layers: RingLayers, gauge: GaugeLayers) {
         val full = GlanceModifier.fillMaxSize()
         val arc = if (m.status == WidgetModel.Status.NotConnected) {
             ColorProvider(day = P.Navy.copy(alpha = 0.45f), night = P.NightInk.copy(alpha = 0.45f))
@@ -202,7 +203,60 @@ class RecorderWidget : GlanceAppWidget() {
             Image(ImageProvider(layers.arcs), null, full, colorFilter = ColorFilter.tint(arc))
             layers.halo?.let { Image(ImageProvider(it), null, full, colorFilter = ColorFilter.tint(ColorProvider(day = P.Paper, night = P.NightRaised))) }
             layers.buoy?.let { Image(ImageProvider(it), null, full, colorFilter = ColorFilter.tint(ColorProvider(day = P.Buoy, night = P.NightBuoy))) }
+            // The recorder in the middle, filled like a battery gauge.
+            val buoy = ColorProvider(day = P.Buoy, night = P.NightBuoy)
+            Image(ImageProvider(gauge.body), null, full, colorFilter = ColorFilter.tint(arc))
+            gauge.level?.let { Image(ImageProvider(it), null, full, colorFilter = ColorFilter.tint(if (gauge.low) buoy else arc)) }
+            gauge.bolt?.let { Image(ImageProvider(it), null, full, colorFilter = ColorFilter.tint(buoy)) }
         }
+    }
+
+    /** The recorder glyph as a battery gauge: its outline, the charge level, and a bolt while charging. */
+    private class GaugeLayers(val body: Bitmap, val level: Bitmap?, val low: Boolean, val bolt: Bitmap?)
+
+    private fun gaugeLayers(context: Context, m: WidgetModel): GaugeLayers {
+        val px = (56 * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        val u = px / 56f // one dp
+        fun layer(draw: Canvas.() -> Unit) = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also { Canvas(it).draw() }
+        val white = android.graphics.Color.WHITE
+        val outline = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f * u; color = white }
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = white }
+        // The same shape as the notification icon: a rounded body, 13 × 21 dp, with a slot at the top.
+        val body = RectF(px / 2f - 6.5f * u, px / 2f - 10.5f * u, px / 2f + 6.5f * u, px / 2f + 10.5f * u)
+        val inner = RectF(body.left + 3f * u, body.top + 3f * u, body.right - 3f * u, body.bottom - 3f * u)
+        val percent = m.battery
+        val bodyLayer = layer {
+            drawRoundRect(body, 3.5f * u, 3.5f * u, outline)
+            // No reading: the plain glyph, slot and all.
+            if (percent == null) drawRect(px / 2f - 1.5f * u, body.top + 3.5f * u, px / 2f + 1.5f * u, body.top + 6.5f * u, fill)
+        }
+        if (percent == null) return GaugeLayers(bodyLayer, null, low = false, bolt = null)
+        val level = percent.coerceIn(0, 100) / 100f
+        val levelLayer = if (level <= 0f) {
+            null
+        } else {
+            layer { drawRoundRect(RectF(inner.left, inner.bottom - inner.height() * level, inner.right, inner.bottom), 1.5f * u, 1.5f * u, fill) }
+        }
+        val bolt = if (!m.charging) {
+            null
+        } else {
+            layer {
+                // A small bolt over the body's middle, with a halo cut so it reads on the fill.
+                val cx = px / 2f
+                val cy = px / 2f
+                val path = android.graphics.Path().apply {
+                    moveTo(cx + 1.2f * u, cy - 6f * u)
+                    lineTo(cx - 3.2f * u, cy + 0.8f * u)
+                    lineTo(cx - 0.2f * u, cy + 0.8f * u)
+                    lineTo(cx - 1.2f * u, cy + 6f * u)
+                    lineTo(cx + 3.2f * u, cy - 0.8f * u)
+                    lineTo(cx + 0.2f * u, cy - 0.8f * u)
+                    close()
+                }
+                drawPath(path, fill)
+            }
+        }
+        return GaugeLayers(bodyLayer, levelLayer, low = percent < LOW_BATTERY && !m.charging, bolt = bolt)
     }
 
     private fun ringLayers(context: Context, m: WidgetModel): RingLayers {
@@ -235,6 +289,7 @@ class RecorderWidget : GlanceAppWidget() {
 
     companion object {
         private const val MIN_SWEEP = 1.5f
+        private const val LOW_BATTERY = 20
 
         /** Redraw every placed widget (the recorder's state or today's recordings changed). */
         suspend fun refresh(context: Context) {
